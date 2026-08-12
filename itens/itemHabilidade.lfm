@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Item de recordList da secao HABILIDADES (aba V).
+
+  Todo codigo e INLINE nos <event>: funcao nomeada no <script> de um template
+  de item vira global, e a ultima linha criada sobrescreve as anteriores.
+
+  Campos do item:
+    tipo         "poder" | "classe" | "feitico"
+    nome         nome dado pelo jogador
+    rank         E D C B A EX
+    poderVinculado  nome do poder de origem (vazio em habilidade de classe)
+    tags         lista separada por virgula
+    energia      custo de Aura (ou Mana, em feiticos)
+    dadoBase     ex.: 3d8
+    modificador  ex.: 6
+    alcance      em metros
+    duracao      texto
+    elemento     tag elemental principal
+    descricao    texto livre
+    efeito       texto livre
+    custoPago    pontos efetivamente gastos (0 quando gratuita)
+    origemGratis de onde veio a gratuidade, quando custoPago = 0
+
+  ARMADILHA: horzTextAlign/vertTextAlign NAO aceitam "left"/"right" - so
+  "center", "leading" e "trailing". Sao propriedades diferentes de align=,
+  que essa sim usa left/right. Confundir as duas derruba o rdk i.
+-->
+<form name="frmItemHabilidade" height="64" theme="dark">
+
+    <event name="onNodeReady"><![CDATA[
+        if sheet ~= nil then
+            local rank = tostring(sheet.rank or "E");
+            local tipo = tostring(sheet.tipo or "poder");
+
+            local cor = "#8A63C9";                       -- poder: violeta
+            if tipo == "classe" then cor = "#4E8C74";    -- classe: musgo
+            elseif tipo == "feitico" then cor = "#7FA8B8"; end;  -- feitico: chuva
+            if self.barraItemHab ~= nil then self.barraItemHab:setColor(cor); end;
+
+            if self.lblRankHab ~= nil then self.lblRankHab:setText(rank); end;
+
+            if self.lblOrigemHab ~= nil then
+                local origem = tostring(sheet.poderVinculado or "");
+                if origem == "" then
+                    if tipo == "classe" then origem = "CLASSE";
+                    else origem = "—"; end;
+                else
+                    origem = string.upper(origem);
+                end;
+                self.lblOrigemHab:setText(origem);
+                self.lblOrigemHab:setFontColor(cor);
+            end;
+            if self.rectOrigemHab ~= nil then self.rectOrigemHab:setStrokeColor(cor); end;
+
+            if self.lblResumoHab ~= nil then
+                local energiaNome = "Aura";
+                if tipo == "feitico" then energiaNome = "Mana"; end;
+                local partes = {};
+                table.insert(partes, energiaNome .. " " .. tostring(sheet.energia or 0));
+                if tostring(sheet.dadoBase or "") ~= "" then
+                    table.insert(partes, tostring(sheet.dadoBase));
+                end;
+                local mod = tonumber(sheet.modificador) or 0;
+                if mod > 0 then table.insert(partes, "+" .. tostring(mod)); end;
+                table.insert(partes, tostring(sheet.alcance or 0) .. "m");
+                local dur = tostring(sheet.duracao or "");
+                dur = dur:gsub("%.%s*$", "");
+                if dur ~= "" then table.insert(partes, dur); end;
+                self.lblResumoHab:setText(table.concat(partes, "   ·   "));
+            end;
+
+            if self.lblTagsHab ~= nil then
+                local t = tostring(sheet.tags or "");
+                if t == "" then
+                    self.lblTagsHab:setText("sem tags");
+                    self.lblTagsHab:setFontColor("#3F4C54");
+                else
+                    self.lblTagsHab:setText(t);
+                    self.lblTagsHab:setFontColor("#5F7078");
+                end;
+            end;
+
+            -- Slot concedido ainda sem nome: o jogador precisa batizar.
+            local credito = tonumber(sheet.creditoEmbutido) or 0;
+            local semNome = (tostring(sheet.nome or "") == "");
+            if self.lblOrigemHab ~= nil and credito > 0 then
+                local rot = tostring(sheet.rotuloGratis or "");
+                if rot ~= "" then
+                    self.lblOrigemHab:setText("◆ " .. string.upper(rot));
+                    self.lblOrigemHab:setFontColor("#C9A24B");
+                end;
+                if self.rectOrigemHab ~= nil then self.rectOrigemHab:setStrokeColor("#C9A24B"); end;
+            end;
+            if semNome then
+                if self.rectItemHab ~= nil then self.rectItemHab:setStrokeColor("#C9A24B"); end;
+                if self.lblResumoHab ~= nil then
+                    self.lblResumoHab:setText("Habilidade concedida — clique para dar um nome e definir tags e efeito.");
+                    self.lblResumoHab:setFontColor("#C9A24B");
+                end;
+            end;
+
+            local pago = tonumber(sheet.custoPago) or 0;
+            if self.lblCustoHab ~= nil then
+                if credito > 0 and pago <= 0 then
+                    self.lblCustoHab:setText("GRÁTIS");
+                    self.lblCustoHab:setFontColor("#C9A24B");
+                    if self.rectCustoHab ~= nil then self.rectCustoHab:setStrokeColor("#C9A24B"); end;
+                elseif credito > 0 then
+                    self.lblCustoHab:setText(tostring(pago) .. " pt  (−" .. tostring(credito) .. ")");
+                    self.lblCustoHab:setFontColor("#C9A24B");
+                    if self.rectCustoHab ~= nil then self.rectCustoHab:setStrokeColor("#C9A24B"); end;
+                elseif pago <= 0 then
+                    self.lblCustoHab:setText("GRÁTIS");
+                    self.lblCustoHab:setFontColor("#C9A24B");
+                    if self.rectCustoHab ~= nil then self.rectCustoHab:setStrokeColor("#C9A24B"); end;
+                else
+                    self.lblCustoHab:setText(tostring(pago) .. " pt");
+                    self.lblCustoHab:setFontColor("#8C9AA0");
+                    if self.rectCustoHab ~= nil then self.rectCustoHab:setStrokeColor("#1A262C"); end;
+                end;
+            end;
+        end;
+    ]]></event>
+
+    <rectangle name="rectItemHab" align="client" color="#101217" strokeColor="#22323A" strokeSize="1" xradius="4" yradius="4" margins="{top=3,bottom=3}">
+        <rectangle name="barraItemHab" align="left" width="3" color="#8A63C9" hitTest="false"/>
+
+        <!-- COLUNA DIREITA: mesma altura e mesmas margens nos tres blocos,
+             para as caixas ficarem alinhadas. O "x" por ultimo, a direita. -->
+        <layout align="right" width="266" margins="{right=6,top=18,bottom=18}">
+            <rectangle name="rectOrigemHab" align="left" width="150" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="8" yradius="8" hitTest="false">
+                <label name="lblOrigemHab" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="8" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+            </rectangle>
+            <rectangle name="rectCustoHab" align="left" width="72" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" hitTest="false">
+                <label name="lblCustoHab" align="client" text="" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="10" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+            </rectangle>
+            <rectangle align="left" width="26" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" cursor="handPoint" hint="Remover esta habilidade da ficha">
+                <event name="onClick"><![CDATA[
+                    if sheet ~= nil then
+                        local raiz = NDB.getRoot(sheet);
+                        local travada = (raiz ~= nil and raiz.fichaFinalizada == true);
+                        local ehMestreReal = function()
+                            local ok, res = pcall(function()
+                                local personagem = rrpg.getPersonagemDe(sheet);
+                                if personagem == nil then return true end;
+                                local mesa = personagem.mesa;
+                                if mesa == nil or mesa.meuJogador == nil then return true end;
+                                return mesa.meuJogador.isMestre == true;
+                            end);
+                            return (not ok) or res;
+                        end;
+                        local podeRemover = true;
+                        if travada then podeRemover = ehMestreReal(); end;
+                        if podeRemover then
+                            NDB.deleteNode(sheet);
+                            if atualizarBlocoHabilidades ~= nil then atualizarBlocoHabilidades(); end;
+                        end;
+                    end;
+                ]]></event>
+                <label align="client" text="x" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="13" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+            </rectangle>
+        </layout>
+
+        <!-- RANK -->
+        <rectangle align="left" width="44" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=9,top=13,bottom=13}" hitTest="false">
+            <label name="lblRankHab" align="client" text="E" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="15" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+        </rectangle>
+
+        <!-- CORPO: tres linhas dentro de 58px uteis (20 + 16 + 14 + folga) -->
+        <rectangle align="client" color="#101217" strokeSize="0" margins="{left=10,right=6,top=4,bottom=4}" cursor="handPoint" hint="Abrir esta habilidade no construtor para editar">
+            <event name="onClick"><![CDATA[
+                if editarHabilidade ~= nil then editarHabilidade(sheet); end;
+            ]]></event>
+            <label align="top" height="20" field="nome" text="(clique para nomear)" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="13" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+            <label name="lblResumoHab" align="top" height="16" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+            <label name="lblTagsHab" align="top" height="14" text="" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="10" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+        </rectangle>
+    </rectangle>
+</form>

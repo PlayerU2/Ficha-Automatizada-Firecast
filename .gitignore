@@ -1,0 +1,19 @@
+# Saída do rdk: gerada a cada compilação, nunca versionada.
+# Se ela existir dentro do projeto, o rdk acusa "form declarado duas vezes".
+output/
+*.rpk
+
+# Lua compilado
+*.luac
+luac.out
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
