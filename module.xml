@@ -1,0 +1,12 @@
+<module sdkVersion="3.7b">
+    <version>0.30.1</version>
+    <info lang="pt-BR">
+        <name>Petrichor - Ficha de Personagem</name>
+        <description>Ficha de personagem automatizada para o sistema homebrew de Petrichor (d20, semideuses, Aura/Mana, Qualidades &amp; Defeitos).</description>
+        <author>Mesa de Petrichor</author>
+        <site>N/A</site>
+        <contact>N/A</contact>
+    </info>
+    <!-- "id" identifica seu plug-in de forma global. Deve ser exclusivo, conter apenas caracteres alfanumericos, underlines, pontos e deve conter pelo menos 5 caracteres e um maximo de 40. Depois de definir o ID, nao altere. -->
+    <id>com.petrichor.fichapersonagem</id>
+</module>

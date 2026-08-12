@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Card de UMA caracteristica racial, usado na aba "Raça & Classe".
+
+  Usamos recordList (em vez de N slots fixos com visible=true/false) porque
+  alternar 'visible' em elementos align="top" REORDENA o layout no Firecast -
+  era isso que jogava o bloco "Classe & Subclasse" para o meio das
+  caracteristicas e deixava a aba bagunçada.
+
+  Sem funcoes nomeadas no <script> (regra dos templates de item): todo codigo
+  fica inline no <event>.
+
+  Campos do item:
+    - nome      (S)
+    - descricao (S)
+    - origem    (S) de qual raca veio (usado na heranca mestica)
+    - modo      (S) "Escolhida" / "Sorteada" (vazio quando nao e mestico)
+    - bloqueada (B) true = existe, mas nao se aplica (ex.: Favorecimento
+                    divino num personagem mestico)
+-->
+<form name="frmItemCaracRacial" height="78" theme="dark">
+
+    <event name="onNodeReady"><![CDATA[
+        if sheet ~= nil then
+            local nome = tostring(sheet.nome or "");
+            local selo = "";
+            local modo = tostring(sheet.modo or "");
+            local origem = tostring(sheet.origem or "");
+            if modo ~= "" then
+                selo = modo:upper();
+                -- Sorteada = lacrada: o card deixa isso explicito, para o
+                -- jogador nao procurar um botao de trocar que nao existe.
+                if modo == "Sorteada" then selo = selo .. " • IMUTÁVEL"; end;
+                if origem ~= "" then selo = selo .. " • " .. origem; end;
+            elseif origem ~= "" then
+                selo = origem;
+            end;
+            if self.lblCaracSelo ~= nil then
+                self.lblCaracSelo:setText(selo);
+                if modo == "Sorteada" then
+                    self.lblCaracSelo:setFontColor("#7FA8B8");
+                else
+                    self.lblCaracSelo:setFontColor("#8C9AA0");
+                end;
+            end;
+            if sheet.bloqueada == true then
+                if self.rectCarac ~= nil then self.rectCarac:setStrokeColor("#8B2332"); end;
+                if self.barraCarac ~= nil then self.barraCarac:setColor("#8B2332"); end;
+                if self.lblCaracNome ~= nil then self.lblCaracNome:setFontColor("#D4838F"); end;
+                if self.lblCaracSelo ~= nil then
+                    self.lblCaracSelo:setText("NÃO SE APLICA (exclusiva de humanos puros)");
+                    self.lblCaracSelo:setFontColor("#D4838F");
+                end;
+            end;
+        end;
+    ]]></event>
+
+    <rectangle name="rectCarac" align="client" color="#0B1014" strokeColor="#3A2E52" strokeSize="1" xradius="4" yradius="4" margins="{bottom=6}">
+        <rectangle name="barraCarac" align="left" width="3" color="#8A63C9"/>
+        <layout align="client" margins="{left=12,right=12,top=7,bottom=7}">
+            <layout align="top" height="20">
+                <label name="lblCaracNome" align="left" width="300" field="nome" text="" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="14" fontStyle="bold" vertTextAlign="center"/>
+                <label name="lblCaracSelo" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" vertTextAlign="center"/>
+            </layout>
+            <label align="client" field="descricao" text="" fontFamily="EB Garamond" fontColor="#DCD3EC" fontSize="13" wordWrap="true" vertTextAlign="leading"/>
+        </layout>
+    </rectangle>
+</form>
