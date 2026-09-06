@@ -18,19 +18,20 @@ relance.
 
 ## O que ela faz
 
-**Nove seções**, cada uma alimentando a seguinte:
+**Dez seções**, cada uma alimentando a seguinte:
 
 | # | Seção | O que resolve |
 |---|-------|---------------|
 | 1 | Perfil | Identidade, aspecto divino, traços de personalidade, XP com subida automática de nível |
 | 2 | Atributos & Perícias | Economia de pontos, limites por nível, rolagem pronta de cada perícia |
 | 3 | Qualidades & Defeitos | Economia de PQ/PD, tiers, efeitos numéricos automáticos |
-| 4 | Raça & Classe | 29 raças, mestiçagem, 12 classes e 36 subclasses |
-| 5 | Poderes & Habilidades | Kits das 18 divindades, economia de pontos, construtor de habilidades |
+| 4 | Raça & Classe | 29 raças com escudo heráldico, mestiçagem lacrada, 12 classes e 36 subclasses |
+| 5 | Poderes & Habilidades | Kits das 18 divindades com kit, economia de pontos, construtor de habilidades |
 | 6 | Cálculos & Combate | Vida, Aura, Mana, Prana, Vitae, quatro defesas, movimento e ações |
-| 7 | Inventário | 214 itens, 64 encantamentos, oito slots de equipado, bolsa de moedas |
-| 8 | Favores Divinos | Favores por divindade, trocas, bênçãos e proclamação |
-| 9 | Background | Campo livre com formatação e imagens |
+| 7 | Inventário | 250 entradas de loja, 64 encantamentos, oito slots de equipado, bolsa de moedas |
+| 8 | Criaturas | Gerador por rank que sorteia dentro da faixa do livro **e diz de onde cada número saiu** |
+| 9 | Favores Divinos | Favores por divindade, trocas, bênçãos e proclamação |
+| 10 | Background | Campo livre com formatação e imagens |
 
 ### Automações que valem o preço
 
@@ -47,6 +48,11 @@ relance.
   atributos; o teto racial de 9 ou 10 só entra a partir do nível 17.
 - **Válvula de escape em tudo** — todo cálculo automático tem campo de ajuste
   manual ao lado. Automação que prende o usuário é automação ruim.
+
+> As contagens acima não são de cabeçalho: a **checagem 39** as confere contra
+> o disco e contra os catálogos a cada build. Até a v0.47.0 este README dizia
+> "nove seções" e a ficha tinha dez — a aba de Criaturas simplesmente não estava
+> aqui. Número que ninguém recontou parece dado e não é.
 
 ---
 
@@ -81,9 +87,9 @@ ficha.lfm                     a ficha inteira: XML das 9 abas + 8.200 linhas de 
 module.xml                    manifesto do plugin
 calculos.lua                  fórmulas do livro, isoladas e testáveis
 dadosSistema.lua              tabela de evolução: nível, rank, proficiência, XP
-catalogoItens.lua             214 itens com preço, dano, requisito e efeitos
+catalogoItens.lua             250 entradas de loja (128 itens em seus níveis de qualidade)
 catalogoEncantamentos.lua     64 encantamentos em três classes
-catalogoPoderes.lua           48 poderes com progressão de 5 níveis
+catalogoPoderes.lua           49 poderes com progressão de 5 níveis
 catalogoRacas.lua             29 raças com características e bônus
 catalogoQualidadesDefeitos.lua 49 qualidades e defeitos
 catalogoDeuses.lua            30 divindades e seus kits
