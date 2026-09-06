@@ -4728,18 +4728,43 @@
             return margemFoiLida[nome]
         end
 
+        -- ESTADO ATUAL de cada linha, para nao repintar o que nao mudou.
+        --
+        -- MEDIDO na tela em 06/09/2026: a v0.48.0 travava por segundos a cada
+        -- tecla no catalogo de itens. Duas causas, e as duas somavam:
+        --
+        --  (a) a DOBRA era refeita a cada tecla. chavePoder() percorre uma
+        --      tabela de ~50 acentos com um gsub por entrada, e o filtro da
+        --      loja a chamava DUAS vezes por card (nome e qualidade) mais uma
+        --      vez por nome buscado: 250 cards x 3 x 50 = 37 mil gsubs por
+        --      TECLA. Agora o indice e montado UMA vez e reusado.
+        --
+        --  (b) todo card recebia setHeight e setMargins a cada tecla, mesmo
+        --      os 240 que ja estavam escondidos e continuariam escondidos.
+        --      Cada um e uma chamada ao host. Agora so muda quem MUDA.
+        --
+        -- Guardar estado tem um preco conhecido: ele pode dessincronizar do
+        -- widget. Por isso zerarEstadoCatalogo() e chamado ao ABRIR o popup,
+        -- que e o unico momento em que alguem pode ter mexido por fora.
+        local estadoLinha = {}
+
+        local function zerarEstadoCatalogo()
+            estadoLinha = {}
+        end
+
         -- Mostra ou esconde uma linha de catalogo (card ou cabecalho).
         --
-        -- A margem so e mexida quando a original pode ser LIDA antes.
-        -- Zerar sem saber restaurar apagaria o recuo left=12 dos 41 cards
-        -- que sao as alternativas do mesmo slot ("um dos dois") e o left=6
-        -- dos subtitulos de consumivel -- e card mentindo sobre a
-        -- estrutura do kit e pior que vao em branco. Nao conseguiu ler ->
-        -- so a altura muda, e o vao fica. Escada, nao aposta: funciona
-        -- mesmo se _gui_setMargins/_obj_getProp nao responderem.
+        -- A margem so e mexida quando a original pode ser LIDA antes. Zerar
+        -- sem saber restaurar apagaria o recuo left=12 dos 41 cards que sao
+        -- as alternativas do mesmo slot ("um dos dois") e o left=6 dos
+        -- subtitulos de consumivel -- e card mentindo sobre a estrutura do
+        -- kit e pior que vao em branco. Nao conseguiu ler -> so a altura
+        -- muda, e o vao fica. Escada, nao aposta.
         local function mostrarLinhaCatalogo(nome, altura, mostrar)
+            if estadoLinha[nome] == mostrar then return true end
             local ctrl = self[nome]
             if ctrl == nil then return false end
+            estadoLinha[nome] = mostrar
             pcall(function() ctrl:setHeight(mostrar and altura or 0) end)
             if guardarMargem(nome, ctrl) then
                 pcall(function()
@@ -4749,11 +4774,11 @@
             return true
         end
 
-        -- A dobra da busca e chavePoder(): ela ja tira acento e tudo que
-        -- nao e alfanumerico, e e ELA que gera o sufixo do nome do widget.
-        -- Buscar com a mesma funcao que batizou o card e o que faz "pocao"
-        -- achar "Pocao de Cura" sem uma tabela de acentos paralela para
-        -- envelhecer -- e a checagem 25 ja cobra essa funcao, deus a deus.
+        -- A dobra da busca e chavePoder(): ela ja tira acento e tudo que nao
+        -- e alfanumerico, e e ELA que gera o sufixo do nome do widget. Buscar
+        -- com a mesma funcao que batizou o card e o que faz "pocao" achar
+        -- "Pocao de Cura" sem uma tabela de acentos paralela para envelhecer
+        -- -- e a checagem 25 ja cobra essa funcao, deus a deus.
         function dobrarBusca(texto)
             return string.lower(chavePoder(texto))
         end
@@ -4763,15 +4788,86 @@
             return string.find(alvoDobrado, agulhaDobrada, 1, true) ~= nil
         end
 
+        -- OS INDICES, montados UMA vez por catalogo.
+        --
+        -- Cada entrada ja traz o nome do widget e o texto dobrado contra o
+        -- qual comparar. Depois disto, uma tecla custa um string.find por
+        -- linha -- e nao uma dobra inteira.
+        local indiceQD, indiceItens, indicePoderes
+
+        local function montarIndiceQD()
+            if indiceQD ~= nil then return indiceQD end
+            indiceQD = {}
+            for _, it in ipairs(CatalogoQD.itens) do
+                indiceQD[#indiceQD + 1] = {
+                    w = "rectLinhaQD_" .. tostring(it.chave),
+                    tipo = tostring(it.tipo),
+                    alvo = dobrarBusca(it.nome or it.chave),
+                }
+            end
+            return indiceQD
+        end
+
+        local function montarIndiceItens()
+            if indiceItens ~= nil then return indiceItens end
+            local linhas, faixas, subs = {}, {}, {}
+            local vistas, vistosSub = {}, {}
+            for _, it in ipairs(CatalogoItens.itens) do
+                local cat = tostring(it.categoria)
+                local sub = it.subtipo ~= nil and tostring(it.subtipo) or nil
+                linhas[#linhas + 1] = {
+                    w = "itmL_" .. chavePoder(it.nome) .. chavePoder(it.qualidade),
+                    alvo = dobrarBusca(tostring(it.nome) .. tostring(it.qualidade)),
+                    cat = cat, sub = sub,
+                }
+                if not vistas[cat] then
+                    vistas[cat] = true
+                    faixas[#faixas + 1] = {chave = cat, w = "itmCab_" .. chavePoder(cat)}
+                end
+                if sub ~= nil and not vistosSub[sub] then
+                    vistosSub[sub] = true
+                    subs[#subs + 1] = {chave = sub, w = "itmSub_" .. chavePoder(sub)}
+                end
+            end
+            indiceItens = {linhas = linhas, faixas = faixas, subs = subs}
+            return indiceItens
+        end
+
+        local function montarIndicePoderes()
+            if indicePoderes ~= nil then return indicePoderes end
+            local kits = {}
+            for _, deus in ipairs(CatalogoDeuses.itens) do
+                local chaveDeus = chavePoder(deus.nome)
+                local kit = {cab = "podCab_" .. chaveDeus, slots = {}}
+                for i, slot in ipairs(deus.slots or {}) do
+                    local s = {rotulo = (#slot > 1) and ("podSlot_" .. chaveDeus .. "_" .. i) or nil,
+                               cards = {}}
+                    for _, nomePoder in ipairs(slot) do
+                        s.cards[#s.cards + 1] = {
+                            w = "rectPod_" .. chaveDeus .. "_" .. chavePoder(nomePoder),
+                            alvo = dobrarBusca(nomePoder),
+                        }
+                    end
+                    kit.slots[#kit.slots + 1] = s
+                end
+                kits[#kits + 1] = kit
+            end
+            local fora = {}
+            for _, nomePoder in ipairs({"Magia", "Hemocinese"}) do
+                fora[#fora + 1] = {w = "rectPod_" .. chavePoder(nomePoder),
+                                   alvo = dobrarBusca(nomePoder)}
+            end
+            indicePoderes = {kits = kits, fora = fora}
+            return indicePoderes
+        end
+
         -- QUALIDADES E DEFEITOS -- o caso limpo dos tres.
         --
-        -- Os dois popups (Qualidades e Defeitos) dividem o prefixo
-        -- rectLinhaQD_ e sao listas planas: nenhum cabecalho de secao
-        -- dentro do scrollBox. Mas cada um tem sua PROPRIA caixa de busca,
-        -- entao o filtro recebe o TIPO e so mexe nos cards daquele popup.
-        -- Filtrar os dois de uma passada esconderia cards do popup vizinho
-        -- com a caixa dele vazia -- exatamente o susto de "o catalogo
-        -- quebrou" que a decisao de zerar ao abrir existe para evitar.
+        -- Os dois popups dividem o prefixo rectLinhaQD_ e sao listas planas:
+        -- nenhum cabecalho de secao dentro do scrollBox. Mas cada um tem sua
+        -- PROPRIA caixa de busca, entao o filtro recebe o TIPO e so mexe nos
+        -- cards daquele popup. Filtrar os dois de uma passada esconderia
+        -- cards do popup vizinho com a caixa dele vazia.
         --
         -- it.chave JA E a forma dobrada ("Anjoguardiao") e it.nome e a de
         -- tela ("Anjo guardiao"): 37 das 49 entradas divergem. O widget vem
@@ -4779,62 +4875,40 @@
         -- lendo quando digita.
         function filtrarCatalogoQD(texto, tipo)
             local agulha = dobrarBusca(texto)
-            for _, it in ipairs(CatalogoQD.itens) do
-                if tipo == nil or tostring(it.tipo) == tipo then
-                    mostrarLinhaCatalogo(
-                        "rectLinhaQD_" .. tostring(it.chave),
-                        ALTURA_CARD_CATALOGO.qd,
-                        buscaCasa(dobrarBusca(it.nome or it.chave), agulha))
+            for _, e in ipairs(montarIndiceQD()) do
+                if tipo == nil or e.tipo == tipo then
+                    mostrarLinhaCatalogo(e.w, ALTURA_CARD_CATALOGO.qd,
+                                         buscaCasa(e.alvo, agulha))
                 end
             end
         end
 
-        -- LOJA -- 250 cards, 9 cabecalhos de categoria e 6 subtitulos de
-        -- consumivel.
+        -- LOJA -- 250 cards, 9 cabecalhos de categoria e 6 subtitulos.
         --
-        -- Ate a v0.47.0 os 15 cabecalhos NAO TINHAM name=, entao o Lua nao
-        -- os alcancava. Batizados nesta versao (itmCab_/itmSub_), porque
-        -- filtrar sem eles deixaria "ARMADURA" flutuando sem nada embaixo
-        -- -- a lista pareceria quebrada sem erro nenhum, que e a forma que
-        -- este projeto ja viu cinco vezes.
+        -- Ate a v0.48.0 os 15 cabecalhos NAO TINHAM name=, entao o Lua nao os
+        -- alcancava. Filtrar sem eles deixaria "ARMADURA" flutuando sem nada
+        -- embaixo -- a lista pareceria quebrada sem erro nenhum.
         --
-        -- Cabecalho some quando NENHUM item da sua faixa sobreviveu ao
-        -- filtro. E derivado do resultado da busca, recalculado a cada
-        -- tecla: nao existe estado de cabecalho para dessincronizar.
+        -- Cabecalho some quando NENHUM item da sua faixa sobreviveu: e
+        -- derivado do resultado da busca, recalculado a cada tecla. Nao
+        -- existe estado de cabecalho para dessincronizar.
         function filtrarCatalogoItens(texto)
             local agulha = dobrarBusca(texto)
-            local sobrouCategoria, sobrouSubtipo = {}, {}
-            for _, it in ipairs(CatalogoItens.itens) do
-                local casa = buscaCasa(
-                    dobrarBusca(tostring(it.nome) .. tostring(it.qualidade)), agulha)
-                mostrarLinhaCatalogo(
-                    "itmL_" .. chavePoder(it.nome) .. chavePoder(it.qualidade),
-                    ALTURA_CARD_CATALOGO.item, casa)
+            local ix = montarIndiceItens()
+            local sobrouCat, sobrouSub = {}, {}
+            for _, e in ipairs(ix.linhas) do
+                local casa = buscaCasa(e.alvo, agulha)
+                mostrarLinhaCatalogo(e.w, ALTURA_CARD_CATALOGO.item, casa)
                 if casa then
-                    sobrouCategoria[tostring(it.categoria)] = true
-                    if it.subtipo ~= nil then sobrouSubtipo[tostring(it.subtipo)] = true end
+                    sobrouCat[e.cat] = true
+                    if e.sub ~= nil then sobrouSub[e.sub] = true end
                 end
             end
-            -- As faixas saem do proprio catalogo, nao de uma lista escrita
-            -- a mao aqui: categoria nova no catalogo ganha cabecalho no
-            -- XML e passa a ser filtrada sem ninguem lembrar de voltar
-            -- neste laco. A checagem 51 cobra o par (faixa, cabecalho).
-            local vistas, vistosSub = {}, {}
-            for _, it in ipairs(CatalogoItens.itens) do
-                local cat = tostring(it.categoria)
-                if not vistas[cat] then
-                    vistas[cat] = true
-                    mostrarLinhaCatalogo("itmCab_" .. chavePoder(cat), 24,
-                                         sobrouCategoria[cat] == true)
-                end
-                if it.subtipo ~= nil then
-                    local sub = tostring(it.subtipo)
-                    if not vistosSub[sub] then
-                        vistosSub[sub] = true
-                        mostrarLinhaCatalogo("itmSub_" .. chavePoder(sub), 18,
-                                             sobrouSubtipo[sub] == true)
-                    end
-                end
+            for _, f in ipairs(ix.faixas) do
+                mostrarLinhaCatalogo(f.w, 24, sobrouCat[f.chave] == true)
+            end
+            for _, s in ipairs(ix.subs) do
+                mostrarLinhaCatalogo(s.w, 18, sobrouSub[s.chave] == true)
             end
         end
 
@@ -4842,47 +4916,35 @@
         --
         -- E o unico dos tres com hierarquia: rotulo de divindade, rotulo de
         -- slot ("SLOT 2 - um dos dois") e card. Os dois rotulos so ganharam
-        -- name= na v0.48.0, e pelo GERADOR (verif/gera_catalogo_poderes.py),
-        -- nunca a mao -- batizar aqui faria a checagem 44 acusar na proxima
-        -- regeracao, que e como um arquivo irmao fica para tras.
-        --
-        -- O cabecalho e derivado do resultado da busca, recalculado a cada
-        -- tecla: some quando nenhum card daquela faixa sobreviveu. Nao ha
-        -- estado de cabecalho para dessincronizar do estado dos cards.
+        -- name= na v0.48.0, e pelo GERADOR, nunca a mao -- batizar aqui faria
+        -- a checagem 44 acusar na proxima regeracao.
         --
         -- ATENCAO A MARGEM: 41 destes cards tem left=12, o recuo que mostra
-        -- que sao as alternativas do MESMO slot. mostrarLinhaCatalogo so
-        -- mexe na margem quando conseguiu ler a original antes, exatamente
-        -- para nao apagar esse recuo -- card mentindo sobre a estrutura do
-        -- kit e pior que um vao em branco.
+        -- que sao alternativas do MESMO slot. mostrarLinhaCatalogo so mexe na
+        -- margem quando conseguiu ler a original antes, exatamente para nao
+        -- apagar esse recuo.
         function filtrarCatalogoPoderes(texto)
             local agulha = dobrarBusca(texto)
-            for _, deus in ipairs(CatalogoDeuses.itens) do
-                local chaveDeus = chavePoder(deus.nome)
+            local ix = montarIndicePoderes()
+            for _, kit in ipairs(ix.kits) do
                 local sobrouNoKit = false
-                for i, slot in ipairs(deus.slots or {}) do
+                for _, s in ipairs(kit.slots) do
                     local sobrouNoSlot = false
-                    for _, nomePoder in ipairs(slot) do
-                        local casa = buscaCasa(dobrarBusca(nomePoder), agulha)
-                        mostrarLinhaCatalogo(
-                            "rectPod_" .. chaveDeus .. "_" .. chavePoder(nomePoder),
-                            ALTURA_CARD_CATALOGO.poder, casa)
+                    for _, c in ipairs(s.cards) do
+                        local casa = buscaCasa(c.alvo, agulha)
+                        mostrarLinhaCatalogo(c.w, ALTURA_CARD_CATALOGO.poder, casa)
                         if casa then sobrouNoSlot = true; sobrouNoKit = true end
                     end
-                    -- o rotulo de slot so existe quando o slot tem "ou"
-                    if #slot > 1 then
-                        mostrarLinhaCatalogo("podSlot_" .. chaveDeus .. "_" .. i, 14, sobrouNoSlot)
+                    if s.rotulo ~= nil then
+                        mostrarLinhaCatalogo(s.rotulo, 14, sobrouNoSlot)
                     end
                 end
-                mostrarLinhaCatalogo("podCab_" .. chaveDeus, 20, sobrouNoKit)
+                mostrarLinhaCatalogo(kit.cab, 20, sobrouNoKit)
             end
-            -- FORA DOS KITS: os dois batizados pelo nome antigo
-            -- (rectPod_<poder>), porque nao vem de divindade nenhuma.
             local sobrouFora = false
-            for _, nomePoder in ipairs({"Magia", "Hemocinese"}) do
-                local casa = buscaCasa(dobrarBusca(nomePoder), agulha)
-                mostrarLinhaCatalogo("rectPod_" .. chavePoder(nomePoder),
-                                     ALTURA_CARD_CATALOGO.poder, casa)
+            for _, c in ipairs(ix.fora) do
+                local casa = buscaCasa(c.alvo, agulha)
+                mostrarLinhaCatalogo(c.w, ALTURA_CARD_CATALOGO.poder, casa)
                 if casa then sobrouFora = true end
             end
             mostrarLinhaCatalogo("podCab_Foradoskits", 20, sobrouFora)
@@ -4908,12 +4970,14 @@
         end
 
         function abrirCatalogoQualidades()
+            zerarEstadoCatalogo()
             zerarCaixaBusca(self.edBuscaQualidades)
             filtrarCatalogoQD("", "Qualidade")
             abrirPopupAjustado(self.popCatalogoQualidades, 920, 600)
         end
 
         function abrirCatalogoDefeitos()
+            zerarEstadoCatalogo()
             zerarCaixaBusca(self.edBuscaDefeitos)
             filtrarCatalogoQD("", "Defeito")
             abrirPopupAjustado(self.popCatalogoDefeitos, 920, 600)
@@ -5480,6 +5544,7 @@
             end
             destacarPoderSelecionado()
             -- Zera o filtro a cada abertura, como nos outros dois catalogos.
+            zerarEstadoCatalogo()
             if self.edBuscaPoderes ~= nil then
                 pcall(function() self.edBuscaPoderes:setText("") end)
             end
@@ -9260,7 +9325,8 @@
         -- Cards cujo valor e uma PALAVRA. A escala de fonte do card e feita
         -- para numeros de ate tres digitos; "Minúsculo" no mesmo corpo
         -- transborda a caixa.
-        local CARDS_DE_TEXTO = {Tamanho = true, Lua = true, Ferido = true}
+        local CARDS_DE_TEXTO = {Tamanho = true, Lua = true, Ferido = true,
+                        Hp = true, Ap = true, Mp = true, Prana = true, Pv = true}
 
         -- quais cards estao ativos para este personagem
         --
@@ -9466,6 +9532,17 @@
             if lbl ~= nil then lbl:setText(tostring(valor)) end
         end
 
+        -- O card de recurso mostra ATUAL / MAXIMO (decisao da mesa,
+        -- 06/09/2026). O atual vem primeiro porque e o numero que a mesa
+        -- olha durante a sessao; o maximo fica do lado para dar a escala.
+        --
+        -- Estes cinco entram em CARDS_DE_TEXTO: "10 / 25" e mais largo que
+        -- tres digitos, e a escala de fonte grande estoura a caixa. Nao e
+        -- decoracao — e a mesma razao pela qual "Minusculo" ja estava la.
+        local function porRecurso(nome, chave)
+            porValor(nome, n(sheet[chave .. "Atual"]) .. " / " .. n(sheet[chave]))
+        end
+
         -- Os dois so existem para o card MONTADO, que e o unico com titulo
         -- variavel e com uma segunda linha de conta. Os outros cards tem
         -- titulo fixo no XML e uma linha so.
@@ -9495,7 +9572,7 @@
             -- ---------- RECURSOS ----------
             -- As CONTAS vem prontas de recalcularTudo(), montadas junto do
             -- valor e com as mesmas parcelas (v0.42.1). Aqui so se copia.
-            porValor("Hp", n(sheet.hp))
+            porRecurso("Hp", "hp")
             porTexto("Hp", CONTAS.Hp)
 
             -- SANGUE BEBIDO. Livro, Racas/Vampiros [1.6], "[Sede de sangue]":
@@ -9551,21 +9628,21 @@
             -- A Aura e SEMPRE calculada e nunca zera: todo ser vivo tem
             -- Aura. O que muda entre magos, bruxas e vampiros e de qual
             -- barra a energia e gasta.
-            porValor("Ap", n(sheet.ap))
+            porRecurso("Ap", "ap")
             porTexto("Ap", CONTAS.Ap)
 
-            porValor("Mp", n(sheet.mp))
+            porRecurso("Mp", "mp")
             porTexto("Mp", CONTAS.Mp)
 
             -- PRANA: so a bruxa tem. E a soma das outras duas barras.
-            porValor("Prana", n(sheet.prana))
+            porRecurso("Prana", "prana")
             porTexto("Prana", CONTAS.Prana)
 
             -- Quem aparece e quanto ocupa fica com ajustarGradeCombate:
             -- os cards visiveis dividem a linha em partes iguais.
             ajustarGradeCombate()
 
-            porValor("Pv", n(sheet.pv))
+            porRecurso("Pv", "pv")
             porTexto("Pv", CONTAS.Pv)
 
             -- destaca o recurso que o personagem realmente usa.
@@ -12013,6 +12090,7 @@
             -- catalogos de Qualidades e Defeitos: reabrir mostrando 3 de
             -- 250 por causa de um filtro esquecido parece catalogo
             -- quebrado, e nao ha erro nenhum na tela para desmentir.
+            zerarEstadoCatalogo()
             if self.edBuscaItens ~= nil then
                 pcall(function() self.edBuscaItens:setText("") end)
             end
@@ -13986,8 +14064,8 @@
                             </layout>
                             <layout align="bottom" height="26" margins="{left=10,right=10}">
                                 <label align="left" width="40" text="ATUAL" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
-                                <rectangle align="client" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3">
-                                    <edit name="cmb_edAtualAp" align="client" field="apAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                <rectangle align="client" color="#080B0E" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3">
+                                    <edit name="cmb_edAtualAp" align="client" field="apAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#C9A24B" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
@@ -14034,8 +14112,8 @@
                             </layout>
                             <layout align="bottom" height="26" margins="{left=10,right=10}">
                                 <label align="left" width="40" text="ATUAL" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
-                                <rectangle align="client" color="#080B0E" strokeColor="#4E8C74" strokeSize="1" xradius="3" yradius="3">
-                                    <edit name="cmb_edAtualPrana" align="client" field="pranaAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#4E8C74" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                <rectangle align="client" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3">
+                                    <edit name="cmb_edAtualPrana" align="client" field="pranaAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
@@ -21832,9 +21910,9 @@
                     <rectangle align="left" width="360" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
                         <layout align="client" margins="{left=8,right=8,top=8,bottom=8}">
                             <label align="top" height="18" text="Clique em um item para ver a descrição completa" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=4}" hitTest="false"/>
-                            <rectangle name="rectBuscaQualidades" align="top" height="26" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}">
+                            <rectangle name="rectBuscaQualidades" align="top" height="26" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}">
                                 <layout align="client" margins="{left=6,right=6}">
-                                    <edit name="edBuscaQualidades" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
+                                    <edit name="edBuscaQualidades" align="client" text="" transparent="true" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
                                         <event name="onChange"><![CDATA[filtrarCatalogoQD(self.edBuscaQualidades:getText(), "Qualidade");]]></event>
                                     </edit>
                                 </layout>
@@ -22113,9 +22191,9 @@
                     <rectangle align="left" width="360" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
                         <layout align="client" margins="{left=8,right=8,top=8,bottom=8}">
                             <label align="top" height="18" text="Clique em um item para ver a descrição completa" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=4}" hitTest="false"/>
-                            <rectangle name="rectBuscaDefeitos" align="top" height="26" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}">
+                            <rectangle name="rectBuscaDefeitos" align="top" height="26" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}">
                                 <layout align="client" margins="{left=6,right=6}">
-                                    <edit name="edBuscaDefeitos" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
+                                    <edit name="edBuscaDefeitos" align="client" text="" transparent="true" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
                                         <event name="onChange"><![CDATA[filtrarCatalogoQD(self.edBuscaDefeitos:getText(), "Defeito");]]></event>
                                     </edit>
                                 </layout>
@@ -23906,9 +23984,9 @@
 
                 <!-- LISTA -->
                 <rectangle align="left" width="360" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
-                    <rectangle name="rectBuscaItens" align="top" height="26" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=8,right=8,top=6,bottom=2}">
+                    <rectangle name="rectBuscaItens" align="top" height="26" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{left=8,right=8,top=6,bottom=2}">
                         <layout align="client" margins="{left=6,right=6}">
-                            <edit name="edBuscaItens" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
+                            <edit name="edBuscaItens" align="client" text="" transparent="true" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
                                 <event name="onChange"><![CDATA[filtrarCatalogoItens(self.edBuscaItens:getText());]]></event>
                             </edit>
                         </layout>
@@ -26641,9 +26719,9 @@
 
                 <layout align="client">
                     <rectangle align="left" width="300" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=14}" hitTest="false">
-                        <rectangle name="rectBuscaPoderes" align="top" height="26" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=8,right=8,top=6,bottom=2}">
+                        <rectangle name="rectBuscaPoderes" align="top" height="26" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{left=8,right=8,top=6,bottom=2}">
                             <layout align="client" margins="{left=6,right=6}">
-                                <edit name="edBuscaPoderes" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome do poder. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
+                                <edit name="edBuscaPoderes" align="client" text="" transparent="true" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome do poder. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
                                     <event name="onChange"><![CDATA[filtrarCatalogoPoderes(self.edBuscaPoderes:getText());]]></event>
                                 </edit>
                             </layout>
