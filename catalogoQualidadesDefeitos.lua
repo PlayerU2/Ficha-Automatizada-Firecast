@@ -63,8 +63,12 @@ CatalogoQD.itens = {
         pontosMax = 2,
         faixaContinua = false,
         efeitos = {
-            [1] = {apPercent = 15},
-            [2] = {apPercent = 30},
+            -- "Possui 15% a mais do valor total de Aura; recupere 25% MAIS
+            -- desta energia por descanso curto ou longo" [2.2]. Sao DOIS
+            -- efeitos na mesma frase, e ate a v0.48.0 so o primeiro estava
+            -- modelado. "desta energia" e a AURA: nao vale para a mana.
+            [1] = {apPercent = 15, descansoApPercent = 25},
+            [2] = {apPercent = 30, descansoApPercent = 50},
         },
         automacao = [==[Ajusta automaticamente o total de Pontos de Aura (Ap) na aba Cálculos & Combate.]==],
         descricao = [==[Esta força utilizada pelos mortais para realizarem atos extraordinários é maior dentro de você que na maioria. Não só a quantidade total é maior, mas você recupera Aura em um ritmo mais acelerado que os demais. Isso não significa que sua energia é mais poderosa ou de alguma forma especial, somente que você possuí um reservatório maior do que os outros.]==],
@@ -397,8 +401,10 @@ CatalogoQD.itens = {
         pontosMax = 2,
         faixaContinua = false,
         efeitos = {
-            [1] = {hpPercent = 15},
-            [2] = {hpPercent = 30},
+            -- "Possui 15% a mais do valor total de Vida; recupere 25% mais de
+            -- vida por descanso longo e curto" [2.2].
+            [1] = {hpPercent = 15, descansoHpPercent = 25},
+            [2] = {hpPercent = 30, descansoHpPercent = 50},
         },
         automacao = [==[Ajusta automaticamente o total de Pontos de Vida (Hp) na aba Cálculos & Combate.]==],
         descricao = [==[Você nasceu com uma constituição naturalmente melhor do que um mortal comum - e até mesmo dentre os semideuses. É mais difícil te derrubar, e o seu processo de recuperação é muito mais rápido que o dos outros, você naturalmente ainda envelhece normalmente e está suscetível a doenças como qualquer outro mortal, no entanto possuí uma capacidade diferenciada de aguentar danos e se recuperar deles]==],
@@ -798,8 +804,10 @@ CatalogoQD.itens = {
         pontosMax = 2,
         faixaContinua = false,
         efeitos = {
-            [1] = {hpPercent = -15},
-            [2] = {hpPercent = -30},
+            -- "Possui 15% a menos do total de Vida; recupere 25% A MENOS de
+            -- vida por descanso longo e curto" [2.2]. O sinal e do defeito.
+            [1] = {hpPercent = -15, descansoHpPercent = -25},
+            [2] = {hpPercent = -30, descansoHpPercent = -50},
         },
         automacao = [==[Ajusta automaticamente o total de Pontos de Vida (Hp) na aba Cálculos & Combate.]==],
         descricao = [==[Você nasceu com uma constituição prejudicada com relação a semideuses, e até mesmo mortais comuns. Te derrubar é mais fácil do que deveria, seu processo de recuperação é mais lento que o de outros. Sua sucestibilidade a doenças não é maior que o de outros, o que muda é o quantos danos você consegue tomar antes de cair, e o quão rápido se recupera.]==],

@@ -228,6 +228,39 @@ NOVO NA v0.48.0 - BUSCA nos catalogos. Confira, nesta ordem:
      E FINALIZE A FICHA como jogador comum: as setas do Ferido tem
      que CONTINUAR funcionando. Marcar ferimento e jogo, nao criacao.
 
+  8. ABA 06, linha de RECURSOS: cada barra (VIDA, AURA, MANA, PRANA,
+     VITAE) tem agora ATUAL embaixo do maximo.
+     PRIMEIRA COISA A CONFERIR, e a mais importante: abra uma ficha
+     ANTIGA, de antes desta versao. Todas as barras tem que aparecer
+     CHEIAS, e nao zeradas. Se abrir zerada, o reparo nao rodou.
+     Baixe a vida atual e suba de nivel: o atual sobe junto, pela
+     diferenca - subir de nivel nao pode encher a barra nem deixar o
+     atual para tras.
+     Digite um numero maior que o maximo: ele e cortado no maximo.
+     Digite um numero negativo: ele FICA negativo, de proposito.
+
+  9. O FERIDO AGORA ENTRA SOZINHO. Com a vida cheia, baixe o ATUAL de
+     uma vez em 30% ou mais do maximo: o card FERIDO tem que acender
+     em I. Baixe de uma vez 90% ou mais: acende direto em III, e nao
+     em I.
+     Agora CURE (suba a vida atual): o Ferido tem que CONTINUAR. Curar
+     nao tira ferimento.
+     E leve um golpe pequeno: o nivel nao pode BAIXAR.
+     Cuidado conhecido: digitar 45 e corrigir para 4 conta como golpe
+     de 41. Use a seta esquerda do card para desfazer.
+
+ 10. DESCANSO, no card ao lado do Vitae: os botoes CURTO e LONGO agora
+     SOMAM nas barras. Confira que o numero que soma e o mesmo que as
+     duas linhas do card mostravam antes de clicar.
+     Com Ferido II marcado, o LONGO tem que render 20% da vida maxima
+     (e nao 30%) e, depois disso, ZERAR o Ferido.
+     Compre Vigor expandido 2 pontos e repita: o ganho sobe 50%.
+
+ 11. VAMPIRO: aperte LONGO. NENHUMA barra pode subir - nem o Vitae,
+     nem as escondidas - mas o Ferido tem que sarar. Depois digite 149
+     no campo ML do card SANGUE BEBIDO e aperte BEBER: o Vitae atual
+     sobe 2 e o campo fica com 49, nao com 0.
+
 ANTES, NA v0.47.0 - as 29 racas tem brasao, e o mestico mostra os DOIS.
 Confira:
 

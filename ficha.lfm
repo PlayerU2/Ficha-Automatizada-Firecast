@@ -237,6 +237,16 @@
             -- mestre precisa poder sobrepor a penalidade no meio da sessao.
             -- Travar este campo entregaria metade da regra.
             {widget = "cmb_edAjusteFerido", campo = "ajusteFerido"},
+            -- As cinco barras ganharam ATUAL em 06/09/2026. Marcar dano,
+            -- gastar aura e beber sangue sao jogo — a mesma familia de
+            -- "equipar, gastar municao, marcar dano" que o metodo ja
+            -- classificava como livre. Travar qualquer um destes deixaria
+            -- a mesa sem como registrar o que acontece na sessao.
+            {widget = "cmb_edAtualHp",      campo = "hpAtual"},
+            {widget = "cmb_edAtualAp",      campo = "apAtual"},
+            {widget = "cmb_edAtualMp",      campo = "mpAtual"},
+            {widget = "cmb_edAtualPrana",   campo = "pranaAtual"},
+            {widget = "cmb_edAtualPv",      campo = "pvAtual"},
         }
 
         function aplicarTravaDeCriacao()
@@ -512,6 +522,259 @@
             return math.ceil(vidaMaximaParaFerimento() * d.fracao)
         end
 
+        -- ===============================================================
+        -- ATUAL x MAXIMO das cinco barras (v0.48.0)
+        -- ===============================================================
+        -- DECISAO DA MESA, 06/09/2026: "os mestres disseram que seria melhor
+        -- ter um atual/maximo nesses campos (vida, aura, mana, prana, vitae)".
+        --
+        -- Ate aqui a ficha so tinha MAXIMOS - foi por isso que o card de
+        -- sangue bebido e o de descanso nasceram apenas mostrando numeros:
+        -- nao havia onde somar. Agora ha.
+        --
+        -- TRES REGRAS, e as tres sao decisao de mesa, nao do livro:
+        --
+        -- 1. FICHA ANTIGA NASCE CHEIA. Campo que nunca existiu vira o
+        --    maximo. Sem isso toda ficha da mesa abriria com 0 de vida,
+        --    aura e mana, e ninguem morto nao e ninguem jogando.
+        --
+        --    E um REPARO, nao um bloco de migracao de versao. Reparo escrito
+        --    como elseif de migracao nunca roda para quem esta na versao
+        --    antiga, que e a maioria - a regra ja custou caro neste projeto.
+        --    Ele roda em TODA abertura e so faz alguma coisa uma vez.
+        --
+        --    A marca e uma STRING, e nao um booleano: o NDB ja devolveu
+        --    booleano de mais de uma forma neste projeto, e um "true" que
+        --    volta como 1 faria o reparo rodar de novo e encher a barra de
+        --    quem estava ferido. E ela e necessaria porque campo vazio e
+        --    indistinguivel de campo zerado: sem a marca, o personagem a 0
+        --    de vida seria "curado" toda vez que abrisse a ficha.
+        --
+        -- 2. MAXIMO QUE MUDA LEVA O ATUAL JUNTO, PELA DIFERENCA. Subiu de
+        --    nivel e ganhou 8 de vida maxima, ganha 8 de vida atual. Por
+        --    isso o maximo anterior fica guardado: sem ele a unica opcao
+        --    seria encher a barra, que apagaria o dano registrado toda vez
+        --    que o mestre mexesse num ajuste no meio da sessao.
+        --
+        -- 3. PODE FICAR NEGATIVO. O livro NAO define regra de vida negativa
+        --    - isto e decisao de mesa. O mestre ve o quanto o golpe passou
+        --    de zero, que e informacao para os "testes de morte" que o
+        --    [2.3] cita e nunca define. O card marca em vermelho.
+        --
+        -- O teto, esse sim, e duro: atual nunca passa do maximo.
+        RECURSOS_COM_ATUAL = {
+            {chave = "hp",    rotulo = "Vida"},
+            {chave = "ap",    rotulo = "Aura"},
+            {chave = "mp",    rotulo = "Mana"},
+            {chave = "prana", rotulo = "Prana"},
+            {chave = "pv",    rotulo = "Vitae"},
+        }
+
+        -- Roda no fim de cada recalculo, depois de os cinco maximos estarem
+        -- prontos. RECONCILIA: nao cria-e-esquece.
+        function reconciliarRecursosAtuais()
+            if sheet == nil then return end
+            local primeiraVez = (tostring(sheet.recursosAtuaisIniciados or "") ~= "1")
+            -- Qual barra o detector de golpe observa: a mesma que o Ferido
+            -- mede. No vampiro e o Vitae.
+            local barraDoFerido = sheet.ehVampiro and "pv" or "hp"
+
+            -- Move a base do detector junto com o atual. MUDANCA DE MAXIMO
+            -- NAO E GOLPE: sem isto, perder uma qualidade que baixa o maximo
+            -- derrubaria o atual junto e a ficha marcaria um Ferido que
+            -- ninguem causou.
+            local function moverBase(delta)
+                local b = sheet.feridoVidaAnterior
+                if b ~= nil and tostring(b) ~= "" then
+                    sheet.feridoVidaAnterior = n(b) + delta
+                end
+            end
+
+            for _, r in ipairs(RECURSOS_COM_ATUAL) do
+                local maximo = n(sheet[r.chave])
+                local cAtual = r.chave .. "Atual"
+                local cAnt   = r.chave .. "MaxAnterior"
+                if primeiraVez then
+                    sheet[cAtual] = maximo
+                else
+                    local ant = sheet[cAnt]
+                    if ant ~= nil and tostring(ant) ~= "" and n(ant) ~= maximo then
+                        local delta = maximo - n(ant)
+                        sheet[cAtual] = n(sheet[cAtual]) + delta
+                        if r.chave == barraDoFerido then moverBase(delta) end
+                    end
+                end
+                -- teto duro; piso nenhum, de proposito (regra 3 acima)
+                if n(sheet[cAtual]) > maximo then
+                    if r.chave == barraDoFerido then
+                        moverBase(maximo - n(sheet[cAtual]))
+                    end
+                    sheet[cAtual] = maximo
+                end
+                sheet[cAnt] = maximo
+            end
+            if primeiraVez then
+                sheet.recursosAtuaisIniciados = "1"
+                -- A base nasce junto com as barras: sem isto o primeiro
+                -- recalculo leria a ficha inteira como um golpe.
+                --
+                -- E ela le o ATUAL, nao o maximo. No instante do reparo os
+                -- dois valem o mesmo, entao o erro nao aparecia aqui - mas
+                -- apareceria na primeira ficha que ja tivesse dano gravado.
+                sheet.feridoVidaAnterior = n(sheet[barraDoFerido .. "Atual"])
+            end
+            detectarGolpeFerido()
+        end
+
+        -- O GOLPE, agora que existe vida ATUAL (mesa, 06/09/2026).
+        --
+        -- Ate aqui o nivel era so marcado a mao, porque a ficha nao via
+        -- golpes - so maximos. Com o atual gravado, a QUEDA entre dois
+        -- recalculos E o golpe, e o gatilho do livro ([2.3]: "um golpe que
+        -- lhe aplica pelo menos 30% de sua vida maxima") fica automatico.
+        --
+        -- SO SOBE, NUNCA DESCE SOZINHO. Palavra do mestre, 06/09/2026:
+        -- "mesmo se ele voltar a recuperar a vida por cura e etc, o ferido
+        -- ainda continua, so com os descansos, pocao de unguento ou outra
+        -- coisa especifica retira os estados de ferido". Entao curar nao
+        -- mexe no nivel, e um golpe menor que o ferimento atual tambem nao:
+        -- e a regra "substitui" andando so para cima.
+        --
+        -- O RISCO E REAL E FOI ACEITO: digitar 45 e corrigir para 4 registra
+        -- uma queda de 41 e pode marcar um Ferido que nao aconteceu. E por
+        -- isso que as setas continuam ali - o mestre desfaz em um clique.
+        -- Preferir o falso positivo corrigivel ao falso negativo silencioso
+        -- e a decisao, e ela esta escrita aqui para nao ser "corrigida"
+        -- depois por quem so ver o sintoma.
+        function detectarGolpeFerido()
+            if sheet == nil then return end
+            local barra = sheet.ehVampiro and "pvAtual" or "hpAtual"
+            local atual = n(sheet[barra])
+            local ant = sheet.feridoVidaAnterior
+            if ant ~= nil and tostring(ant) ~= "" then
+                local queda = n(ant) - atual
+                if queda > 0 then
+                    -- do maior para o menor: o golpe dispara o MAIOR nivel
+                    -- que ele alcanca, e nao o primeiro
+                    for nv = 3, 1, -1 do
+                        local limiar = limiarFerido(nv)
+                        if limiar > 0 and queda >= limiar then
+                            if nv > nivelFerido() then sheet.feridoNivel = nv end
+                            break
+                        end
+                    end
+                end
+            end
+            sheet.feridoVidaAnterior = atual
+        end
+
+        -- ===============================================================
+        -- DESCANSO (v0.48.0)
+        -- ===============================================================
+        -- LIVRO [2.3]: "Toda criatura recupera 30% de sua vida maxima quando
+        -- realiza um 'Descanso Longo', ou seja, passa pelo menos vinte e
+        -- quatro horas repousando focado em se recuperar. Tambem e possivel
+        -- recuperar vida atraves do 'Descanso Curto', ficando 12 horas
+        -- repousando e em troca recuperando 25% da vida maxima."
+        --
+        -- LIVRO [2.3]: "Um personagem recupera 50% de sua aura ou mana maxima
+        -- quando realiza um 'Descanso Longo', e 25% em 'Descanso Curto'."
+        --
+        -- TRES QUALIDADES MEXEM AQUI, e ate a v0.48.0 nenhuma estava modelada
+        -- porque o catalogo so guardava o percentual de TOTAL. O segundo
+        -- efeito esta na MESMA FRASE do livro: "Vigor expandido" e "Vigor
+        -- reprimido" mudam o ganho de VIDA por descanso, e "Aura expandida"
+        -- muda o da AURA ("desta energia" - nao vale para a mana).
+        --
+        -- DECISOES DA MESA, 06/09/2026:
+        --
+        -- * O DESCANSO LONGO ZERA O FERIDO. O livro nao da numero para isso -
+        --   as linhas de Ferimentos falam de recuperar VIDA, nao de remover
+        --   nivel - entao e regra de mesa.
+        --
+        -- * A RECUPERACAO PROPRIA DO FERIDO SUBSTITUI o ganho do descanso
+        --   longo: 30%, 20% ou 10% conforme o nivel, no lugar dos 30%
+        --   padrao. Isso explica a frase do livro que parecia inofensiva -
+        --   o Ferido I recuperar "30% por dia" e igual ao padrao por
+        --   coincidencia; quem perde sao o II e o III.
+        --
+        -- * ORDEM: descansa FERIDO e depois sara. O ganho sai pelo percentual
+        --   do nivel que a personagem tinha ao deitar; so entao o nivel vai a
+        --   zero. Descansar ja curado inverteria a narrativa.
+        --
+        -- * O VAMPIRO NAO RECUPERA VITAE DESCANSANDO. [1.6], "[Sede de
+        --   sangue]": "voce apenas recupera esta barra de energia se
+        --   alimentando do sangue de outros seres vivos". Ele descansa (e
+        --   sara o ferimento), mas a barra nao sobe.
+        DESCANSO = {
+            curto = {rotulo = "CURTO", horas = 12, vida = 25, energia = 25, saraFerido = false},
+            longo = {rotulo = "LONGO", horas = 24, vida = 30, energia = 50, saraFerido = true},
+        }
+
+        -- Quanto um descanso rende, em PONTOS. O percentual da qualidade
+        -- multiplica o GANHO, e nao o maximo: o livro diz "recupere 25% MAIS
+        -- de vida por descanso", nao "tenha 25% mais de vida".
+        function ganhoDescanso(maximo, percentBase, percentQualidade)
+            local bruto = n(maximo) * (n(percentBase) / 100)
+            bruto = bruto * (1 + n(percentQualidade) / 100)
+            return math.floor(bruto + 0.5)
+        end
+
+        -- O percentual de VIDA de um descanso, ja com a substituicao do
+        -- Ferido. Uma funcao so, porque a tela e o botao precisam do MESMO
+        -- numero - card mostrando um valor e botao aplicando outro e a
+        -- classe de bug que este projeto ja pagou com a conta do deslocamento.
+        function percentVidaDescanso(tipo)
+            local d = DESCANSO[tipo] or DESCANSO.longo
+            local nv = nivelFerido()
+            if d.saraFerido and nv > 0 then return FERIDO[nv].recupera end
+            return d.vida
+        end
+
+        -- BEBER: converte o ml anotado em pontos de Vitae e ZERA o contador.
+        -- [1.6], "[Sede de sangue]": "Cada 50ml recupera 1 ponto de Vitae".
+        --
+        -- Zerar o contador e o que impede o erro de somar duas vezes: sem
+        -- isso, cada recalculo tentaria aplicar o mesmo copo de sangue de
+        -- novo, e o jogador nao teria como saber quantos ja entraram. O
+        -- resto que nao completa 50ml FICA no contador, porque ele e o
+        -- registro de quanto sangue ja foi bebido sem virar ponto.
+        function beberSangue()
+            if sheet == nil or not sheet.ehVampiro then return end
+            local ml = n(sheet.sangueBebidoMl)
+            local pontos = math.floor(ml / 50)
+            if pontos <= 0 then return end
+            sheet.pvAtual = n(sheet.pvAtual) + pontos
+            sheet.sangueBebidoMl = ml - (pontos * 50)
+            recalcularTudo()
+        end
+
+        function aplicarDescanso(tipo)
+            if sheet == nil then return end
+            local d = DESCANSO[tipo] or DESCANSO.longo
+            local ef = CatalogoQD.somarEfeitos(escolhidosQD())
+            -- Vampiro nao recupera a barra dele descansando, mas descansa.
+            if not sheet.ehVampiro then
+                local ganho = ganhoDescanso(sheet.hp, percentVidaDescanso(tipo),
+                                            ef.descansoHpPercent or 0)
+                sheet.hpAtual = n(sheet.hpAtual) + ganho
+                sheet.apAtual = n(sheet.apAtual) +
+                    ganhoDescanso(sheet.ap, d.energia, ef.descansoApPercent or 0)
+                if sheet.temCoracaoDeMana then
+                    sheet.mpAtual = n(sheet.mpAtual) +
+                        ganhoDescanso(sheet.mp, d.energia, 0)
+                end
+                if personagemEhBruxa() then
+                    sheet.pranaAtual = n(sheet.pranaAtual) +
+                        ganhoDescanso(sheet.prana, d.energia, ef.descansoApPercent or 0)
+                end
+            end
+            -- e SO ENTAO o ferimento sara: o ganho acima ja saiu pelo
+            -- percentual do nivel que a personagem tinha ao deitar
+            if d.saraFerido then sheet.feridoNivel = 0 end
+            recalcularTudo()
+        end
+
         function recalcularTudo()
             if sheet == nil then return end
             if recalculando then return end
@@ -781,6 +1044,12 @@
                     CONTAS.Pv = "apenas vampiros"
                 end
             end
+
+            -- Os cinco maximos estao prontos: o atual de cada barra e
+            -- reconciliado aqui, e nao la embaixo na pintura. Pintura que
+            -- decide valor e a origem da classe de bug em que a tela
+            -- mostra uma coisa e o dado guardado e outra.
+            reconciliarRecursosAtuais()
 
             -- Base terrestre. Racas com FORMA ALTERNATIVA (Lobisomens
             -- "12m (forma mortal) / 24m (forma bestial)", Ursaris "8m (em pé)
@@ -8972,7 +9241,7 @@
         -- Roda no onResize do scrollBox e ao fim de cada recalculo.
         -- ---------------------------------------------------------------
         local GRADE_COMBATE = {
-            {linha = "cmb_linhaRecursos",  cards = {"Hp", "Ap", "Mp", "Prana", "Pv", "Sangue", "Lua"}},
+            {linha = "cmb_linhaRecursos",  cards = {"Hp", "Ap", "Mp", "Prana", "Pv", "Sangue", "Descanso", "Lua"}},
             {linha = "cmb_linhaDefesas",   cards = {"DefAparar", "DefEsquiva", "DefEmpatica", "DefTelepatica", "Ferido"}},
             -- MOVIMENTO tem uma linha só para ele. Voo e nado sao FIXOS: uma
             -- raça que não voa mostra "—" e o campo de ajuste continua ali,
@@ -9241,6 +9510,42 @@
                 porValor("Sangue", math.floor(ml / 50))
                 CONTAS.Sangue = "(" .. ml .. " ÷ 50) [ml de sangue]"
                 porTexto("Sangue", CONTAS.Sangue)
+            end
+
+            -- DESCANSO: as duas linhas dizem o que cada botao vai fazer, com
+            -- o MESMO numero que aplicarDescanso soma. Card mostrando um
+            -- valor e botao aplicando outro e a classe de bug da conta do
+            -- deslocamento, que mentiu por duas versoes.
+            do
+                -- efeitosQD e LOCAL de recalcularTudo e NAO se enxerga daqui:
+                -- a pintura mora em atualizarAbaCombate. Indexar nil derruba
+                -- a pintura no meio e os cards seguintes simplesmente deixam
+                -- de existir - foi o que aconteceu ao escrever isto. A fonte
+                -- e recalculada, e e a MESMA que aplicarDescanso usa, para o
+                -- numero mostrado e o aplicado nunca divergirem.
+                local efDesc = CatalogoQD.somarEfeitos(escolhidosQD())
+                local pctV = efDesc.descansoHpPercent or 0
+                local pctA = efDesc.descansoApPercent or 0
+                local function linha(tipo)
+                    local d = DESCANSO[tipo]
+                    if sheet.ehVampiro then
+                        return d.rotulo:lower() .. " " .. d.horas .. "h: Vitae só com sangue"
+                    end
+                    local partes = {"+" .. ganhoDescanso(sheet.hp, percentVidaDescanso(tipo), pctV) .. " vida"}
+                    table.insert(partes, "+" .. ganhoDescanso(sheet.ap, d.energia, pctA) .. " aura")
+                    if sheet.temCoracaoDeMana then
+                        table.insert(partes, "+" .. ganhoDescanso(sheet.mp, d.energia, 0) .. " mana")
+                    end
+                    return d.rotulo:lower() .. " " .. d.horas .. "h: " .. table.concat(partes, " · ")
+                end
+                porValor("Descanso", sheet.ehVampiro and 0
+                    or ganhoDescanso(sheet.hp, percentVidaDescanso("longo"), pctV))
+                if self.cmb_contaDescanso ~= nil then
+                    self.cmb_contaDescanso:setText(linha("longo"))
+                end
+                if self.cmb_curtoDescanso ~= nil then
+                    self.cmb_curtoDescanso:setText(linha("curto"))
+                end
             end
 
             -- A Aura e SEMPRE calculada e nunca zera: todo ser vivo tem
@@ -13640,7 +13945,7 @@
                     <label align="left" width="300" text="RECURSOS" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
                     <rectangle align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=13,bottom=13}" hitTest="false"/>
                 </layout>
-                    <layout name="cmb_linhaRecursos" align="top" height="132">
+                    <layout name="cmb_linhaRecursos" align="top" height="162">
                     <layout name="cmb_wrapHp" align="left" width="196">
                         <rectangle name="cmb_secHp" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
@@ -13651,6 +13956,14 @@
                                 <label align="left" width="40" text="AJUSTE" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
                                     <edit align="client" field="ajusteHp" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Correção manual — some ou subtraia o que o sistema não cobre.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit>
+                                </rectangle>
+                            </layout>
+                            <layout align="bottom" height="26" margins="{left=10,right=10}">
+                                <label align="left" width="40" text="ATUAL" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="client" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3">
+                                    <edit name="cmb_edAtualHp" align="client" field="hpAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#8B2332" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
@@ -13671,6 +13984,14 @@
                                     </edit>
                                 </rectangle>
                             </layout>
+                            <layout align="bottom" height="26" margins="{left=10,right=10}">
+                                <label align="left" width="40" text="ATUAL" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="client" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3">
+                                    <edit name="cmb_edAtualAp" align="client" field="apAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit>
+                                </rectangle>
+                            </layout>
                         </rectangle>
                     </layout>
                     <layout name="cmb_wrapMp" align="left" width="196">
@@ -13683,6 +14004,14 @@
                                 <label align="left" width="40" text="AJUSTE" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
                                     <edit align="client" field="ajusteMp" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Correção manual — some ou subtraia o que o sistema não cobre.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit>
+                                </rectangle>
+                            </layout>
+                            <layout align="bottom" height="26" margins="{left=10,right=10}">
+                                <label align="left" width="40" text="ATUAL" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="client" color="#080B0E" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3">
+                                    <edit name="cmb_edAtualMp" align="client" field="mpAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
@@ -13703,6 +14032,14 @@
                                     </edit>
                                 </rectangle>
                             </layout>
+                            <layout align="bottom" height="26" margins="{left=10,right=10}">
+                                <label align="left" width="40" text="ATUAL" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="client" color="#080B0E" strokeColor="#4E8C74" strokeSize="1" xradius="3" yradius="3">
+                                    <edit name="cmb_edAtualPrana" align="client" field="pranaAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#4E8C74" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit>
+                                </rectangle>
+                            </layout>
                         </rectangle>
                     </layout>
                     <layout name="cmb_wrapPv" align="left" width="196">
@@ -13715,6 +14052,14 @@
                                 <label align="left" width="40" text="AJUSTE" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
                                     <edit align="client" field="ajustePv" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Correção manual — some ou subtraia o que o sistema não cobre.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit>
+                                </rectangle>
+                            </layout>
+                            <layout align="bottom" height="26" margins="{left=10,right=10}">
+                                <label align="left" width="40" text="ATUAL" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="client" color="#080B0E" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3">
+                                    <edit name="cmb_edAtualPv" align="client" field="pvAtual" type="number" text="0" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="12" horzTextAlign="center" transparent="true" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
@@ -13740,12 +14085,44 @@
                             <label align="top" height="26" text="SANGUE BEBIDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Cada 50 ml de sangue bebido recupera 1 ponto de Vitae (Raças/Vampiros, [Sede de sangue])."/>
                             <label name="cmb_lblSangue" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#8B2332" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaSangue" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
-                            <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=6}">
+                            <layout align="bottom" height="26" margins="{top=2,left=10,right=10,bottom=4}">
+                                <rectangle name="cmb_btnBeber" align="client" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Converte o sangue anotado em pontos de Vitae e zera o contador. O resto abaixo de 50 ml continua anotado.">
+                                    <label align="client" text="BEBER" fontFamily="Marcellus SC" fontColor="#9E3B4A" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    <event name="onClick"><![CDATA[beberSangue();]]></event>
+                                </rectangle>
+                            </layout>
+                            <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=2}">
                                 <label align="left" width="40" text="ML" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="client" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3">
                                     <edit name="cmb_edSangueMl" align="client" field="sangueBebidoMl" type="number" text="0" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="12" horzTextAlign="center" transparent="true" hint="Quantos ml o vampiro bebeu. É campo de JOGO: continua livre com a ficha finalizada.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
+                                </rectangle>
+                            </layout>
+                        </rectangle>
+                    </layout>
+
+
+                    <!-- DESCANSO (v0.48.0). Os dois botoes APLICAM: somam no
+                         atual das barras e, no caso do longo, saram o Ferido.
+                         As duas linhas mostram o que cada um rende ANTES de
+                         clicar, porque botao que muda numero sem avisar o
+                         quanto e botao que ninguem aperta duas vezes. -->
+                    <layout name="cmb_wrapDescanso" align="left" width="196">
+                        <rectangle name="cmb_secDescanso" align="client" color="#0D1317" strokeColor="#4E8C74" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
+                            <rectangle align="top" height="3" color="#4E8C74" hitTest="false"/>
+                            <label align="top" height="24" text="DESCANSO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="[2.3]: Longo (24h) devolve 30% da vida e 50% da aura/mana; Curto (12h), 25% e 25%. O longo TAMBÉM sara o Ferido, e enquanto ferido o ganho de vida sai pelo percentual do nível (30/20/10%)."/>
+                            <label name="cmb_lblDescanso" align="top" height="30" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="24" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
+                            <label name="cmb_contaDescanso" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
+                            <label name="cmb_curtoDescanso" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
+                            <layout align="bottom" height="26" margins="{top=2,left=10,right=10,bottom=6}">
+                                <rectangle name="cmb_btnDescCurto" align="left" width="76" color="#080B0E" strokeColor="#4E8C74" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Aplicar descanso curto (12h)">
+                                    <label align="client" text="CURTO" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    <event name="onClick"><![CDATA[aplicarDescanso("curto");]]></event>
+                                </rectangle>
+                                <rectangle name="cmb_btnDescLongo" align="right" width="76" color="#080B0E" strokeColor="#4E8C74" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Aplicar descanso longo (24h) — também sara o Ferido">
+                                    <label align="client" text="LONGO" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    <event name="onClick"><![CDATA[aplicarDescanso("longo");]]></event>
                                 </rectangle>
                             </layout>
                         </rectangle>

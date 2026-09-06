@@ -151,6 +151,103 @@ registra, e não soma em lugar nenhum** — a ficha não rastreia recurso *atual
 para o personagem, só máximos, e somar ali entregaria metade de um rastreio que
 não existe.
 
+### Atual × máximo nas cinco barras
+
+Até aqui a ficha guardava **só máximos**. Foi por isso que o card de sangue
+bebido nasceu apenas convertendo ml em pontos, e o de descanso, apenas
+mostrando números: não existia onde somar. Decisão dos mestres (06/09/2026):
+Vida, Aura, Mana, Prana e Vitae passam a ter **atual e máximo**, com o atual
+editável em cada card.
+
+Três regras, e as três são de mesa:
+
+* **Ficha antiga nasce cheia.** Campo que nunca existiu vira o máximo — sem
+  isso toda ficha da mesa abriria com 0 de vida. É um **reparo**, não um bloco
+  de migração de versão: reparo escrito como `elseif` de migração nunca roda
+  para quem está na versão antiga, que é a maioria.
+
+  A marca é **string, não booleano**. O NDB já devolveu booleano de mais de uma
+  forma neste projeto, e um `true` que voltasse como `1` faria o reparo rodar de
+  novo e **curar quem estava ferido**. E a marca é necessária porque campo vazio
+  é indistinguível de campo zerado: sem ela, o personagem a 0 de vida seria
+  "curado" toda vez que abrisse a ficha.
+
+* **Máximo que muda leva o atual junto, pela diferença.** Subiu de nível e
+  ganhou 8 de máximo, ganha 8 de atual. Encher a barra apagaria o dano toda vez
+  que o mestre mexesse num ajuste no meio da sessão.
+
+* **Pode ficar negativo.** O teto é duro; o piso não existe. O livro não tem
+  regra de vida negativa — isto é da mesa, e o mestre vê o quanto o golpe passou
+  de zero.
+
+### O Ferido passou a entrar sozinho
+
+Com vida atual gravada, a **queda entre dois recálculos é o golpe** — e o
+gatilho do livro ficou automático. Era exatamente a inferência que esta mesma
+versão tinha recusado por não haver dado; o dado passou a existir.
+
+* **Só sobe.** *"mesmo se ele voltar a recuperar a vida por cura e etc, o ferido
+  ainda continua"* (mestre). Curar não mexe no nível, e golpe menor que o
+  ferimento atual também não.
+* **Dispara o maior nível que alcança**, não o primeiro.
+* **Mudança de máximo não é golpe** — a reconciliação move a base do detector
+  pelo mesmo delta. Sem isso, perder uma qualidade marcaria um Ferido que
+  ninguém causou.
+
+> **O risco foi aceito e está escrito no código:** digitar 45 e corrigir para 4
+> registra uma queda de 41 e pode marcar um Ferido que não aconteceu. As setas
+> continuam ali — o mestre desfaz num clique. Falso positivo corrigível é melhor
+> que falso negativo silencioso.
+
+### Descanso que aplica, e sangue que soma
+
+Dois botões, **CURTO (12h)** e **LONGO (24h)**, que agora somam de verdade nas
+barras. `[2.3]`: 30% da vida e 50% da aura/mana no longo; 25% e 25% no curto.
+
+**Três qualidades mexem no descanso e nenhuma estava modelada.** Vigor
+expandido, Vigor reprimido e Aura expandida têm, na **mesma frase** do livro, um
+segundo efeito — *"recupere 25% mais de vida por descanso longo e curto"* — que
+o catálogo não guardava: ele só tinha o percentual de *total*. Entraram como
+`descansoHpPercent` e `descansoApPercent`. Detalhe de leitura: *"recupere 25%
+mais **desta energia**"* é a **Aura**; a mana não é modificada.
+
+Decisões da mesa (06/09/2026), que o livro não dá:
+
+* **o descanso longo zera o Ferido**;
+* **a recuperação própria do Ferido substitui o ganho do descanso longo** —
+  30%, 20% ou 10% conforme o nível. Isso explica a frase do livro que parecia
+  inofensiva: o Ferido I recuperar "30% por dia" é igual ao padrão por
+  coincidência; quem perde são o II e o III;
+* **a ordem é descansar ferido e depois sarar** — o ganho sai pelo percentual do
+  nível que a personagem tinha ao deitar.
+
+O **vampiro descansa e sara, mas a barra não sobe**: `[1.6]`, *"[Sede de
+sangue]"*, o Vitae só volta com sangue. Para ele há o botão **BEBER**, que
+converte o ml anotado em pontos e **desconta só o que virou ponto** — o resto
+abaixo de 50 ml continua anotado. Zerar tudo perderia o resto; não descontar
+nada faria o mesmo copo ser bebido a cada clique.
+
+**O número que o card mostra é o número que o botão aplica** — os dois saem da
+mesma função. Card mostrando um valor e botão somando outro é a classe de bug da
+conta do deslocamento, que mentiu por duas versões neste projeto.
+
+### O que a bateria e a mutação pegaram de mim, nesta leva
+
+* a bateria do Ferido **media a barra errada**: as baterias dividem o mesmo
+  `sheet`, e a do Ferido termina trocando a raça para Vampiros — o detector
+  passou a vigiar o Vitae. O farejador mostrou `base=141` contra uma vida atual
+  de 46; duas hipóteses minhas morreram na primeira medição;
+* a asserção de "mudança de máximo não é golpe" mexia **10 pontos**, abaixo do
+  limiar de 14 — passava verde com o detector quebrado. A mutação foi quem
+  mostrou; agora ela balança 80;
+* eu escrevi uma sonda que **não podia falhar** (a base do detector lendo o
+  máximo em vez do atual: as duas expressões são provadamente iguais naquele
+  ponto) e cheguei a registrar isso como "erro real encontrado". **Não era.** A
+  sonda saiu e o motivo ficou no lugar dela;
+* e o card de descanso derrubou 27 asserções de uma vez ao ler `efeitosQD`, que
+  é **local de `recalcularTudo`** e não se enxerga da pintura. Indexar nil parou
+  a pintura no meio e os cards seguintes deixaram de existir.
+
 ### Condição FERIDO, na linha das defesas
 
 `[2.3]` "Ferimentos": um **golpe único** que aplique 30%, 60% ou 90% da **vida

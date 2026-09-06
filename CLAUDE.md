@@ -14,8 +14,8 @@ divergirem.
 
 ```
 verificar   →  44 checagens de empacotamento
-testes      →  243 asserções em Lua puro
-mutacao     →  173 mutações (~10 min)
+testes      →  274 asserções em Lua puro
+mutacao     →  187 mutações (~12 min)
 rdk l       →  lint do SDK
 rdk i       →  instala; depois FECHE o Firecast por completo
 ```
