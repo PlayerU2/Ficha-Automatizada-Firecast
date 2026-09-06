@@ -4837,6 +4837,98 @@
             return true
         end
 
+        -- ===============================================================
+        -- FAREJADOR DA BUSCA
+        -- ===============================================================
+        -- A busca continuou pesada depois de duas correcoes minhas: a
+        -- tempestade de gsub (que era real, e caiu de 153 ms para 13 ms no
+        -- harness) e o reflow (que tentei suspender escondendo a lista, e nao
+        -- resolveu). Duas explicacoes gastas para o mesmo sintoma.
+        --
+        -- A lei da casa manda parar e construir o instrumento. E ele tem de
+        -- rodar DENTRO do Firecast: o harness troca setHeight por escrita em
+        -- tabela, entao ele mede o Lua e nao mede o host -- que e justamente
+        -- onde o tempo esta.
+        --
+        -- COMO USAR: digite  !t  na caixa de busca do catalogo. A ficha mede
+        -- e escreve o laudo acima da lista. Nao muda nada na ficha.
+        --
+        -- Os quatro numeros separam as quatro suspeitas, e cada um mede UMA
+        -- coisa: percorrer o indice, ler margem, mudar altura, mudar margem.
+        function farejarBusca(qual)
+            if sheet == nil then return end
+            local lbl = self["lblLaudo" .. qual]
+            if lbl == nil then return end
+
+            local alvos, altura
+            if qual == "Itens" then
+                alvos, altura = {}, ALTURA_CARD_CATALOGO.item
+                for _, e in ipairs(montarIndiceItens().linhas) do
+                    alvos[#alvos + 1] = e.w
+                end
+            else
+                alvos, altura = {}, ALTURA_CARD_CATALOGO.poder
+                for _, kit in ipairs(montarIndicePoderes().kits) do
+                    for _, s in ipairs(kit.slots) do
+                        for _, c in ipairs(s.cards) do alvos[#alvos + 1] = c.w end
+                    end
+                end
+            end
+            local n0 = #alvos
+
+            -- 1. so o Lua: percorre o indice e compara, sem tocar em widget
+            local t0 = os.clock()
+            local casaram = 0
+            for _, w in ipairs(alvos) do
+                if string.find(w, "zzz", 1, true) ~= nil then casaram = casaram + 1 end
+            end
+            local tLua = os.clock() - t0
+
+            -- 2. so ACHAR o widget (self[nome]), sem chamar metodo nenhum
+            t0 = os.clock()
+            for _, w in ipairs(alvos) do local _ = self[w] end
+            local tAchar = os.clock() - t0
+
+            -- 3. LER a margem: e _obj_getProp, e roda uma vez por card na
+            --    primeira passada
+            t0 = os.clock()
+            for _, w in ipairs(alvos) do
+                pcall(function() local _ = self[w]:getMargins() end)
+            end
+            local tLer = os.clock() - t0
+
+            -- 4. MUDAR a altura, que e a suspeita principal
+            t0 = os.clock()
+            for _, w in ipairs(alvos) do
+                pcall(function() self[w]:setHeight(altura) end)
+            end
+            local tAltura = os.clock() - t0
+
+            -- 5. MUDAR a margem
+            t0 = os.clock()
+            for _, w in ipairs(alvos) do
+                pcall(function() self[w]:setMargins(ZERO_MARGENS) end)
+            end
+            local tMargem = os.clock() - t0
+
+            -- devolve tudo ao lugar, para o farejador nao deixar estrago
+            for _, w in ipairs(alvos) do
+                if margemFoiLida[w] then
+                    pcall(function() self[w]:setMargins(margemDoWidget[w]) end)
+                end
+                pcall(function() self[w]:setHeight(altura) end)
+            end
+            estadoLinha = {}
+
+            local function ms(v) return string.format("%.0f", v * 1000) end
+            lbl:setText(n0 .. " cards  ·  laco " .. ms(tLua) ..
+                " ms  ·  achar widget " .. ms(tAchar) ..
+                " ms  ·  LER margem " .. ms(tLer) ..
+                " ms  ·  MUDAR altura " .. ms(tAltura) ..
+                " ms  ·  MUDAR margem " .. ms(tMargem) .. " ms")
+            pcall(function() lbl:setHeight(34) end)
+        end
+
         -- A dobra da busca e chavePoder(): ela ja tira acento e tudo que nao
         -- e alfanumerico, e e ELA que gera o sufixo do nome do widget. Buscar
         -- com a mesma funcao que batizou o card e o que faz "pocao" achar
@@ -4956,6 +5048,7 @@
         -- derivado do resultado da busca, recalculado a cada tecla. Nao
         -- existe estado de cabecalho para dessincronizar.
         function filtrarCatalogoItens(texto)
+            if tostring(texto) == "!t" then return farejarBusca("Itens") end
             local agulha = dobrarBusca(texto)
             suspenderLista("sbListaItens", true)
             local ix = montarIndiceItens()
@@ -4989,6 +5082,7 @@
         -- margem quando conseguiu ler a original antes, exatamente para nao
         -- apagar esse recuo.
         function filtrarCatalogoPoderes(texto)
+            if tostring(texto) == "!t" then return farejarBusca("Poderes") end
             local agulha = dobrarBusca(texto)
             suspenderLista("sbListaPoderes", true)
             local ix = montarIndicePoderes()
@@ -5612,6 +5706,9 @@
             destacarPoderSelecionado()
             -- Zera o filtro a cada abertura, como nos outros dois catalogos.
             zerarEstadoCatalogo()
+            if self.lblLaudoPoderes ~= nil then
+                pcall(function() self.lblLaudoPoderes:setHeight(0) end)
+            end
             if self.edBuscaPoderes ~= nil then
                 pcall(function() self.edBuscaPoderes:setText("") end)
             end
@@ -12253,6 +12350,9 @@
             -- 250 por causa de um filtro esquecido parece catalogo
             -- quebrado, e nao ha erro nenhum na tela para desmentir.
             zerarEstadoCatalogo()
+            if self.lblLaudoItens ~= nil then
+                pcall(function() self.lblLaudoItens:setHeight(0) end)
+            end
             if self.edBuscaItens ~= nil then
                 pcall(function() self.edBuscaItens:setText("") end)
             end
@@ -13467,7 +13567,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.1" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.2" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -24179,6 +24279,7 @@
                             </edit>
                         </layout>
                     </rectangle>
+                    <label name="lblLaudoItens" align="top" height="0" text="" fontFamily="EB Garamond" fontColor="#C9A24B" fontSize="11" wordWrap="true" hitTest="false"/>
                     <scrollBox name="sbListaItens" align="client" margins="{left=8,right=8,top=4,bottom=8}">
                             <label name="itmCab_Armadura" align="top" height="24" text="ARMADURA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_ArmaduraleveComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
@@ -26915,6 +27016,7 @@
                                 </edit>
                             </layout>
                         </rectangle>
+                        <label name="lblLaudoPoderes" align="top" height="0" text="" fontFamily="EB Garamond" fontColor="#C9A24B" fontSize="11" wordWrap="true" hitTest="false"/>
                         <scrollBox name="sbListaPoderes" align="client" margins="{left=8,right=8,top=4,bottom=8}">
                                 <label name="podCab_Ammis" align="top" height="20" text="AMMIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Ammis_Carismasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Carisma sobrenatural — kit de Ammis">
