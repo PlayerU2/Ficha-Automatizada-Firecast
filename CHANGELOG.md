@@ -1,3 +1,129 @@
+## v0.49.4 — a margem custava 35 ms por chamada (06/09/2026)
+
+### O que travava a busca não era o que eu disse duas vezes
+
+Relatado na tela, depois de duas correções minhas: *"o campo de busca dos
+poderes e itens continua travando muito, vamos ter que arranjar um jeito de
+ficar leve essa ferramenta, ou desistir dela"*. E depois: *"Continua pesado."*
+
+A lei da casa manda que, na segunda explicação para o mesmo sintoma, se pare de
+raciocinar e se construa o instrumento. Foi o que a v0.49.2 fez — o farejador,
+que roda **dentro do Firecast** porque o harness troca `setHeight` por escrita
+em tabela e por isso não vê o host, que é onde o tempo estava.
+
+A medição, digitando `!t` na caixa de busca:
+
+| catálogo | laço de Lua | achar o widget | mudar altura | **mudar margem** |
+|---|---|---|---|---|
+| poderes (111 cards) | 0 ms | 0 ms | 1 ms | **1.854 ms** |
+| itens (250 cards) | 0 ms | 0 ms | 0 ms | **8.749 ms** |
+
+`setMargins` custa **~35 ms por chamada** neste host. `setHeight` é de graça. As
+duas explicações anteriores — a tempestade de `gsub` (real: 153 ms → 13 ms) e o
+*reflow* da lista (que não era nada) — mediam o Lua, e o custo não estava no
+Lua.
+
+E a chamada estava ali **por minha causa**: eu zerava a margem ao esconder o
+card para não deixar vão fantasma. A correção tira a folga vertical da margem e
+a põe na **altura** dos 466 widgets de catálogo — esconder passa a ser altura
+zero, e altura zero não deixa vão. A margem que sobrou é horizontal (o recuo
+`left=12` das alternativas de um mesmo slot) e nunca é tocada.
+
+As três alturas viraram uma por prefixo: o último card de um slot levava
+`bottom=6` e os outros `bottom=2`, o que daria três alturas para `rectPod_`, e a
+busca devolve todos com um número só. O que separa os slots é o rótulo
+*"SLOT n"*, que continua.
+
+### Os valores dos cards saíram do meio
+
+Relatado na tela: *"Agora os valores dos cards ficaram deslocados na esquerda,
+saíram completamente de centralização."*
+
+A caixa do **ATUAL** tinha 88px cravados no XML, e quem decide a largura do card
+é o `ajustarGradeCombate`, em tempo de execução (a linha disponível dividida
+pelos cards visíveis). Numa janela larga o card passa de 230px, o rótulo
+`/ máximo` é `align="client"` e come toda a sobra: o par inteiro escorrega para
+a esquerda. Agora a caixa vale **metade do miolo do card**, e o `/` cai no meio
+em qualquer largura.
+
+### Quatro chamadas para uma função que não existia mais
+
+`suspenderLista()` era a segunda explicação — suspender o *reflow* da lista — e
+morreu junto com a maquinaria de margem. As quatro chamadas ficaram:
+`attempt to call a nil value (global suspenderLista)` em cima do filtro, que é
+justamente a ferramenta que o mestre estava tentando usar.
+
+### As redes
+
+* **checagem 57** — a busca não mexe em margem, e card de catálogo não tem
+  margem vertical. As duas metades: a chamada não volta, e a margem que a
+  justificava não volta também. O comentário *"NÃO REINTRODUZA setMargins
+  AQUI"* aponta para ela, porque comentário não é guarda-corpo;
+* **checagem 58** — a caixa do ATUAL vale metade do card, e a moldura escrita no
+  Lua bate com a soma das margens no XML dos cinco cards;
+* **checagem 59** — toda função chamada pelo script existe em algum lugar. É a
+  outra metade da 56: a 56 cobre o nome declarado **abaixo** de onde é usado, e
+  a 59 cobre o nome que não existe em canto nenhum. As duas dão a mesma
+  mensagem na tela, e nenhuma das duas é erro de compilação em Lua;
+* **checagem 51 (d)** — nenhuma altura literal entregue ao
+  `mostrarLinhaCatalogo` é inventada. As partes (a) e (c) comparam o XML com
+  números que moram na régua; esta lê o outro lado;
+* **a bateria da busca parou de repetir a altura.** As 13 asserções cravavam
+  44, 28, 26, 24, 18, 20 e 14 — e quando a altura mudou, elas cobravam o
+  tamanho que tinha deixado de valer, que é o teste protegendo o defeito. Agora
+  a altura declarada sai do `ficha.lfm` lida **pelo Python**, e a asserção
+  cruza duas fontes de verdade em vez de medir o Lua com o Lua;
+* **as duas asserções da margem foram invertidas**: exigiam que esconder
+  zerasse a margem. Era o contrato do defeito.
+
+E o **gerador de poderes** foi corrigido junto — ele reemite os 111 cards, e
+regerar sem isso devolveria as margens lentas em silêncio. Duas âncoras dele
+tinham envelhecido (o `scrollBox` e o rótulo *FORA DOS KITS* ganharam `name=` na
+v0.48.0/v0.49.x) e o gerador quebrou ruidosamente ao ser chamado, que é o
+comportamento certo. Regerado, o arquivo saiu **byte a byte igual** ao editado à
+mão.
+
+---
+
+## v0.49.3 — o farejador lia um global nil (06/09/2026)
+
+`farejarBusca` foi escrita **acima** dos `local function montarIndice*` que ela
+chama. Em Lua isso não é erro de compilação: o nome vira global, vale `nil`, e
+só estoura no uso — `attempt to call a nil value (global 'montarIndiceItens')`
+na tela do mestre, depois de 46 checagens e 292 asserções verdes.
+
+A **checagem 56** nasceu daqui: nenhum `local` de topo é usado acima da linha
+que o declara. A skill e o `CLAUDE.md` listavam essa verificação como
+obrigatória havia versões, e ela **nunca existiu** — o que a deixava valendo o
+mesmo que um comentário. O mesmo defeito já tinha custado a v0.45.0.
+
+---
+
+## v0.49.2 — o farejador (06/09/2026)
+
+Duas explicações gastas no mesmo sintoma. A ficha passou a se medir por dentro:
+digite `!t` na caixa de busca do catálogo e ela escreve o laudo acima da lista,
+separando laço de Lua, achar o widget, mudar altura e mudar margem. Não altera
+nada na ficha.
+
+---
+
+## v0.49.1 — a perícia rolava com o atributo sem a penalidade (06/09/2026)
+
+Relatado na tela: a linha dizia *"Atributo 1 + Proef 3"* com o Ferido ativo,
+quando devia dizer *"Atributo -1 + Proef 3"*, total +2.
+
+O atributo passou a ter **dois totais**, e a diferença é o que cada um serve:
+
+* `<atributo>Total` — **limpo**, sem a penalidade do Ferido. Sete consumidores
+  leem dele e **nenhum é rolagem**: o teto de pontos por perícia e as quatro
+  contas de defesa. Se ele levasse a penalidade, a defesa contaria o Ferido
+  duas vezes;
+* `<atributo>TotalRolagem` — com a penalidade. É o que a tela mostra e o que a
+  perícia soma.
+
+---
+
 ## v0.49.0 — a terceira coluna do atributo, e a busca que travava (06/09/2026)
 
 ### Cada tecla no catálogo refazia 37 mil operações de texto
