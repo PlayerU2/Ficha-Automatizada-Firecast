@@ -1,3 +1,72 @@
+## v0.49.0 — a terceira coluna do atributo, e a busca que travava (06/09/2026)
+
+### Cada tecla no catálogo refazia 37 mil operações de texto
+
+Relatado na tela: *"essa mecânica está muito pesada (…) sempre que busco por um
+nome a ficha fica travada por longos segundos"*. Duas causas, e as duas somavam:
+
+* a **dobra era refeita a cada tecla**. `chavePoder()` percorre uma tabela de
+  ~50 acentos com um `gsub` por entrada, e o filtro da loja a chamava **duas
+  vezes por card** mais uma por nome buscado: 250 × 3 × 50 = **37 mil `gsub` por
+  tecla**. Agora o índice é montado uma vez;
+* **todo card recebia `setHeight` e `setMargins` a cada tecla**, inclusive os
+  240 que já estavam escondidos e continuariam escondidos. No harness isso é
+  escrita em tabela; no Firecast é chamada ao host, e é ela que congela a tela.
+
+**Medido**, digitando `armadura` e apagando (17 teclas), nos três catálogos:
+
+| | tempo de Lua (itens) | chamadas ao widget |
+|---|---|---|
+| antes | 153 ms | **7.718** |
+| depois | 13 ms | **1.293** |
+
+### O atributo tem três parcelas
+
+```
+FORÇA   [base]  +  [bônus]  +  [automações]  =  [total]
+```
+
+A terceira coluna é onde raça, poder, qualidade e **Ferido** aparecem. Até aqui
+eles somavam no mesmo campo em que o jogador digita o bônus dele — o que
+escondia de onde veio cada ponto e obrigava a máquina de concessões a somar e
+subtrair em vez de recalcular.
+
+**São dois totais, e confundi-los é a armadilha desta versão.** O total
+*interno* continua **limpo**, sem o Ferido, porque **sete rotinas o leem e
+nenhuma é rolagem** — quantas perícias cabem no atributo, a conta das quatro
+defesas, o texto do deslocamento. Decisão da mesa: *"como o próprio ferido diz,
+ele influencia ROLAGENS, então esses derivados não são influenciados"*. Há
+asserção cravando que a **vida máxima não se move** quando o Ferido muda.
+
+A coluna é `<label>`, não `<edit>`: é calculada, e o que o jogador digitasse ali
+sumiria no recálculo seguinte sem aviso.
+
+**O reparo** desfaz cada concessão de dentro do bônus usando a função inversa
+que a ficha já usa quando uma fonte sai — não uma conta nova escrita para a
+ocasião — e deixa `aplicarConcessoes()` reaplicar tudo na coluna.
+
+### Atual / Total no card, e a cor certa
+
+Os cinco cards de recurso mostram `atual / máximo`, e o campo ATUAL usa a cor do
+próprio card. **Eu tinha chutado essas cores** em vez de ler as do card, e errei
+duas de cinco: a Aura ficou roxa num card dourado, o Prana verde num card roxo.
+Quem viu foi o mestre, na tela. Virou a **checagem 54**, que cobra a *forma* — o
+campo herda a cor do rótulo do card —, então barra nova nasce coberta.
+
+A **caixa de busca** pintava fundo claro próprio: 122 dos 134 `<edit>` da ficha
+são `transparent="true"` e as minhas quatro estavam entre as que não eram.
+
+### O que a mutação me corrigiu nesta leva
+
+* uma sonda que **se anulava sozinha**: `CAMPO_AUTO_ATRIBUTO` aparece duas vezes
+  (a declaração e a restauração no fim do reparo), e trocar só a primeira fazia
+  o reparo devolver o valor certo no fim;
+* uma sonda **na rede errada**: "a tela volta a mostrar o total limpo" é fato de
+  **XML**, e asserção de Lua não alcança XML. Mudou para a rede de
+  empacotamento, junto com a checagem 55, que nasceu disso.
+
+---
+
 ## v0.48.0 — busca nos catálogos, e o gerador que reescrevia o arquivo inteiro (05/09/2026)
 
 ### Campo de busca nos três catálogos

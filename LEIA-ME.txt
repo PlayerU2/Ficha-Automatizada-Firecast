@@ -1,4 +1,4 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.48.0
+FICHA DE PERSONAGEM - PETRICHOR - v0.49.0
 
 
 =======================================================================
@@ -74,14 +74,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.48.0, o que esta rodando nao e este pacote.
+disser v0.49.0, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.48.0)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.49.0)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que
@@ -260,6 +260,30 @@ NOVO NA v0.48.0 - BUSCA nos catalogos. Confira, nesta ordem:
      nem as escondidas - mas o Ferido tem que sarar. Depois digite 149
      no campo ML do card SANGUE BEBIDO e aperte BEBER: o Vitae atual
      sobe 2 e o campo fica com 49, nao com 0.
+
+NOVO NA v0.49.0 - a terceira coluna do atributo, e a busca rapida.
+
+ 12. ABA 02 (Atributos): cada atributo tem agora TRES campos antes do
+     "=" - base, bonus e AUTOMACOES. O terceiro e calculado pela ficha e
+     nao aceita digitacao: e ali que raca, poder, qualidade e FERIDO
+     aparecem. Confira que a linha FECHA: base + bonus + automacoes = o
+     numero grande.
+     O bonus que VOCE digitou nao pode ter mudado ao instalar - o reparo
+     tira do bonus so o que a propria ficha tinha somado la.
+     Marque Ferido II na aba 06 e volte: a coluna de automacoes de TODOS
+     os atributos cai 4, e o total cai junto.
+     Mas a VIDA MAXIMA, a aura e o deslocamento NAO podem mudar: o
+     ferido penaliza rolagem, nao derivado.
+
+ 13. BUSCA: abra o catalogo de ITENS e digite depressa. Antes cada tecla
+     refazia 37 mil operacoes de texto e 250 chamadas de tela; agora o
+     indice e montado uma vez. Tem que responder na hora.
+     E o campo de busca agora tem o mesmo fundo escuro das outras
+     entradas da ficha, em vez de um retangulo claro.
+
+ 14. Os cards de recurso mostram ATUAL / MAXIMO, e o campo ATUAL usa a
+     cor do proprio card - vermelho na vida, dourado na aura, azul na
+     mana, roxo no prana, vinho no vitae.
 
 ANTES, NA v0.47.0 - as 29 racas tem brasao, e o mestico mostra os DOIS.
 Confira:

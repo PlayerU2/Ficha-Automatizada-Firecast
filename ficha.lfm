@@ -823,6 +823,7 @@
 
             -- Reavalia as concessoes a cada recalculo: trocar de raca troca as
             -- caracteristicas, e os bonus precisam entrar e sair junto.
+            pcall(function() separarAutomacoesDoBonus() end)
             pcall(function() aplicarConcessoes() end)
 
             -- Hemocinese fica FORA da tabela CONCESSOES porque o nivel
@@ -869,13 +870,49 @@
                 end
             end
 
-            -- Totais de atributo (base + bonus)
+            -- TOTAIS DE ATRIBUTO: base + bonus + automacoes.
+            --
+            -- Sao DOIS numeros, e a diferenca entre eles e o Ferido:
+            --
+            --   valores[chave]  -- SEM o Ferido. E o que alimenta as formulas
+            --                      derivadas: vida, aura, mana, deslocamento,
+            --                      iniciativa e a base das defesas.
+            --   <chave>Total    -- COM o Ferido. E o numero que aparece na
+            --                      ficha e com o qual o jogador ROLA.
+            --
+            -- DECISAO DA MESA, 06/09/2026: "como o proprio ferido diz, ele
+            -- influencia ROLAGENS, entao esses derivados nao sao
+            -- influenciados". Sem essa separacao, Ferido II encolheria a vida
+            -- maxima, a aura e o deslocamento junto -- e a vida maxima caindo
+            -- puxaria a atual pela regra da diferenca, que e uma segunda
+            -- punicao que ninguem pediu.
+            --
+            -- O Ferido continua descendo direto nas quatro defesas, mais
+            -- abaixo. Ele NAO chega la por aqui: a base da defesa usa
+            -- valores[], que e o valor limpo. Se um dia alguem trocar
+            -- valores[] pelo Total, a penalidade passa a contar duas vezes.
             local atributos = {"carisma", "constituicao", "destreza", "forca", "inteligencia", "manipulacao", "sabedoria"}
             local valores = {}
+            local penAtributo = penalidadeFerido()
             for _, chave in ipairs(atributos) do
-                local total = n(sheet[chave .. "Base"]) + n(sheet[chave .. "Bonus"])
-                sheet[chave .. "Total"] = total
-                valores[chave] = total
+                local concedido = n(sheet[chave .. "Concedido"])
+                local limpo = n(sheet[chave .. "Base"]) + n(sheet[chave .. "Bonus"]) + concedido
+                valores[chave] = limpo
+                -- a coluna que a ficha mostra: o que ela automatizou, ja com
+                -- o ferimento dentro
+                sheet[chave .. "Auto"] = concedido - penAtributo
+                -- <chave>Total continua sendo o valor LIMPO, e essa escolha
+                -- e o coracao disto. Sete lugares o leem e NENHUM deles e
+                -- rolagem: quantas pericias cabem no atributo, a conta das
+                -- quatro defesas, o texto do deslocamento. Se a penalidade
+                -- entrasse aqui, os sete passariam a mentir de uma vez -- e
+                -- a defesa contaria o Ferido DUAS vezes, porque ele ja desce
+                -- nela direto mais abaixo.
+                sheet[chave .. "Total"] = limpo
+                -- e este e o numero da TELA, com o qual o jogador rola. E o
+                -- unico que a penalidade toca, e e ele que faz a linha do
+                -- atributo fechar: base + bonus + automacoes.
+                sheet[chave .. "TotalRolagem"] = limpo - penAtributo
             end
 
             -- Efeitos numericos vindos de Qualidades/Defeitos escolhidos
@@ -7552,6 +7589,70 @@
             ["Manipulação"] = "manipulacao",
         }
 
+        -- ===============================================================
+        -- ONDE A AUTOMACAO DO ATRIBUTO MORA (v0.49.0)
+        -- ===============================================================
+        -- DECISAO DA MESA, 06/09/2026: "nos atributos deveriamos ter um
+        -- terceiro campo a direita, esse campo servira para expressar todas
+        -- as automatizacoes da ficha (...) basicamente todas as automatizacoes
+        -- que ja fazemos, mas elas estao vinculadas nos campos de atributo
+        -- bonus".
+        --
+        -- Ate a v0.48.0 raca, poder e qualidade somavam no MESMO campo em que
+        -- o jogador digita o bonus dele. Funcionava, e escondia de quem olha a
+        -- ficha de onde cada ponto veio -- e era o que obrigava a maquina de
+        -- concessoes a somar e subtrair em vez de simplesmente recalcular.
+        --
+        -- E VARIAVEL, e nao constante, por um motivo so: o REPARO abaixo
+        -- precisa desfazer as concessoes de onde elas estavam (Bonus) antes
+        -- de reaplica-las onde elas passam a morar (Concedido). Fora desse
+        -- instante ela nunca muda.
+        CAMPO_AUTO_ATRIBUTO = "Concedido"
+
+        -- REPARO, uma vez por ficha.
+        --
+        -- Desfaz cada concessao JA APLICADA de dentro do Bonus usando a
+        -- funcao que a ficha ja usa para isso quando uma fonte sai -- ou
+        -- seja, a inversa exata, e nao uma conta nova escrita para a ocasiao.
+        -- Depois zera o registro do que estava aplicado, e o
+        -- aplicarConcessoes() seguinte reaplica tudo no campo novo.
+        --
+        -- O bonus de poder tem contabilidade propria (BonusDePoder guarda o
+        -- quanto ja foi lancado), entao ele e devolvido na mao aqui e o
+        -- sincronizador o refaz no campo novo.
+        --
+        -- E reparo solto, e nao bloco de migracao de versao: reparo escrito
+        -- como elseif de migracao nunca roda para quem esta na versao antiga.
+        function separarAutomacoesDoBonus()
+            if sheet == nil then return end
+            if tostring(sheet.atributosAutoSeparados or "") == "1" then return end
+
+            CAMPO_AUTO_ATRIBUTO = "Bonus"
+            pcall(function()
+                local aplicadas = chavesConcedidas()
+                for _, con in ipairs(CONCESSOES) do
+                    if aplicadas[con.chave] then
+                        pcall(function() desfazerEfeitoConcessao(con) end)
+                    end
+                end
+                sheet.concessoesAplicadas = ""
+                for _, chave in ipairs({"carisma", "constituicao", "destreza",
+                                        "forca", "inteligencia", "manipulacao",
+                                        "sabedoria"}) do
+                    local lancado = n(sheet[chave .. "BonusDePoder"])
+                    if lancado ~= 0 then
+                        local novo = n(sheet[chave .. "Bonus"]) - lancado
+                        if novo < 0 then novo = 0 end
+                        sheet[chave .. "Bonus"] = novo
+                        sheet[chave .. "BonusDePoder"] = 0
+                    end
+                    sheet[chave .. "Concedido"] = 0
+                end
+            end)
+            CAMPO_AUTO_ATRIBUTO = "Concedido"
+            sheet.atributosAutoSeparados = "1"
+        end
+
         function chavesConcedidas()
             if sheet == nil then return {} end
             local r = {}
@@ -7803,7 +7904,7 @@
                 for _, nomeAtr in ipairs(ef.atributos or {}) do
                     local base = CAMPO_ATRIBUTO[nomeAtr]
                     if base ~= nil then
-                        sheet[base .. "Bonus"] = n(sheet[base .. "Bonus"]) + n(ef.valor)
+                        sheet[base .. CAMPO_AUTO_ATRIBUTO] = n(sheet[base .. CAMPO_AUTO_ATRIBUTO]) + n(ef.valor)
                         sheet[base .. "TetoRacial"] = n(ef.teto)
                         lancados = lancados + 1
                     end
@@ -7821,7 +7922,7 @@
                 if base == nil then return false end
                 local v = n(ef.valor)
                 if v == 0 then v = 1 end
-                sheet[base .. "Bonus"] = n(sheet[base .. "Bonus"]) + v
+                sheet[base .. CAMPO_AUTO_ATRIBUTO] = n(sheet[base .. CAMPO_AUTO_ATRIBUTO]) + v
                 local t = n(ef.teto)
                 if t == 0 then t = 10 end
                 sheet[base .. "TetoRacial"] = t
@@ -7880,9 +7981,9 @@
                 for _, nomeAtr in ipairs(ef.atributos or {}) do
                     local base = CAMPO_ATRIBUTO[nomeAtr]
                     if base ~= nil then
-                        local novo = n(sheet[base .. "Bonus"]) - n(ef.valor)
+                        local novo = n(sheet[base .. CAMPO_AUTO_ATRIBUTO]) - n(ef.valor)
                         if novo < 0 then novo = 0 end
-                        sheet[base .. "Bonus"] = novo
+                        sheet[base .. CAMPO_AUTO_ATRIBUTO] = novo
                         sheet[base .. "TetoRacial"] = 0
                     end
                 end
@@ -7894,9 +7995,9 @@
                 if base ~= nil then
                     local v = n(sheet.atributoRacialValor)
                     if v == 0 then v = 1 end
-                    local novo = n(sheet[base .. "Bonus"]) - v
+                    local novo = n(sheet[base .. CAMPO_AUTO_ATRIBUTO]) - v
                     if novo < 0 then novo = 0 end
-                    sheet[base .. "Bonus"] = novo
+                    sheet[base .. CAMPO_AUTO_ATRIBUTO] = novo
                     sheet[base .. "TetoRacial"] = 0
                 end
                 sheet.atributoRacialLancado = ""
@@ -7924,7 +8025,7 @@
                         local campoLancado = base .. "BonusDePoder"
                         local lancado = n(sheet[campoLancado])
                         if desejado ~= lancado then
-                            local campoBonus = base .. "Bonus"
+                            local campoBonus = base .. CAMPO_AUTO_ATRIBUTO
                             sheet[campoBonus] = n(sheet[campoBonus]) + (desejado - lancado)
                             sheet[campoLancado] = desejado
                         end
@@ -13305,7 +13406,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.48.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -13758,9 +13859,13 @@
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
+                                <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="client" field="carismaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="carismaTotal" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="client" field="carismaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
                                 </layout>
                             </layout>
 
@@ -13796,9 +13901,13 @@
                                     <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                 </edit>
                             </rectangle>
-                            <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
+                            <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="client" field="constituicaoAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
+                                <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                             <layout align="left" width="86">
-                                <label align="client" field="constituicaoTotal" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                <label align="client" field="constituicaoTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
                             </layout>
                             <label align="client" text="Não possui perícias vinculadas (regra do sistema)" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" vertTextAlign="center" horzTextAlign="trailing" margins="{left=10}"/>
                         </layout>
@@ -13819,9 +13928,13 @@
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
+                                <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="client" field="destrezaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="destrezaTotal" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="client" field="destrezaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
                                 </layout>
                             </layout>
 
@@ -13858,9 +13971,13 @@
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
+                                <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="client" field="forcaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="forcaTotal" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="client" field="forcaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
                                 </layout>
                             </layout>
 
@@ -13897,9 +14014,13 @@
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
+                                <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="client" field="inteligenciaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="inteligenciaTotal" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="client" field="inteligenciaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
                                 </layout>
                             </layout>
 
@@ -13936,9 +14057,13 @@
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
+                                <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="client" field="manipulacaoAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="manipulacaoTotal" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="client" field="manipulacaoTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
                                 </layout>
                             </layout>
 
@@ -13975,9 +14100,13 @@
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
+                                <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="client" field="sabedoriaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="sabedoriaTotal" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="client" field="sabedoriaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
                                 </layout>
                             </layout>
 
