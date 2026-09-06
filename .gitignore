@@ -17,3 +17,13 @@ desktop.ini
 .idea/
 *.swp
 *~
+
+# O driver de video recria esta pasta dentro do projeto porque o rdk roda
+# com a pasta do projeto como diretorio de trabalho. MEDIDO em 05/09/2026:
+# ela NAO entra no .rpk (a checagem 36 abre o zip e confirma), mas tambem
+# nao e nossa.
+NVIDIA Corporation/
+
+# Cache do Python das checagens, quando rodadas de dentro do projeto
+__pycache__/
+*.pyc

@@ -1,0 +1,355 @@
+FICHA DE PERSONAGEM - PETRICHOR - v0.47.0
+
+
+=======================================================================
+ 1. INSTALANDO
+=======================================================================
+
+  1. Se existir uma pasta "output/" dentro do projeto, APAGUE-A.
+     Ela causa o erro de "form declarado duas vezes".
+
+  2. rdk p     (PREPARE - obrigatorio antes do resto)
+  3. rdk i     (compila e instala)
+
+O passo 2 nao e opcional. O "rdk p" e quem cria a pasta "sdk/" dentro do
+projeto, e sem ela o "rdk c" e o "rdk l" abortam - as vezes em silencio,
+sem dizer o que faltou.
+
+ATENCAO: versoes antigas deste arquivo mandavam rodar "rdk n" para criar
+um projeto novo. ESSE COMANDO NAO EXISTE. O "rdk -?" do 3.7b lista, e
+sao so estes:
+
+  -C<OMPILE>   -L<INT>   -I<NSTALL>   -P<REPARE>
+  -PDF         -LFM      -BUILDREP    -SCANREP     -H<ELP>
+
+Quem faz o papel de "criar projeto novo" e o -P: numa pasta VAZIA, o
+"rdk p" deixa um module.xml de exemplo e a pasta sdk/, e a propria saida
+dele diz "Edite o arquivo module.xml para personalizar seu projeto".
+(Medido nesta maquina em 03/09/2026, nao lembrado.)
+
+
+=======================================================================
+ 2. SE VOCE ESTA VENDO O ERRO "A versao do SDK usado pelo projeto e
+    diferente de 3.7b"
+=======================================================================
+
+Esse erro NAO vem deste pacote. O module.xml daqui ja declara
+sdkVersion="3.7b", que e a versao do seu rdk.
+
+O erro vem de RESIDUOS do projeto antigo na pasta onde voce esta
+rodando o rdk. Um projeto rdk guarda arquivos do SDK dentro da propria
+pasta, e esses arquivos NAO vem no zip - eles sao criados pelo rdk na
+sua maquina. Se a pasta veio sincronizada de outro PC (OneDrive/git),
+ela carrega o SDK velho junto.
+
+CAMINHO RECOMENDADO - consertar a pasta atual:
+
+  1. Apague a pasta "output/".
+  2. Apague a pasta "sdk/" que esta DENTRO do projeto (NAO e a sua
+     instalacao em AppData\Local\FirecastSDK3).
+  3. rdk p     (recria o sdk/ na versao certa)
+  4. rdk i
+
+  Se o "rdk p" der erro, copie a mensagem inteira - o texto do erro diz
+  o que ele nao conseguiu converter.
+
+CAMINHO ALTERNATIVO - comecar de uma pasta limpa:
+
+  1. Crie uma pasta NOVA e vazia, de preferencia FORA do OneDrive.
+     Ex.: C:\Dev\Petrichor
+     (OneDrive sincronizando durante a compilacao ja causou problema.)
+  2. rdk p     dentro dela
+  3. Copie o CONTEUDO deste pacote para la, SOBRESCREVENDO o module.xml
+     de exemplo. Os arquivos vao na RAIZ do projeto - nao deixe uma
+     pasta "petrichor_ficha" no meio do caminho.
+  4. rdk i
+
+
+=======================================================================
+ 3. DEPOIS DE INSTALAR
+=======================================================================
+
+FECHE O FIRECAST POR COMPLETO e abra de novo. Nao basta fechar e
+reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
+vendo a versao antiga, achando que a instalacao falhou.
+
+A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
+disser v0.47.0, o que esta rodando nao e este pacote.
+
+
+=======================================================================
+ 4. ESTRUTURA DO PACOTE
+=======================================================================
+
+  module.xml                            manifesto (sdkVersion 3.7b, v0.47.0)
+  ficha.lfm                             ficha completa, 10 abas
+  LEIA-ME.txt                           este arquivo
+  CHANGELOG.md                          o que mudou em cada versao, e por que
+
+  itens/  (5 templates de linha de lista)
+    itemPericia.lfm                     pericia
+    itemQualidadeDefeito.lfm            qualidade / defeito
+    itemCaracRacial.lfm                 caracteristica racial
+    itemHabilidade.lfm                  habilidade
+    itemCriatura.lfm                    linha da lista de criaturas
+
+  fonts/  (8 arquivos, 5 familias)
+    Cinzel e EB Garamond vem em Regular e Bold; Cinzel Decorative tambem.
+    Marcellus SC e Petrichor Simbolos so tem Regular - o negrito deles e
+    sintetizado pelo renderizador, e sintetico e ~6% mais largo que o
+    desenhado (a checagem 35 desconta isso ao medir rotulo).
+    Petrichor Simbolos tem 17 KB: so os 67 glifos que a ficha usa.
+
+  imagens/  (111 arquivos)
+    10 icones de aba em 2 estados (ativa / inativa), a moldura do retrato,
+    o brasao do cabecalho e os 30 selos das divindades EM DOIS TAMANHOS:
+    selo_<deus>.png com 64x64, para o painel de detalhe do catalogo, e
+    selo38_<deus>.png com 38x38, para o cabecalho e para o seletor.
+    Sao dois arquivos e nao um escalado porque a mesa decidiu
+    style="originalSize" para arte de pacote: mandar o de 64 para o
+    cabecalho de 38 o desenharia CORTADO. A checagem 46 confere o tamanho
+    de cada PNG contra o papel que ele exerce.
+    Mais os 10 brasoes das racas JOGAVEIS (brasao_raca_<raca>.png, 96x96),
+    no card da aba 04. As racas nao jogaveis nao tem brasao de proposito:
+    ninguem as escolhe na criacao, e escudo generico repetido nao
+    identifica nada. A checagem 48 cobra que nenhuma jogavel fique de
+    fora - uma sem, ao lado de nove com, e pior que nenhuma ter. Caminho relativo a raiz do plugin; copie a
+    pasta inteira. A moldura tem centro TRANSPARENTE: ela e desenhada por
+    cima do campo de imagem, e e o alfa que deixa o retrato aparecer.
+
+    TROCAR O BRASAO DO CABECALHO pelo da sua mesa:
+      1. salve o seu como PNG de 38 x 38 pixels, com FUNDO TRANSPARENTE
+         (o cabecalho e #0D1317; fundo branco ou preto chapado vai
+         aparecer como um quadrado em volta do desenho);
+      2. sobrescreva imagens/brasao_petrichor.png com ele, mantendo o
+         nome do arquivo;
+      3. rode "rdk i" na pasta do projeto e reabra o Firecast.
+    Nada mais precisa mudar: o XML aponta para esse nome fixo, e ele
+    aparece nos dois lados do titulo em todas as abas. Se o seu desenho
+    tiver muito detalhe fino, confira como ele fica nos 38px antes de
+    entregar para a mesa - o que some nesse tamanho some para todos.
+
+  regras e catalogos  (14 arquivos .lua na raiz)
+    dadosSistema.lua                    nivel / rank / proficiencia
+    calculos.lua                        Hp, Mp, Ap, Pv, defesas, deslocamento
+    catalogoPericias.lua                64 pericias por atributo
+    catalogoQualidadesDefeitos.lua      qualidades e defeitos
+    catalogoRacas.lua                   29 racas
+    catalogoTracos.lua                  36 tracos de personalidade
+    catalogoClasses.lua                 12 classes / 36 subclasses
+    catalogoDeuses.lua                  30 divindades
+    catalogoPoderes.lua                 49 poderes
+    catalogoBestiario.lua               tamanho, natureza, intelecto, dieta,
+                                        tipo, raridade, rank e montarias
+    catalogoProgressiva.lua             habilidades raciais progressivas e as
+                                        cinco fases da lua do lobisomem
+    catalogoItens.lua                   250 entradas de loja (128 itens em
+                                        seus niveis de qualidade)
+    catalogoEncantamentos.lua           64 encantamentos
+    catalogoHabilidades.lua             tabela de balanceamento por rank
+                                        (habilidades gastam Aura; feiticos,
+                                        Mana)
+
+
+=======================================================================
+ 5. SOBRE OS DOIS CATALOGOS REGERADOS
+=======================================================================
+
+catalogoDeuses.lua e catalogoPoderes.lua nao vieram no zip da v0.12.1
+(sao posteriores) e foram regerados a partir do .bib. Conferencias que
+passaram:
+
+  - as 30 chaves batem 1:1 com os cards rectDeus_<chave> do ficha.lfm
+    (hoje isso e a checagem 25, e roda a cada entrega);
+  - os 18 kits tem 5 slots, sempre 3 ativos e 2 passivos, como manda o
+    livro;
+  - todo poder citado em kit existe no catalogo;
+  - Uhtris e Unaris da 7 paragrafos e 3.752 caracteres, exatamente o
+    numero anotado no changelog da v0.13.5 original.
+
+Detalhes das divergencias de grafia do proprio .bib estao no CHANGELOG.
+
+
+=======================================================================
+ 6. O QUE TESTAR PRIMEIRO
+=======================================================================
+
+NOVO NA v0.47.0 - as 29 racas tem brasao, e o mestico mostra os DOIS.
+Confira:
+
+  1. ABA 04: escolha uma raca jogavel. Ao lado dos cards SITUACAO e
+     ATRIBUTOS BASE aparece um ESCUDO com o brasao dela - a bigorna e a
+     montanha dos Anoes, o manto e a onda dos Selkies, as presas e a lua
+     dos Vampiros. O formato e escudo, e nao medalhao redondo como o dos
+     deuses, para os dois nunca se confundirem.
+  2. Escolha agora uma raca NAO jogavel - Centauros, Ghiscari, Ursaris,
+     Goblins... Na v0.46.0 elas nao tinham escudo; agora tem. Elas ENTRAM
+     na criacao pela qualidade "Sangue das racas antigas" (como raca
+     principal) e pela "Mestico" (como segunda raca), entao ficar sem arte
+     era um erro nosso. As sete Primordiais (Dragoes, Fenix, Krakens...)
+     tambem ganharam escudo, pelo lore.
+  3. MESTICO: compre a qualidade "Mestico" na aba 03, volte a aba 04 e
+     defina a heranca. Um SEGUNDO escudo aparece na ponta DIREITA do card,
+     com a arte da segunda raca. Os dois juntos contam a heranca inteira.
+  4. Agora DESFACA: limpe a heranca, ou remova a qualidade Mestico. O
+     escudo da direita tem de SUMIR e o texto reocupar a linha. Se ele
+     ficar la, avise - e o tipo de sobra que ninguem percebe sozinho.
+
+NOVO NA v0.45.2 - o seletor ganhou a opcao AUTOMATICO, no topo, e ela
+mostra o selo que produz hoje. Sem ela, quem escolhesse um selo nunca
+mais voltava a seguir a proclamacao. E o cabecalho passa a reaplicar o
+selo depois de abrir a ficha: numa ficha proclamada ele aparecia com o
+brasao ate o primeiro recalculo.
+
+NOVO NA v0.45.1 - o clique do selo, que na v0.45.0 nao funcionava. O
+evento estava num <layout>, e neste SDK layout nao recebe clique: o
+seletor nao abria E o Lua nao achava a imagem de dentro para trocar o
+selo. Agora e um <rectangle>, que e o que a ficha usa nos outros 1751
+cliques dela. A checagem 47 passa a proibir onClick em <layout>.
+
+NOVO NA v0.45.0 - o selo do cabecalho e do personagem. Confira:
+
+  1. CLIQUE no brasao ao lado de "CRONICAS DE PETRICHOR", em qualquer aba.
+     Abre o seletor com o que o personagem pode exibir: o brasao da mesa,
+     o Aspecto Divino dele e cada divindade que o abencoou. O que estiver
+     em uso fica com a borda dourada.
+  2. Numa ficha SEM vinculo nenhum, o seletor abre explicando onde se
+     ganha um: Aspecto Divino na secao I, bencao trocando 3 Favores na
+     secao IX.
+  3. PROCLAMACAO: peca ao mestre para proclamar o personagem na secao IX.
+     Sem voce escolher nada, o cabecalho passa sozinho a exibir o selo da
+     divindade que proclamou - a proclamacao e marco raro e aparece na
+     ficha inteira.
+  4. Peca ao mestre para REMOVER uma bencao cujo selo voce estava
+     exibindo: o cabecalho volta ao padrao no mesmo recalculo, em vez de
+     ficar mostrando o selo de um vinculo que nao existe mais.
+
+NOVO NA v0.44.1 - o panteao inteiro selado. Confira:
+
+  1. Abra o catalogo de divindades e percorra a lista DE CIMA A BAIXO. As
+     9 primordiais (Asta, Bran, Erinor, Isydras, Khelion, Oskarion,
+     Tenebria, Uhtris e Unaris, Zeno) e as 3 menores (Haliana, Morgara,
+     Vista) agora tem selo proprio, e nao mais o brasao generico. Nenhum
+     nome do catalogo repete selo com outro.
+  2. NOCTEFIR foi refeito: agora e o cavalo Erebo empinado com a coroa
+     solar do elmo atras, como na arte do livro. O anterior era um elmo
+     generico que nao dizia nada da divindade.
+  3. Se algum dia entrar um deus novo no catalogo SEM selo, ele aparece
+     com o brasao da mesa e a checagem 46 acusa a falta antes de o
+     pacote sair.
+
+NOVO NA v0.44.0 - os selos das divindades. Confira:
+
+  1. ABA 09 (FAVORES) ou o cabecalho da aba 05: abra o catalogo de
+     divindades e clique em qualquer uma das 18 que TEM KIT. No painel
+     da direita, ao lado do nome, aparece o selo dela a 64px - Oduwa
+     tem o hipopotamo dos rios, Mungus a fechadura com dois olhos,
+     Aslot as tres mascaras afundando, Grun a montanha com a forja.
+  2. Clique numa divindade SEM kit (Asta, Bran, Tenebria...): o selo
+     cai para o brasao da mesa. Nenhuma fica sem imagem.
+  3. Na LISTA da esquerda continua so o nome. Os selos foram medidos a
+     22px numa folha de contato e viram todos o mesmo borrao dourado -
+     imagem que nao identifica e peso morto fingindo de informacao.
+
+NOVO NA v0.43.0 - as primeiras artes da ficha. Confira:
+
+  1. O CABECALHO, em qualquer aba: um brasao de cada lado de "CRONICAS DE
+     PETRICHOR" - gota de chuva caindo sobre ardosia rachada, lua
+     crescente e coroa de louros. Sao DOIS porque o titulo so fica
+     centrado se sobrar o mesmo dos dois lados.
+  2. ABA 01, o retrato: a moldura continua a linha fina de sempre. A
+     versao em filigrana foi testada na v0.43.0 e DESCARTADA na mesma
+     sessao - ficou pesada demais ao lado do resto da ficha, que e
+     sobria. Fica o registro para ninguem tentar de novo sem saber que
+     ja se tentou.
+
+NOVO NA v0.42.1 - o que a PRIMEIRA passada na tela devolveu. A v0.42.0
+subiu com 35 checagens, 155 assercoes e 123 mutacoes verdes, e mesmo
+assim a tela achou cinco coisas. Confira nesta ordem:
+
+  1. ABA 04, raca ELFOS: sem nada escolhido, as DUAS alternativas
+     aparecem no bloco roxo, cada uma com "ALTERNATIVA - ESCOLHA UMA
+     ACIMA" (confira o acento: na v0.42.0 saia embaralhado). Clique em
+     MAGIA INATA la em cima: a CONEXAO COM A NATUREZA some da lista, e
+     nao sobra buraco no fim dela. Clique de novo para desfazer e as
+     duas voltam.
+  2. ABA 05, catalogo, divindade RAS'BUZ: o slot 4 tem TRES opcoes
+     (agua, terra, ar) e o rotulo agora diz "um dos tres". Os outros 19
+     slots com "ou" continuam "um dos dois".
+  3. ABA 05, painel de cima: se os DOIS poderes de atributo vierem da
+     mesma divindade, o contador avisa em dourado. O livro [2.4] nao
+     permite; a v0.42.0 so recusava a compra nova e ficava calada
+     sobre a ficha que ja estava assim.
+  4. ABA 05, catalogo com nada selecionado: o lado direito nao mostra
+     mais o esqueleto vazio de "PROGRESSAO / NIVEL 1..5".
+  5. ABA 08, editar criatura: a linha cinza que explica o rank ("Rank E
+     - forca de um mortal jovem comum...") tem a largura inteira. Na
+     v0.42.0 ela dividia a fileira com os botoes e vinha cortada.
+
+NOVO NA v0.42.0 - a rodada da bateria de testes (37 achados de
+04/09/2026, todos corrigidos). O que conferir na tela, nesta ordem:
+
+  1. ABA 06 - as contas embaixo dos cards FECHAM com o numero. Equipe
+     uma armadura pesada: o deslocamento mostra "raça 10 + Des 5 + rank 1
+     − armadura 10" e o card diz 6. Mana: "15 + idade 115 [60 anos] +
+     (7 × 2)". Digite 201 no NIVEL: o campo volta a 20 e AVISA ao lado.
+  2. ABA 01 com a ficha FINALIZADA, num jogador comum: NIVEL, IDADE,
+     ANIVERSARIO e os dois "AJUSTE DO MESTRE" da aba 02 ficam cinza e
+     nao aceitam digitacao. XP continua livre (decisao da mesa: o
+     jogador anota). RACA e CLASSE sao preenchidas pela aba 04, sempre.
+  3. ABA 02 - o painel de pontos agora mostra a nota de rodape (e o
+     aviso de limite quando voce estoura um atributo); os blocos de
+     atributo sem pericia sao compactos; com Linhagem de Unaris aparece
+     o seletor de ESCOLA COM VANTAGEM.
+  4. ABA 04, raca ELFOS: o bloco "escolha uma" entre Magia inata e
+     Conexao com a Natureza. Sem escolher, nenhuma das duas vale.
+  5. ABA 05 - CONCEDIDOS agora tem caixa e "0". No catalogo, cada
+     divindade mostra 5 slots, com "SLOT n - um dos dois" (ou tres)
+     onde o livro
+     escreve OU; o card que acende e o do kit certo. Comprar dois
+     poderes de atributo do MESMO aspecto e recusado (o mestre libera
+     com AUTORIZAR); comprar as duas alternativas de um slot AVISA.
+  6. ABA 08 - reabra uma criatura salva: o botao "O QUE FICOU PARA
+     VOCE" esta la, e abre numa coluna a direita sem esconder os campos.
+     APLICAR de novo nao apaga um atributo que voce digitou. Constructo
+     mostra "IMUNE: telepatia, empatia" no card e no editor.
+  7. Redimensione a janela para 1366x768 em OUTRA aba e entre na 06: os
+     quatro cards de recursos cabem, sem trocar de aba e voltar.
+
+NOVO NA v0.41.1 - texto de item. Abra a loja, va em Consumiveis e
+confira o painel de detalhe da GRANADA "Lendaria" e da BOMBA EOLICA
+"Superior": o campo EFEITO tem de acabar no texto do proprio item. Ate a
+v0.41.0 os dois traziam junto a secao SEGUINTE do livro - a Granada
+carregava cinco paragrafos sobre "Pergaminhos de habilidades". A checagem
+40 passou a cobrar isso contra os titulos de secao do proprio livro.
+
+NOVO NA v0.41.0 - slots de encantamento. Abra a aba Inventario, va na
+loja e confira no painel de detalhe:
+
+  - um item "Otima" (ex.: Armadura leve) deve mostrar
+        SLOTS DE ENCANTAMENTO   0   = qualidade Ótima 0 + material Incomum 0
+    Ate a v0.40.2 ele dizia "1 (pela qualidade Ótima)", que contrariava a
+    tabela do livro [2.8];
+  - a Granada Excepcional deve mostrar 1, e a Granada Lendaria tambem;
+  - no editor de um item ja na mochila, SLOTS MAXIMOS continua editavel -
+    e a valvula de escape para item forjado com material Raro ou melhor.
+
+NOVO NA v0.40.0 - a barra de abas. Redimensione a janela do Firecast e
+veja a barra acompanhar: os botoes encolhem ate o piso e, quando aperta,
+o ICONE some primeiro e o texto nunca. Em 1366 de largura todas as dez
+abas tem de caber com o nome inteiro.
+
+SEMPRE VALE - a aba de Poderes, que depende dos catalogos regerados.
+Abra o popup de Aspecto Divino e confira:
+
+  - os 30 cards aparecem, separados em primordiais / grandes / menores;
+  - so os 18 grandes tem o botao de escolha ativo;
+  - primordiais e menores mostram o MOTIVO do bloqueio, nao so o botao
+    apagado;
+  - o kit de um deus grande mostra 5 linhas com (passivo) / (ativo) ao
+    lado;
+  - Noctefir, Nellios e Merewen tem slot com escolha - deve aparecer
+    "X ou Y";
+  - a historia rola inteira, sem buraco entre paragrafos.
+
+Se algo aparecer errado, manda o print.

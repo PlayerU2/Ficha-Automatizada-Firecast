@@ -15,6 +15,13 @@
     - descricao (S)
     - origem    (S) de qual raca veio (usado na heranca mestica)
     - modo      (S) "Escolhida" / "Sorteada" (vazio quando nao e mestico)
+    - alternativa (S) "sim" / "pendente" / "" — o "ou" do livro (Elfos:
+                    Magia inata OU Conexao com a Natureza). MARCADOR ASCII
+                    de proposito: separa o valor logico do texto de tela, e
+                    a frase acentuada e montada aqui dentro. "pendente" so
+                    existe enquanto ninguem escolheu; escolhida uma, a outra
+                    nem entra na lista (ficha.lfm,
+                    preencherListaCaracsRaciais).
     - bloqueada (B) true = existe, mas nao se aplica (ex.: Favorecimento
                     divino num personagem mestico)
 -->
@@ -26,7 +33,15 @@
             local selo = "";
             local modo = tostring(sheet.modo or "");
             local origem = tostring(sheet.origem or "");
-            if modo ~= "" then
+            local alt = tostring(sheet.alternativa or "");
+            if alt == "sim" then
+                selo = "ALTERNATIVA ESCOLHIDA";
+            elseif alt == "pendente" then
+                -- so aparece enquanto NADA foi escolhido: as duas ficam na
+                -- lista para o jogador ler antes de decidir. Escolhida uma, a
+                -- outra sai da lista inteira (v0.42.1, pedido na tela).
+                selo = "ALTERNATIVA — ESCOLHA UMA ACIMA";
+            elseif modo ~= "" then
                 selo = modo:upper();
                 -- Sorteada = lacrada: o card deixa isso explicito, para o
                 -- jogador nao procurar um botao de trocar que nao existe.
@@ -60,7 +75,24 @@
         <layout align="client" margins="{left=12,right=12,top=7,bottom=7}">
             <layout align="top" height="20">
                 <label name="lblCaracNome" align="left" width="300" field="nome" text="" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="14" fontStyle="bold" vertTextAlign="center"/>
-                <label name="lblCaracSelo" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" vertTextAlign="center"/>
+                <!-- LARGURA FIXA, E ESTA E A CONFIGURACAO QUE A TELA APROVOU.
+                     Ate a v0.42.0 este selo era align="client" e saia
+                     embaralhado ("ALTERNATIVA NÃƒO ESCOLHIDA â€" ESCOLHA
+                     ACIMA"). O mecanismo NAO foi isolado - morreram, uma a
+                     uma e por medicao, a tese do string.upper (o botao da
+                     loja escreve "UMA-MÃO" certo), a da fonte (o ttf.py
+                     mostra Ã, ç e — em Marcellus SC), a do ida-e-volta pelo
+                     no ("Médio" do gerador volta certo) e a da compilacao (os
+                     bytes no output/ estao corretos). O que a sonda de
+                     05/09/2026 MOSTROU foi o texto voltar ao normal com o
+                     rotulo em align="left" com largura declarada. Como o
+                     diagnostico nao fechou, o que vai para a mesa e a forma
+                     OBSERVADA funcionando, e nao a que eu deduziria.
+                     Largura: o maior selo possivel mede 268px com a fonte
+                     real (medido no ttf.py); 330 deixa folga sem truncar. A
+                     checagem 45 cobra a forma. -->
+                <label name="lblCaracSelo" align="left" width="330" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center"/>
+                <label align="client" text="" hitTest="false"/>
             </layout>
             <label align="client" field="descricao" text="" fontFamily="EB Garamond" fontColor="#DCD3EC" fontSize="13" wordWrap="true" vertTextAlign="leading"/>
         </layout>

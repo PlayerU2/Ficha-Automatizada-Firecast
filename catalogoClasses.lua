@@ -28,7 +28,10 @@ CatalogoClasses.NIVEL_MIN_PRIMEIRA_PARA_SEGUNDA = 4
 
 CatalogoClasses.classes = {
     {
-        nome = [=[Artificie]=],
+        -- GRAFIA (decisao da mesa, 05/09/2026): "Artíficie", como o livro
+        -- escreve na maioria das vezes. Fichas antigas gravaram "Artificie"
+        -- em classe1Nome/classe2Nome; repararNosAntigos() converte.
+        nome = [=[Artíficie]=],
         subclasses = {
             {
                 nome = [=[Mestre da forja]=],

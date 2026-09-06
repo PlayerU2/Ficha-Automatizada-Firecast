@@ -1,0 +1,11 @@
+# NUNCA converter quebra de linha.
+# Este projeto tem checagens que medem o arquivo byte a byte (largura de
+# texto pelo TTF real, atributo com quebra de linha, contagem de caracteres).
+# Deixar o git trocar LF por CRLF muda o que a regua le. Guardamos os bytes
+# exatamente como o rdk os compila.
+* -text
+
+*.png binary
+*.ttf binary
+*.rpk binary
+*.dlua binary

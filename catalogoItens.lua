@@ -1,6 +1,17 @@
 -- catalogoItens.lua
--- Extraido da secao "Equipamentos" do .bib: 68 itens, cada um em duas
--- qualidades (Comum e Otima).
+-- Extraido das secoes de loja do .bib.
+--
+-- MEDIDO em 03/09/2026: 250 entradas, 128 nomes distintos. O cabecalho
+-- antigo dizia "68 itens, cada um em duas qualidades" (= 136) e ficou
+-- para tras conforme consumiveis, kits e metamorfoses entraram. Numero
+-- de cabecalho que ninguem recontou e a mesma classe de bug do LEIA-ME
+-- desatualizado: parece dado e nao e.
+--
+-- As qualidades NAO sao duas: alem de Comum/Otima, ha a escala de pocao
+-- (Amadora/Mediana/Superior, livro 2.8:399), os ranks das metamorfoses,
+-- e os niveis proprios da Granada (Excepcional, Lendaria) e da Montaria
+-- Adulta (Incomum). A checagem 38 exige que toda qualidade daqui seja
+-- conhecida — typo novo falha o build em vez de virar zero slot calado.
 --
 -- Campos possiveis por item:
 --   durabilidade   pontos de uso antes de quebrar
@@ -949,7 +960,7 @@ CatalogoItens.itens = {
   {
     nome = "Elixir da Ira",
     categoria = "Consumíveis",
-    qualidade = "Mediano",
+    qualidade = "Mediana",
     slot = "consumivel",
     preco = { lunaris = 25 },
     efeito = "Ao ser consumido você entra automaticamente na condição [Enfurecido] por 3 turnos.",
@@ -1366,7 +1377,7 @@ CatalogoItens.itens = {
     qualidade = "Superior",
     slot = "consumivel",
     preco = { aureus = 1 },
-    efeito = "Ao cair sobre um alvo aplica uma explosão de [Vento] que aplica 5d6 de dano em um raio de 6 metros; Cria um pequeno tufão que irá interagir com o terreno Granadas: Granadas são itens consumíveis com objetivo destrutivo, sua diferença para as bombas é que as bombas elementais são feitas por alquimistas, enquanto granadas são criadas por mecânicos.",
+    efeito = "Ao cair sobre um alvo aplica uma explosão de [Vento] que aplica 5d6 de dano em um raio de 6 metros; Cria um pequeno tufão que irá interagir com o terreno",
     subtipo = "Bomba",
   },
   {
@@ -1405,13 +1416,13 @@ CatalogoItens.itens = {
   {
     nome = "Granada",
     categoria = "Consumíveis",
-    qualidade = "Artíficie",
+    qualidade = "Lendária",
     slot = "consumivel",
     preco = { aureus = 1 },
     areaRaio = 6,
     danoArea = "11d6",
     areaElemento = "Neutro",
-    efeito = "Consumível; Qualidade Lendária; [2x Aço e 2x Pólvora]; Criação meta 30; Aplica 11d6 de dano [Neutro] em um raio de 6 metros; Pode ser imbuida com elementos ou encantamentos temporários Pergaminhos de habilidades Pergaminhos de habilidades são objetos feitos por personagens da subclasse Estudioso (Devoto), que consistem em uma série de inscrições arcanas em um pedaço de papel preparado que captura a aura de um Ser/Criatura durante um uso de sua habilidade. Cada pergaminho funciona como um consumivel , onde seu usuário o utiliza para ter a capacidade de usar uma vez a habilidade ali presente. É possível armazenar em um pergaminho habilidades de qualquer tipo ou rank, dependendo única e exclusivamente da capacidade do Estudioso em preparar o objeto e encontrar um Ser ou Criatura com uma skill do respectivo nível. Restrição: somente é permitido utilizar os pergaminhos de habilidade por personagens que saibam ler (3 de Inteligência + perícia \"Acadêmicos\"). Preço dos Pergaminhos: Rank D: 25 Lunaris Rank C: 1 Aureu Rank B: 1 Aureus e 25 Lunaris Rank A: 2 Aureus Estoque de pergaminhos:",
+    efeito = "Consumível; Qualidade Lendária; [2x Aço e 2x Pólvora]; Criação meta 30; Aplica 11d6 de dano [Neutro] em um raio de 6 metros; Pode ser imbuida com elementos ou encantamentos temporários",
   },
   {
     nome = "Armadura de areia",
@@ -2060,6 +2071,295 @@ CatalogoItens.itens = {
     preco = { aureus = 1 },
     efeito = "Realiza um vôo por até 2 turnos e máxima de 14 metros, respeitando o limite de seu deslocamento +3 metros para cada ação de movimentação.",
     subtipo = "Pergaminho",
+  },
+
+  -- ------------------------------------------------------------------
+  -- SECOES RECUPERADAS EM 21/08/2026 (v0.34.0)
+  --
+  -- Estas quatro secoes da Loja - Criaturas (espolios), Montarias,
+  -- Utilidades e Kits - NUNCA tinham chegado ao catalogo. A extracao
+  -- original entendia so o formato "[Qualidade - Preco]" na mesma linha do
+  -- efeito, e elas escrevem "Preço:" e o valor em linhas separadas. Foram
+  -- descartadas em silencio: 36 linhas compraveis.
+  --
+  -- Entram no FIM da tabela de proposito. O popup do catalogo referencia
+  -- cada item pelo INDICE (verDetalheItem(N), 214 chamadas escritas no XML);
+  -- inserir no meio deslocaria todas elas.
+  --
+  -- Nenhuma tem "slot": sela equipa na MONTARIA e nao no personagem, e
+  -- kits, utilidades e espolios vivem na mochila. Sem slot, a ficha nao
+  -- oferece equipar - que e o certo.
+  -- ------------------------------------------------------------------
+  {
+    nome = "Chifres",
+    categoria = "Espólios",
+    qualidade = "Comum",
+    preco = { lunaris = 2 },
+    efeito = [==[unidade padrão de chifres de criaturas comuns, podendo ser usadas como ingredientes para alimentação, vestuários, poções ou forja.]==],
+  },
+  {
+    nome = "Couro",
+    categoria = "Espólios",
+    qualidade = "Comum",
+    preco = { lunaris = 5 },
+    efeito = [==[unidade padrão de couro tratado de uma criatura comum, usado como ingrediente para vestuários ou forja.]==],
+  },
+  {
+    nome = "Dentes",
+    categoria = "Espólios",
+    qualidade = "Comum",
+    preco = { florins = 14 },
+    efeito = [==[unidade padrão de dentes de criaturas comuns, usados como ingredientes para poções, alimentação ou forja.]==],
+  },
+  {
+    nome = "Ossos",
+    categoria = "Espólios",
+    qualidade = "Comum",
+    preco = { florins = 12 },
+    efeito = [==[unidade padrão de ossos de criaturas comuns, usados como ingredientes para alimentação, vestuários, poções ou forja.]==],
+  },
+  {
+    nome = "Unha/Garras",
+    categoria = "Espólios",
+    qualidade = "Comum",
+    preco = { florins = 8 },
+    efeito = [==[unidade de unhas de criaturas comuns, usadas como ingredientes para alimentação, vestuários, poções ou forja.]==],
+  },
+  {
+    nome = "Carroça",
+    categoria = "Montarias",
+    qualidade = "Comum",
+    preco = { lunaris = 45 },
+    efeito = [==[Carroça de madeira, puxada por até 2 criaturas; Possuí 10 espaços para pessoas ou baús/barris]==],
+  },
+  {
+    nome = "Carroça",
+    categoria = "Montarias",
+    qualidade = "Ótima",
+    preco = { aureus = 1, lunaris = 20 },
+    efeito = [==[Carroça de madeira, puxada por até 4 criaturas; Possuí 12 espaços para pessoas ou baús/barris]==],
+  },
+  {
+    nome = "Montaria Adulta",
+    categoria = "Montarias",
+    qualidade = "Comum",
+    preco = { aureus = 2 },
+    efeito = [==[Não-treinado; Rank E; 60 de Vida; 25m de Deslocamento; +2 de Proficiência; 13 de Defesas; 14 pontos de atributos; 0+(Bônus de proficiência)m de bônus de montaria]==],
+  },
+  {
+    nome = "Montaria Adulta",
+    categoria = "Montarias",
+    qualidade = "Incomum",
+    preco = { aureus = 4 },
+    efeito = [==[Treino simples; Rank D; 100 de Vida; 27m de Deslocamento; +4 de Proficiência; 16 de Defesas; 21 pontos de atributos; 1+(Bônus de proficiência)m de bônus de montaria]==],
+  },
+  {
+    nome = "Sela de corrida",
+    categoria = "Montarias",
+    qualidade = "Comum",
+    preco = { lunaris = 30 },
+    durabilidade = 2,
+    efeito = [==[Acessório de montaria; Material comum; Qualidade comum; 02/02 de durabilidade; +02 metros de deslocamento adicional da montaria]==],
+  },
+  {
+    nome = "Sela de corrida",
+    categoria = "Montarias",
+    qualidade = "Ótima",
+    preco = { lunaris = 45 },
+    durabilidade = 3,
+    efeito = [==[Acessório de montaria; Material incomum; Qualidade ótima; 03/03 de durabilidade; +04 metros de deslocamento adicional da montaria]==],
+  },
+  {
+    nome = "Sela de guerra",
+    categoria = "Montarias",
+    qualidade = "Comum",
+    preco = { lunaris = 30 },
+    durabilidade = 2,
+    efeito = [==[Acessório de montaria; Material comum; Qualidade comum; 02/02 de durabilidade; +02 em todas as defesas da montaria]==],
+  },
+  {
+    nome = "Sela de guerra",
+    categoria = "Montarias",
+    qualidade = "Ótima",
+    preco = { lunaris = 45 },
+    durabilidade = 3,
+    efeito = [==[Acessório de montaria; Material incomum; Qualidade ótima; 03/03 de durabilidade; +04 em todas as defesas da montaria]==],
+  },
+  {
+    nome = "Sela de viagem",
+    categoria = "Montarias",
+    qualidade = "Comum",
+    preco = { lunaris = 30 },
+    durabilidade = 2,
+    espacos = 10,
+    efeito = [==[Acessório de montaria; Material comum; Qualidade comum; 02/02 de durabilidade; Adiciona uma mochila com 10 slots carregada pela montaria]==],
+  },
+  {
+    nome = "Sela de viagem",
+    categoria = "Montarias",
+    qualidade = "Ótima",
+    preco = { lunaris = 45 },
+    durabilidade = 3,
+    espacos = 14,
+    efeito = [==[Acessório de montaria; Material incomum; Qualidade ótima; 03/03 de durabilidade; Adiciona uma mochila com 14 slots carregadas pela montaria]==],
+  },
+  {
+    nome = "30m de corda",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { lunaris = 18 },
+    efeito = [==[corda resistente que pode ser usada para amarrar alvos ou objetos para usos diversos.]==],
+  },
+  {
+    nome = "Canoa pequena",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { lunaris = 60 },
+    efeito = [==[uma canoa pequena de madeira, para travessia em rios ou lagos, comporta até 5 adultos.]==],
+  },
+  {
+    nome = "Estadia em uma pensão simples",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { florins = 12 },
+    efeito = [==[preço para um adulto passar uma noite em uma pensão simples, com pouco conforto e nada incluso.]==],
+  },
+  {
+    nome = "Lamparina",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { florins = 6 },
+    efeito = [==[uma lamparina nova, alimentada com óleo e usada como forma de iluminação mais prática que as tochas.]==],
+  },
+  {
+    nome = "Óleo inflamável",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { florins = 6 },
+    efeito = [==[um frasco pequeno de óleo usado para reabastecer lamparinas, fogueiras ou com objetivos incendiários.]==],
+  },
+  {
+    nome = "Presente simples de Latão e Prata",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { lunaris = 3 },
+    efeito = [==[um presente simples, normalmente na forma de um brinco, um anel, uma pulseira ou um colar feito de latão adornado com um detalhe de prata.]==],
+  },
+  {
+    nome = "Roupa simples",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { florins = 8 },
+    efeito = [==[uma muda de roupa simples, normalmente feita de algodão ou lã, no nível que um plebeu comum pode comprar para usar.]==],
+  },
+  {
+    nome = "Vestimenta nobre",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { aureus = 1 },
+    efeito = [==[um traje nobre feito de linho fino, veludo, seda, cetim ou tafetá, pode ser usada no dia-a-dia ou em eventos que não necessitam de maior preparo. Não inclui joias e acessórios.]==],
+  },
+  {
+    nome = "Travessia de barco em um rio",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { florins = 2 },
+    efeito = [==[preço para um adulto atravessar um rio de uma margem a outro em um barco simples ou canoa.]==],
+  },
+  {
+    nome = "Viagem curta em uma carruagem",
+    categoria = "Utilidades",
+    qualidade = "Comum",
+    preco = { florins = 15 },
+    efeito = [==[viagens que durem menos de meio-dia de distância em uma carruagem de transporte para um adulto]==],
+  },
+  {
+    nome = "Kit de acampamento",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 2 },
+    usos = 5,
+    efeito = [==[barraca, saco de dormir e acendedor que permitem até cinco pessoas possam acampar em paz, cada noite consome um uso.]==],
+  },
+  {
+    nome = "Kit de alquimia",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 3 },
+    usos = 5,
+    efeito = [==[um kit que permite a produção de poções mágicas, cada poção produzida com este kit consome um uso]==],
+  },
+  {
+    nome = "Kit de culinária",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 2 },
+    usos = 5,
+    efeito = [==[panelas, temperos e talheres para que um cozinheiro prepare uma refeição completa para até 10 pessoas, cada refeição preparada consome um uso.]==],
+  },
+  {
+    nome = "Kit de cura",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 3 },
+    usos = 5,
+    efeito = [==[gaze, sutura e desinfetante para que seja prestado primeiros socorros e procedimentos simples em um ferido ao custo de 1 uso.]==],
+  },
+  {
+    nome = "Kit de disfarces",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 1 },
+    usos = 5,
+    efeito = [==[maquiagem, peruca falsa, barba falsa e algumas peças de roupas para que uma pessoa se disfarce ao custo de 1 uso.]==],
+  },
+  {
+    nome = "Kit de engenharia",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 2 },
+    usos = 5,
+    efeito = [==[um kit que permite a construção e desarme de minas, granadas e armadilhas ao custo de 1 uso. Também é utilizado para criação ou manutenção de mecanismos industriais.]==],
+  },
+  {
+    nome = "Kit de escalada",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 1 },
+    usos = 5,
+    efeito = [==[composto por equipamentos necessários para um grupo de até cinco pessoas realizarem uma escalada ao custo de 1 uso.]==],
+  },
+  {
+    nome = "Kit de forja",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 2 },
+    usos = 5,
+    efeito = [==[um kit que permite aos ferreiros realizarem reparos e criações de itens e equipamentos, ao custo de 1 uso.]==],
+  },
+  {
+    nome = "Kit de herbalismo",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 1 },
+    usos = 5,
+    efeito = [==[um kit que permite ao usuário realizar a coleta de plantas, frutas e fungos, ao custo de 1 uso.]==],
+  },
+  {
+    nome = "Kit de roubo",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 2 },
+    usos = 5,
+    efeito = [==[gazuas e lâminas finas para que um ladrão possa realizar arrombamentos de portas, janelas e trancas ao custo de 1 uso.]==],
+  },
+  {
+    nome = "Kit de tecelagem",
+    categoria = "Kits",
+    qualidade = "Comum",
+    preco = { lunaris = 2 },
+    usos = 5,
+    efeito = [==[agulhas, carreteis, botões, cadarços e zíperes reunidos em um kit para que alfaiates possam reparar e criarem vestuários, ao custo de 1 uso.]==],
   },
 }
 

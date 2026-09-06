@@ -145,7 +145,7 @@ CatalogoHabilidades.tagsComuns = {
 }
 
 CatalogoHabilidades.tagsClasses = {
-  "Arcanista", "Artífice", "Artista", "Atirador", "Boticário", "Devoto",
+  "Arcanista", "Artíficie", "Artista", "Atirador", "Boticário", "Devoto",
   "Domador", "Duelista", "Espadachim", "Guerreiro", "Ladino", "Senescal",
 }
 

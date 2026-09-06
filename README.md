@@ -9,7 +9,7 @@ número** — para o jogador conferir sem abrir o livro e o mestre auditar de
 relance.
 
 <p align="center">
-  <img alt="versão" src="https://img.shields.io/badge/versão-0.30.1-C9A24B">
+  <img alt="versão" src="https://img.shields.io/badge/versão-0.47.0-C9A24B">
   <img alt="Firecast SDK" src="https://img.shields.io/badge/Firecast%20SDK-3.7b-8A63C9">
   <img alt="Lua" src="https://img.shields.io/badge/Lua-5.3-000080">
 </p>
@@ -55,8 +55,8 @@ relance.
 Precisa do [Firecast SDK 3](https://firecast.com.br) instalado.
 
 ```bash
-git clone https://github.com/SEU-USUARIO/petrichor-ficha.git
-cd petrichor-ficha
+git clone https://github.com/PlayerU2/Ficha-Automatizada-Firecast.git
+cd Ficha-Automatizada-Firecast
 rdk i
 ```
 
@@ -91,9 +91,22 @@ catalogoClasses.lua           12 classes, 36 subclasses
 catalogoPericias.lua          64 perícias por atributo
 catalogoHabilidades.lua       balanceamento de rank, tags e conflitos
 catalogoTracos.lua            36 traços de personalidade com seus opostos
+catalogoBestiario.lua         tipos, ranks e marcas das criaturas
+catalogoProgressiva.lua       progressões que dependem do nível
 itens/                        templates das linhas de lista (perícia, item, qualidade…)
 fonts/                        Cinzel, Cinzel Decorative, Marcellus SC, EB Garamond
+imagens/                      111 arquivos: 30 selos divinos em dois tamanhos,
+                              29 escudos de raça, ícones de aba, moldura, brasão
+sdk/                          SDK do Firecast, versionado de propósito: as baterias
+                              em Lua rodam contra o SDK de verdade, não contra
+                              um dublê que eu escreveria do jeito que me convém
 ```
+
+> **A arte não escala.** A mesa decidiu `style="originalSize"`, então cada peça
+> existe já no tamanho em que aparece — dois tamanhos são dois arquivos. Quem
+> converte a arte crua no PNG instalado é `verif/arte_brasao.py`, no repositório
+> do ferramental, e os números dele foram **medidos** contra a arte já aprovada
+> na tela, não deduzidos.
 
 Os catálogos são **gerados a partir do livro de regras**, não digitados à mão.
 Quando o sistema muda, regera-se o catálogo e a varredura confere se a ficha
@@ -103,39 +116,25 @@ continua coerente.
 
 ## Verificação
 
-O projeto tem duas redes de segurança, e as duas nasceram de bugs reais.
+O ferramental vive **noutro repositório**, ao lado deste, porque a checagem 36
+reprova qualquer coisa que não seja do plugin dentro da pasta do plugin — o
+`rdk` compila a pasta inteira. São três redes, e cada uma pega o que as outras
+não pegam:
 
-### Varredura do catálogo
+| Rede | Mede | Hoje |
+|---|---|---|
+| `verif/verifica.py` | o XML, o empacotamento, o texto que cabe na tela | 41 checagens |
+| `verif/testes.py` | as contas, em Lua puro, fora do Firecast | 188 asserções |
+| `verif/mutacao.py` | se as duas acima realmente mordem | 156 mutações |
 
-Percorre **29 raças, 48 poderes, 36 subclasses e todas as qualidades**,
-aplicando cada uma numa ficha limpa e conferindo se a ficha entrega o que o
-catálogo promete:
+**Toda checagem nasceu de um bug que chegou ao usuário**, e a saída diz de qual.
+Uma checagem que não pega a própria mutação é decorativa, e a bateria de mutação
+existe para descobrir isso — inclusive quando o alvo da mutação apodrece e ela
+para de testar qualquer coisa, o que já aconteceu com seis delas.
 
-```bash
-cd varredura
-lua5.3 varre_tudo.lua
-```
-
-> A pasta `varredura/` **não pode ir para dentro do projeto do plugin**: o
-> Firecast carrega todo `.lua` do pacote, e esses scripts usam `dofile`, que
-> não existe naquele ambiente. Deixe-a ao lado.
-
-### Checagens de empacotamento
-
-Antes de cada entrega, o projeto verifica:
-
-- XML bem-formado em todos os `.lfm`
-- **cada bloco `CDATA` compilado como Lua** — são 1.524, e um `onClick`
-  malformado passa por todas as outras checagens
-- **o bloco `<script>` inteiro compilado**, não um recorte
-- **`local` usada antes de ser declarada** — em Lua isso compila e vira `nil`
-  em execução; já derrubou a ficha quatro vezes
-- nomes de tag duplicados (o Firecast exige nome único)
-- widgets referenciados no Lua mas ausentes do XML
-- `dofile`, `io.open` e afins dentro do pacote
-- valores inválidos em `align`, `horzTextAlign` e `vertTextAlign`
-
----
+A lei que sustenta as três: **verificação mede a saída, não a intenção.** Uma
+checagem que confere se o que eu escrevi é simétrico mede a mim, não o produto,
+e passa verde enquanto o jogador vê lixo na tela.
 
 ## Armadilhas do Firecast
 
@@ -158,6 +157,17 @@ Anotadas aqui porque custaram caro:
   vínculo e só se recupera reabrindo a ficha.
 - **`#texto` conta bytes, não caracteres.** Em português isso são uns 10% de
   diferença.
+- **`<layout>` não recebe `onClick`.** O clique não dispara *e* o Lua não acha
+  os filhos — dois sintomas, uma causa. A ficha tem 1.751 `<rectangle>`
+  clicáveis e zero `<layout>` clicável: o código instalado já dizia qual é o
+  padrão deste SDK.
+- **Irmãos são posicionados na ordem em que aparecem.** Um `align="client"`
+  declarado antes come a linha inteira, e o painel seguinte nasce com largura
+  zero para sempre, sem erro nenhum.
+- **O erro aqui é silencioso.** Widget que não existe devolve `nil`, o
+  `if ~= nil` engole, e a tela mantém o estado anterior — que costuma parecer
+  certo. Por isso a ficha carimba a **versão na tela**: metade das conversas de
+  "continua igual" é versão antiga instalada.
 
 ---
 

@@ -41,6 +41,7 @@ CatalogoRacas.itens = {
         dadoVidaNum = 10,
         deslocamentoTexto = [==[8 metros]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 8 },
         caracteristicas = {
             {
                 nome = "Vigorosos",
@@ -78,6 +79,7 @@ CatalogoRacas.itens = {
         dadoVidaNum = 10,
         deslocamentoTexto = [==[10 metros]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 10 },
         caracteristicas = {
             {
                 nome = "Mestres da domesticação",
@@ -128,14 +130,24 @@ CatalogoRacas.itens = {
         dadoVidaNum = 10,
         deslocamentoTexto = [==[10 metros]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 10 },
+        -- O "OU" DO LIVRO (v0.42.0, B-04). [1.6], Elfos: "[Magia inata] receba
+        -- +1 em testes de magia até o nível 10, a partir do 11 este bônus é
+        -- de +2 OU [Conexão com a Natureza] receba +1 em testes das perícias
+        -- Natureza e Sobrevivência...". E escolha EXCLUSIVA: o elfo fica com
+        -- uma das duas. O extrator quebrou o texto em dois cards e a ficha
+        -- aplicava so a Conexao, sem perguntar. A escolha fica em
+        -- sheet.racaTracoEscolhido; temCaracRacial() so responde true para a
+        -- escolhida. Unico caso em 29 racas (medido em 04/09/2026).
+        escolhaExclusiva = { "Magia inata", "Conexão com a Natureza" },
         caracteristicas = {
             {
                 nome = "Magia inata",
-                descricao = [==[Receba +1 em testes de magia até o nível 10, a partir do 11 este bônus é de +2 OU]==],
+                descricao = [==[Receba +1 em testes de magia até o nível 10, a partir do 11 este bônus é de +2. (Escolha UMA: esta OU Conexão com a Natureza.)]==],
             },
             {
                 nome = "Conexão com a Natureza",
-                descricao = [==[Receba +1 em testes das perícias "Natureza" e "Sobrevivência" até o nível 10, a partir do 11 este bônus é de +2]==],
+                descricao = [==[Receba +1 em testes das perícias "Natureza" e "Sobrevivência" até o nível 10, a partir do 11 este bônus é de +2. (Escolha UMA: esta OU Magia inata.)]==],
             },
             {
                 nome = "Agilidade élfica",
@@ -173,6 +185,7 @@ CatalogoRacas.itens = {
         dadoVidaNum = 8,
         deslocamentoTexto = [==[8 metros (terrestre) / 18 metros (voando)]==],
         dadoVidaTexto = [==[1d8]==],
+        deslocamentoModos = { terrestre = 8, voo = 18 },
         caracteristicas = {
             {
                 nome = "Graciosidade",
@@ -213,6 +226,7 @@ CatalogoRacas.itens = {
         dadoVidaNum = 8,
         deslocamentoTexto = [==[8m]==],
         dadoVidaTexto = [==[1d8]==],
+        deslocamentoModos = { terrestre = 8 },
         caracteristicas = {
             {
                 nome = "Saúde pacífica",
@@ -254,6 +268,7 @@ CatalogoRacas.itens = {
         dadoVidaNum = 10,
         deslocamentoTexto = [==[10m]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 10 },
         caracteristicas = {
             {
                 nome = "Multitarefas",
@@ -292,6 +307,7 @@ CatalogoRacas.itens = {
         dadoVidaNum = 10,
         deslocamentoTexto = [==[10m]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 10 },
         caracteristicas = {
             {
                 nome = "Fisiologia de guerra",
@@ -337,6 +353,7 @@ CatalogoRacas.itens = {
         dadoVidaNum = 12,
         deslocamentoTexto = [==[10m / 20m (aquático)]==],
         dadoVidaTexto = [==[1d12]==],
+        deslocamentoModos = { terrestre = 10, nado = 20 },
         caracteristicas = {
             {
                 nome = "Super força",
@@ -378,6 +395,7 @@ CatalogoRacas.itens = {
         dadoVidaNum = 10,
         deslocamentoTexto = [==[8m (terrestre) / 18m (aquático)]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 8, nado = 18 },
         caracteristicas = {
             {
                 nome = "Super força",
@@ -432,6 +450,7 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
         dadoVidaNum = 12,
         deslocamentoTexto = [==[12m]==],
         dadoVidaTexto = [==[1d12]==],
+        deslocamentoModos = { terrestre = 12 },
         caracteristicas = {
             {
                 nome = "Vigorosos",
@@ -524,6 +543,7 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
         dadoVidaNum = 12,
         deslocamentoTexto = [==[10m (terrestre) / 20m (aéreo)]==],
         dadoVidaTexto = [==[1d12]==],
+        deslocamentoModos = { terrestre = 10, voo = 20 },
         caracteristicas = {
             {
                 nome = "Asas de Aarakocras",
@@ -564,6 +584,7 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
         dadoVidaNum = 10,
         deslocamentoTexto = [==[8m (terrestre) / 24m (aéreo)]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 8, voo = 24 },
         caracteristicas = {
             {
                 nome = "Olhos da verdade",
@@ -621,6 +642,7 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
         dadoVidaNum = 12,
         deslocamentoTexto = [==[6m (terrestre) / 13m (aquático)]==],
         dadoVidaTexto = [==[1d12]==],
+        deslocamentoModos = { terrestre = 6, nado = 13 },
         caracteristicas = {
             {
                 nome = "Pele endurecida",
@@ -659,6 +681,7 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
         dadoVidaNum = 10,
         deslocamentoTexto = [==[8m (terrestre) / 24m (aquático)]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 8, nado = 24 },
         caracteristicas = {
             {
                 nome = "Manipuladoras",
@@ -729,6 +752,7 @@ Tritões:
         dadoVidaNum = 12,
         deslocamentoTexto = [==[24m]==],
         dadoVidaTexto = [==[1d12]==],
+        deslocamentoModos = { terrestre = 24 },
         caracteristicas = {
             {
                 nome = "Aptidão com arcos",
@@ -770,6 +794,7 @@ Tritões:
         dadoVidaNum = 10,
         deslocamentoTexto = [==[14m]==],
         dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 14 },
         caracteristicas = {
             {
                 nome = "Forma Primal Ghiscari",
@@ -825,6 +850,7 @@ Deslocamento: 14m  Dado de Vida: 1d10
         dadoVidaNum = 8,
         deslocamentoTexto = [==[10m (terrestre/aéreo/aquático)]==],
         dadoVidaTexto = [==[1d8]==],
+        deslocamentoModos = { terrestre = 10, voo = 10, nado = 10 },
         caracteristicas = {
             {
                 nome = "Regeneração Avançada",
@@ -857,12 +883,23 @@ Deslocamento: 14m  Dado de Vida: 1d10
         tipo = "Terrestre",
         alinhamento = "Caótico Bom",
         jogavel = true,
-        sangueAntigas = false,
-        mesticoPermitido = false,
+        sangueAntigas = false,     -- nao esta na lista das 11 do livro
+        mesticoPermitido = false,  -- "nao pode ser adquirida para (...) 'Lobisomem'"
+        -- Qualidades, "Linhagem da noite [06 pontos]":
+        --   "Receba a raca 'Lobisomem (Nascido)'. Escolha uma faccao de
+        --    origem: Vigilantes da Lua (controle e disciplina) ou Filhos da
+        --    Furia (poder e instinto) e a habilidade progressiva
+        --    [Forma Bestial Lupina]"
+        --   Restricao: "Somente uma ficha por vez pode possuir esta qualidade."
+        -- O livro chama de "Lobisomem (Nascido)" - e este mesmo bloco de
+        -- raca, com a origem definida (nascido, e nao mordido).
+        linhagemNoite = true,
         deslocamentoNum = 12,
         dadoVidaNum = 12,
         deslocamentoTexto = [==[12m (forma mortal) / 24m (forma bestial)]==],
         dadoVidaTexto = [==[1d12]==],
+        deslocamentoModos = { terrestre = 12 },
+        formaAlternativa = { nome = "forma bestial", rotuloBase = "forma mortal", terrestre = 24 },
         caracteristicas = {
             {
                 nome = "Super força",
@@ -963,6 +1000,7 @@ Deslocamento: 14m  Dado de Vida: 1d10
         dadoVidaNum = 12,
         deslocamentoTexto = [==[8m]==],
         dadoVidaTexto = [==[1d12+4]==],
+        deslocamentoModos = { terrestre = 8 },
         caracteristicas = {
             {
                 nome = "Super força",
@@ -1003,6 +1041,7 @@ Deslocamento: 14m  Dado de Vida: 1d10
         dadoVidaNum = 8,
         deslocamentoTexto = [==[12m]==],
         dadoVidaTexto = [==[1d8]==],
+        deslocamentoModos = { terrestre = 12 },
         caracteristicas = {
             {
                 nome = "Carismáticos",
@@ -1051,6 +1090,8 @@ Deslocamento: 14m  Dado de Vida: 1d10
         dadoVidaNum = 12,
         deslocamentoTexto = [==[8m (em pé) / 18m (postura Ursari)]==],
         dadoVidaTexto = [==[1d12]==],
+        deslocamentoModos = { terrestre = 8 },
+        formaAlternativa = { nome = "postura Ursari", rotuloBase = "em pé", terrestre = 18 },
         caracteristicas = {
             {
                 nome = "Pele endurecida",
@@ -1101,6 +1142,7 @@ Deslocamento: 14m  Dado de Vida: 1d10
         dadoVidaNum = 8,
         deslocamentoTexto = [==[10m]==],
         dadoVidaTexto = [==[1d8]==],
+        deslocamentoModos = { terrestre = 10 },
         caracteristicas = {
             {
                 nome = "Maestria furtiva",
@@ -1136,11 +1178,12 @@ Deslocamento: 14m  Dado de Vida: 1d10
         alinhamento = "Leal Neutro",
         jogavel = false,
         sangueAntigas = false,
-        mesticoPermitido = true,
+        mesticoPermitido = false,
         deslocamentoNum = 0,
         dadoVidaNum = 0,
         deslocamentoTexto = [==[]==],
         dadoVidaTexto = [==[]==],
+        deslocamentoModos = {  },
         caracteristicas = {
         },
         tracos = [==[]==],
@@ -1162,11 +1205,12 @@ Deslocamento: 14m  Dado de Vida: 1d10
         alinhamento = "Neutro bom",
         jogavel = false,
         sangueAntigas = false,
-        mesticoPermitido = true,
+        mesticoPermitido = false,
         deslocamentoNum = 0,
         dadoVidaNum = 0,
         deslocamentoTexto = [==[]==],
         dadoVidaTexto = [==[]==],
+        deslocamentoModos = {  },
         caracteristicas = {
         },
         tracos = [==[]==],
@@ -1189,11 +1233,12 @@ Deslocamento: 14m  Dado de Vida: 1d10
         alinhamento = "Leal Bom",
         jogavel = false,
         sangueAntigas = false,
-        mesticoPermitido = true,
+        mesticoPermitido = false,
         deslocamentoNum = 0,
         dadoVidaNum = 0,
         deslocamentoTexto = [==[]==],
         dadoVidaTexto = [==[]==],
+        deslocamentoModos = {  },
         caracteristicas = {
         },
         tracos = [==[]==],
@@ -1213,11 +1258,12 @@ O juramento de ordenação dos cavaleiros de Asta: "Eu juro, por minha honra e p
         alinhamento = "Leal Neutro",
         jogavel = false,
         sangueAntigas = false,
-        mesticoPermitido = true,
+        mesticoPermitido = false,
         deslocamentoNum = 0,
         dadoVidaNum = 0,
         deslocamentoTexto = [==[]==],
         dadoVidaTexto = [==[]==],
+        deslocamentoModos = {  },
         caracteristicas = {
         },
         tracos = [==[]==],
@@ -1239,11 +1285,12 @@ O juramento de ordenação dos cavaleiros de Asta: "Eu juro, por minha honra e p
         alinhamento = "Neutro",
         jogavel = false,
         sangueAntigas = false,
-        mesticoPermitido = true,
+        mesticoPermitido = false,
         deslocamentoNum = 0,
         dadoVidaNum = 0,
         deslocamentoTexto = [==[]==],
         dadoVidaTexto = [==[]==],
+        deslocamentoModos = {  },
         caracteristicas = {
         },
         tracos = [==[]==],
@@ -1265,11 +1312,12 @@ O juramento de ordenação dos cavaleiros de Asta: "Eu juro, por minha honra e p
         alinhamento = "Caótico Mal",
         jogavel = false,
         sangueAntigas = false,
-        mesticoPermitido = true,
+        mesticoPermitido = false,
         deslocamentoNum = 0,
         dadoVidaNum = 0,
         deslocamentoTexto = [==[]==],
         dadoVidaTexto = [==[]==],
+        deslocamentoModos = {  },
         caracteristicas = {
         },
         tracos = [==[]==],
@@ -1292,11 +1340,12 @@ O juramento de ordenação dos cavaleiros de Asta: "Eu juro, por minha honra e p
         alinhamento = "Leal Bom",
         jogavel = false,
         sangueAntigas = false,
-        mesticoPermitido = true,
+        mesticoPermitido = false,
         deslocamentoNum = 0,
         dadoVidaNum = 0,
         deslocamentoTexto = [==[]==],
         dadoVidaTexto = [==[]==],
+        deslocamentoModos = {  },
         caracteristicas = {
         },
         tracos = [==[]==],
@@ -1327,7 +1376,30 @@ function CatalogoRacas.listarPorCategoria(categoria)
 end
 
 -- Decide se a raca pode ser escolhida agora, dado o contexto da ficha.
--- ctx = {temMestico=bool, temSangueAntigas=bool, autorizacaoMestre=bool}
+-- ctx = {temMestico=bool, temSangueAntigas=bool, temLinhagemNoite=bool,
+--        autorizacaoMestre=bool}
+--
+-- LIBERACAO POR QUALIDADE - inventario fechado, de uma varredura do capitulo
+-- de Qualidades atras de toda frase que concede raca:
+--
+--   "Mestico"                    -> jogaveis e nao-jogaveis, "mas jamais de
+--       racas primordiais; Esta qualidade nao pode ser adquirida para as
+--       racas 'Vampiro' ou 'Lobisomem'"
+--   "Sangue das racas antigas"   -> LISTA FECHADA de 11: "Aarakocra, Harpia,
+--       Giff, Sereia, Centauro, Ghiscari, Ninfa, Minotauro, Satiro, Ursari
+--       ou Goblin"
+--   "Linhagem da noite" [06 pts] -> "Receba a raca 'Lobisomem (Nascido)'"
+--   "Linhagem de Gunndana"       -> "receba a raca 'Meio-Gigante'" - raca que
+--       NAO EXISTE no capitulo de Racas nem neste catalogo. Pendente com o
+--       mestre; nao inventei bloco de atributos para ela.
+--
+-- Ate a v0.35.6 a ficha so conhecia as duas primeiras, e por isso recusava
+-- Lobisomens para todo mundo: a raca nao esta na lista do "Sangue das racas
+-- antigas" (certo) e o "Mestico" e vetado para ela (certo tambem) - so que a
+-- qualidade que DE FATO libera nunca tinha sido ligada. A checagem 26 do
+-- verifica.py agora recusa o build se aparecer uma qualidade nova que concede
+-- raca e ninguem tiver ligado.
+--
 -- Devolve: permitido(bool), motivo(string)
 function CatalogoRacas.podeEscolher(raca, ctx)
     ctx = ctx or {}
@@ -1350,16 +1422,50 @@ function CatalogoRacas.podeEscolher(raca, ctx)
     end
     local viaMestico = ctx.temMestico and raca.mesticoPermitido
     local viaSangue = ctx.temSangueAntigas and raca.sangueAntigas
-    if viaMestico or viaSangue then
-        local por = viaMestico and "Mestiço" or "Sangue das raças antigas"
+    local viaNoite = ctx.temLinhagemNoite and raca.linhagemNoite
+    if viaMestico or viaSangue or viaNoite then
+        local por = "Mestiço"
+        if viaSangue then por = "Sangue das raças antigas" end
+        if viaNoite then por = "Linhagem da noite" end
         return true, "Liberada pela qualidade \"" .. por .. "\"."
     end
 
-    local motivo = "Esta raça não é jogável por padrão. Adquira a qualidade \"Mestiço\" ou \"Sangue das raças antigas\" na aba Qualidades & Defeitos para liberá-la."
+    -- A recusa NOMEIA a qualidade que serve para ESTA raca. Mandar o jogador
+    -- comprar "Sangue das racas antigas" quando ela nao libera a raca que ele
+    -- quer e pior do que nao dizer nada: custa 3 pontos e nao resolve.
+    local servem = {}
+    if raca.mesticoPermitido then table.insert(servem, "\"Mestiço\"") end
+    if raca.sangueAntigas then table.insert(servem, "\"Sangue das raças antigas\"") end
+    if raca.linhagemNoite then table.insert(servem, "\"Linhagem da noite\"") end
+
+    if #servem == 0 then
+        return false, "Esta raça não é jogável por padrão, e NENHUMA qualidade do livro a libera — só autorização do mestre (marque na aba Raça & Classe)."
+    end
+
+    local lista = servem[1]
+    for i = 2, #servem do
+        lista = lista .. ((i == #servem) and " ou " or ", ") .. servem[i]
+    end
+
+    local motivo = "Esta raça não é jogável por padrão. Para esta raça, a qualidade que serve é " ..
+        lista .. " — pegue na aba Qualidades & Defeitos, ou peça autorização do mestre."
     if not raca.mesticoPermitido then
-        motivo = motivo .. " Atenção: a qualidade \"Mestiço\" NÃO pode ser usada para esta raça (vetada no texto da qualidade); aqui só vale \"Sangue das raças antigas\" ou autorização do mestre."
-    elseif not raca.sangueAntigas then
-        motivo = motivo .. " Atenção: esta raça não consta na lista de \"Sangue das raças antigas\"; aqui só vale \"Mestiço\" ou autorização do mestre."
+        motivo = motivo .. " Atenção: \"Mestiço\" NÃO vale aqui (vetada no texto da própria qualidade)."
+    end
+
+    -- MOSTRA O QUE A FICHA ESTA VENDO. Sem esta linha, "peguei a qualidade e
+    -- continua bloqueado" vira discussao sem prova: ninguem sabe se a ficha
+    -- nao leu a lista, se o nome nao bateu, ou se a versao instalada e outra.
+    -- Com ela, a propria tela responde - e a lei de "mostre a conta" vale
+    -- para decisao de permissao tanto quanto para numero.
+    local vistas = {}
+    if ctx.temMestico then table.insert(vistas, "Mestiço") end
+    if ctx.temSangueAntigas then table.insert(vistas, "Sangue das raças antigas") end
+    if ctx.temLinhagemNoite then table.insert(vistas, "Linhagem da noite") end
+    if #vistas == 0 then
+        motivo = motivo .. "   [A ficha não encontrou nenhuma qualidade de liberação na sua lista.]"
+    else
+        motivo = motivo .. "   [A ficha vê na sua lista: " .. table.concat(vistas, ", ") .. ".]"
     end
     return false, motivo
 end

@@ -87,19 +87,98 @@ end
 
 -- ---------------------------------------------------------------------
 -- Pontos de vitae (Pv) - apenas para vampiros.
--- Pv = 10 + (Constituicao * 1.5) + (Rank * 30)
+--
+-- Tutorial de Ficha, verbete "Pontos de vitae (Pv)":
+--   "Para os personagens que sao vampiros, o Vitae representa a energia
+--    sanguinea que possuem, utilizada para realizar todos os seus feitos
+--    NO LUGAR DA AURA E DA MANA. (...) O calculo do maximo de Vitae que
+--    estes seres podem se abaster e pela conta:
+--    [10 + (Constituicao * 1.5) + (Rank * 30)]"
+--
+-- VAMPIRA + LINHAGEM DE UNARIS (a "vampibruxa"). O livro nao escreve a
+-- combinacao, mas os dois verbetes se encaixam sem sobra:
+--
+--   Tutorial, "Pontos de mana (Mp)": "Para as personagens com a qualidade
+--   Linhagem de Unaris, os Pontos de mana e Pontos de aura serao FUNDIDOS
+--   EM UMA COISA SO dentro do MP, enquanto a Aura permanecera sem valor."
+--
+-- Ou seja: na bruxa nao existem mais duas reservas, existe UMA (o Prana).
+-- E no vampiro o Vitae fica "no lugar da Aura e da Mana" - no lugar,
+-- portanto, dessa unica reserva. Logo a reserva fundida entra DENTRO do
+-- Vitae; ela nao fica ao lado dele.
+--
+-- DECISAO DA MESA (22/08/2026, mestre): confirmado -
+--     Vitae da vampibruxa = 10 + (Con * 1,5) + (Rank * 30) + Prana
+-- e o card de Prana some da tela, porque nao ha uma segunda barra para
+-- gastar. O Prana continua sendo calculado: ele e uma PARCELA do Vitae.
+--
+-- Ate a v0.34.3 o Prana era exibido como uma segunda barra ao lado do
+-- Vitae. A visibilidade era o sintoma; o erro de verdade era este calculo,
+-- que ignorava o Prana.
 -- ---------------------------------------------------------------------
 function Calculos.pv(ctx)
     if not ctx.ehVampiro then return 0 end
     local total = 10 + (n(ctx.constituicao) * 1.5) + (rankNumero(ctx.rank) * 30)
+    -- ctx.prana ja vem com o ajuste manual do Prana somado; por isso o
+    -- Prana e calculado ANTES do Vitae em recalcularTudo().
+    total = total + n(ctx.prana)
     return math.floor(total + 0.5) + n(ctx.ajusteManual)
 end
 
 -- ---------------------------------------------------------------------
 -- Deslocamento (metros) = deslocamento base da raca + Destreza + Rank
+--
+-- Tutorial de Ficha, verbete "Deslocamento (metros)":
+--   "[Deslocamento padrao da raca + Destreza + Rank]"
+--
+-- MODOS. As racas declaram o deslocamento em modos - Aarakocras
+-- "10m (terrestre) / 20m (aéreo)", Sereias "8m (terrestre) / 24m
+-- (aquático)". O livro escreve a conta uma vez so, no verbete geral, e nao
+-- repete para voo e nado.
+--
+-- REGRA DA MESA (21/08/2026): cada modo usa a MESMA conta, trocando so o
+-- valor base. Voo de Aarakocra = 20 + Destreza + Rank.
 -- ---------------------------------------------------------------------
+function Calculos.deslocamentoModo(ctx)
+    return n(ctx.baseModo) + n(ctx.destreza) + rankNumero(ctx.rank) + n(ctx.ajusteManual)
+end
+
+-- ---------------------------------------------------------------------
+-- NADO e ESCALADA sem base racial = METADE DO DESLOCAMENTO
+--
+-- O LIVRO NAO TEM REGRA. Varredura completa: natacao e escalada aparecem
+-- so como uso da pericia Atletismo ("usado para testes de escalada,
+-- natacao, salto, disputas de forca") e na lista do que uma acao de
+-- movimento permite ("correndo, realizando saltos, escaladas, vôo etc").
+-- Nenhuma velocidade, em lugar nenhum. As unicas velocidades de nado do
+-- livro sao as de 5 racas, escritas no bloco de cada uma.
+--
+-- DECISAO DA MESA (30/08/2026, mestres): o padrao e deslocamento / 2, e a
+-- base da raca substitui o padrao quando existe.
+--   * metade do deslocamento FINAL (o do card, ja com Destreza e Rank),
+--     e nao da base racial;
+--   * MEIO METRO E VALIDO: 13 / 2 = 6,5m fica 6,5m, sem arredondar.
+--
+-- O que entra no numero que e dividido, e por que:
+--   * penalidade de armadura pesada  SIM - ja estava embutida no
+--     deslocamento quando ele foi dividido, e a mesa ja decidiu (21/08)
+--     que o desconto vale para todos os modos;
+--   * Passos de vento (Duelista N2)  NAO - a mesma decisao de 21/08 diz
+--     que o dobro so vale para o terrestre. Por isso quem chama esta
+--     funcao passa o deslocamento capturado ANTES da dobra.
+-- ---------------------------------------------------------------------
+function Calculos.metadeDeslocamento(ctx)
+    local v = n(ctx.deslocamento) / 2 + n(ctx.ajusteManual)
+    if v < 0 then return 0 end
+    return v
+end
+
+-- Mantido pelo nome antigo: e o modo terrestre.
 function Calculos.deslocamento(ctx)
-    return n(ctx.deslocamentoBaseRaca) + n(ctx.destreza) + rankNumero(ctx.rank) + n(ctx.ajusteManual)
+    return Calculos.deslocamentoModo({
+        baseModo = ctx.deslocamentoBaseRaca, destreza = ctx.destreza,
+        rank = ctx.rank, ajusteManual = ctx.ajusteManual,
+    })
 end
 
 -- ---------------------------------------------------------------------
@@ -135,6 +214,11 @@ end
 --   * Duelista/Passos de vento nivel 2: deslocamento padrao E corrida
 --     dobram passivamente - por isso o multiplicador entra sobre o
 --     deslocamento ja dobrado.
+--
+-- REGRA DA MESA (21/08/2026): a corrida (disparada) vale TAMBEM para voo e
+-- nado, sempre pelo dobro. As duas excecoes acima ficam de fora dos modos
+-- novos: "Maratonista" fala de corrida e saltos, e "Passos de vento" diz
+-- "deslocamento PADRAO". Por isso 'ehSatiro' nao e passado nos modos.
 -- ---------------------------------------------------------------------
 function Calculos.corrida(ctx)
     local mult = 2
@@ -143,27 +227,42 @@ function Calculos.corrida(ctx)
 end
 
 -- ---------------------------------------------------------------------
--- Acoes por turno. Todo personagem comeca com 1 de cada; os ganhos vem
--- da tabela de evolucao e sao de niveis DIFERENTES para cada tipo:
---   padrao +1 no nivel 19 | bonus +1 no nivel 10 | reacao +1 no nivel 15
--- Antes a ficha tinha um contador so, o que nao representava a regra.
+-- Acoes por turno.
+--
+-- BASE (Tutorial de Ficha, verbetes "Acoes padrao", "Acoes bonus" e
+-- "Acoes de reacao"): "Todo personagem comeca com 1 acao padrao / 1 acao
+-- bonus / 1 acao de reacao, e ganha mais a medida que avanca de nivel".
+-- Existe ainda a acao de MOVIMENTO ("por padrao todos tem uma acao de
+-- movimento, uma acao principal e uma acao bonus", Sistema e Evolucao),
+-- que nao tem contador porque nada no livro a multiplica.
+--
+-- EVOLUCAO (Sistema e Evolucao, tabela de niveis), cada tipo num nivel
+-- diferente:
+--   nivel 10 -> "+1 Acao bonus"
+--   nivel 15 -> "+1 ponto de reacao"
+--   nivel 19 -> "+1 Acao padrao"
+--
+-- "extras" traz o que vem de PODER e de CLASSE, ja somado pela ficha
+-- (ver ACOES_EXTRAS no ficha.lfm). Fica como parametro, e nao como regra
+-- aqui dentro, porque depende de ler a ficha - e estas funcoes sao puras
+-- de proposito, para rodarem no lua5.3 sem o Firecast.
 -- ---------------------------------------------------------------------
 function Calculos.acoesPadrao(ctx)
     local total = 1
     if n(ctx.nivel) >= 19 then total = total + 1 end
-    return total + n(ctx.ajusteManual)
+    return total + n(ctx.extras) + n(ctx.ajusteManual)
 end
 
 function Calculos.acoesBonus(ctx)
     local total = 1
     if n(ctx.nivel) >= 10 then total = total + 1 end
-    return total + n(ctx.ajusteManual)
+    return total + n(ctx.extras) + n(ctx.ajusteManual)
 end
 
 function Calculos.acoesReacao(ctx)
     local total = 1
     if n(ctx.nivel) >= 15 then total = total + 1 end
-    return total + n(ctx.ajusteManual)
+    return total + n(ctx.extras) + n(ctx.ajusteManual)
 end
 
 -- ---------------------------------------------------------------------

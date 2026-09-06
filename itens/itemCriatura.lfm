@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Template MINIMO da lista de criaturas.
+
+  A aba "Criaturas" NAO desenha as linhas por este template: ela usa doze
+  slots fixos (abaCri_wrap1..12) e escreve neles por script, como as abas de
+  Poderes, Habilidades e Inventario ja faziam. O recordList existe so para
+  guardar os nos e dar o :append() - por isso ele fica com 4px de altura na
+  aba, fora do caminho.
+
+  Um recordList do SDK exige templateForm mesmo quando ninguem ve o template.
+  Este arquivo e esse minimo obrigatorio.
+
+  ARMADILHA (v0.34.0, pega pelo rdk): a primeira versao deste arquivo trazia
+  formType="listItem" e dataType="...". Nenhum dos dois existe:
+
+      [itens/itemCriatura.lfm] Erro: O valor "listItem" foi informado na
+      propriedade "formType", porem ela aceita apenas um dos seguintes
+      valores: "undefined", "sheetTemplate" e "tablesDock".
+
+  Os quatro templates que ja funcionavam declaram so name, height e theme -
+  e e exatamente isso que este faz agora.
+
+  Sem funcoes nomeadas aqui: dentro de template de recordList uma funcao
+  nomeada vira GLOBAL, e a ultima linha criada sobrescreve todas as outras.
+-->
+<form name="frmItemCriatura" height="4" theme="dark">
+    <layout align="client"/>
+</form>

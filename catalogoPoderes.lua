@@ -1,6 +1,10 @@
 -- catalogoPoderes.lua
 -- Gerado do .bib (secao Poderes, "Lista de poderes").
--- 48 poderes: 27 ativos, 21 passivos. Cada um com progressao de 5 niveis.
+-- 49 poderes: 28 ativos, 21 passivos. Cada um com progressao de 5 niveis.
+--
+-- 48 vem da lista do livro. O 49o e "Hemocinese", que o livro promete nas
+-- racas Orcs e Vampiros e nunca coloca na lista - ver o comentario no
+-- proprio item. Todo item com "inferido = true" nao saiu do livro.
 --
 -- CAMPO "atributo": preenchido apenas nos 7 poderes passivos que
 -- bonificam um atributo (um por atributo do sistema). Serve a regra
@@ -251,6 +255,43 @@ CatalogoPoderes.itens = {
       "+2 em todos os seus testes com as duas perícias escolhidas",
       "+2 em todos os seus testes com as duas perícias escolhidas",
       "+2 em todos os seus testes com as duas perícias escolhidas",
+    },
+  },
+  {
+    -- ------------------------------------------------------------------
+    -- HEMOCINESE — NAO SAI DA LISTA DE PODERES DO LIVRO.
+    --
+    -- O livro cita o poder DUAS vezes, sempre como caracteristica racial, e
+    -- nunca escreve a progressao dele:
+    --
+    --   Racas / Orcs:
+    --     "[Hemocinese] receba o poder exclusivo 'Hemocinese' em sua ficha,
+    --      comecando com 1 ponto no mesmo e recebendo upgrades automaticos
+    --      nos niveis 5, 10, 15 e 20; Se voce ja tiver upado o poder, os
+    --      pontos recebidos se convertem em pontos de poder comuns."
+    --
+    --   Racas / Vampiros:
+    --     "[Hemocinese] receba o poder exclusivo 'Hemocinese', substituindo
+    --      um poder ativo em sua ficha; Este poder pode coexistir com o poder
+    --      'Magia'."
+    --
+    -- A DESCRICAO e a PROGRESSAO abaixo sao INFERIDAS do molde dos outros
+    -- poderes "cinese" (Audiocinese, Fitocinese) e dos "Manipulacao de X",
+    -- todos ativos com a mesma escada de ranks. Decisao alinhada em
+    -- 21/08/2026; PENDENTE de o mestre escrever a progressao oficial.
+    -- Quando ela chegar, troque este bloco e nada mais precisa mudar.
+    -- ------------------------------------------------------------------
+    nome = "Hemocinese",
+    tipo = "ativo",
+    atributo = nil,
+    inferido = true,
+    descricao = "poder exclusivo das linhagens que carregam o sangue como arma: permite pressentir, moldar, atrair e manipular o sangue — o próprio, o dos aliados e o dos inimigos. (Descrição INFERIDA do molde dos demais poderes 'cinese': o livro cita o poder nas raças Orcs e Vampiros mas não descreve seus níveis.)",
+    progressao = {
+      "permite o aprendizado de habilidades deste poder de Rank E/D",
+      "permite o aprendizado de habilidades deste poder de Rank C",
+      "permite o aprendizado de habilidades deste poder de Rank B",
+      "permite o aprendizado de habilidades deste poder de Rank A",
+      "permite o aprendizado de habilidades deste poder de Rank EX",
     },
   },
   {

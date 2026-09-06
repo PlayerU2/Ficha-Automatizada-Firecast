@@ -34,22 +34,43 @@ DadosSistema.niveis = {
     [20] = { xp = 850920, prof = 7 },
 }
 
--- Limite de acoes principais/bonus por nivel - USADO APENAS COMO SUGESTAO
--- INICIAL ao criar a ficha (campo "limiteAcoesPadrao"/"limiteAcoesBonus" na
--- aba Dados Pessoais). Na pratica de mesa esse numero e mais influenciado por
--- Poderes (ex.: "Destreza Sobrenatural" da mais uma acao no nivel 5) do que
--- por uma tabela fixa de nivel, entao os campos na ficha ficam 100% editaveis
--- e este valor so preenche o campo se ele ainda estiver vazio.
+-- ---------------------------------------------------------------------
+-- LIMITE DE ACOES POR TURNO
 --
--- O documento fonte "[2.3] Sistema e Evolucao" diz: "Ate o nivel 5 so e
--- permitida uma acao; A partir do NIVEL 6 [...] uma segunda acao; A partir
--- do nivel 11 [...] tres acoes; No nivel 20 [...] quatro acoes." A mesa usa
--- nivel 10 em vez de 6 na pratica; e por isso mesmo que virou sugestao e nao
--- regra travada.
+-- Texto integral, "[2.3] Sistema e Evolucao", secao "Limite de acoes":
+--
+--   "O limite de acoes serve para impedir que um personagem possa acumular
+--    acoes principais/bonus atraves de itens, poderes e afins para
+--    desbalancear o sistema. Ate o nivel 5 so e permitida uma acao
+--    principal/bonus; A partir do nivel 6 os personagens ganham direito a
+--    realizarem uma segunda acao; A partir do nivel 11 e possivel executar
+--    tres acoes; No nivel 20 um personagem ganha o direito de utilizar
+--    quatro acoes em um mesmo turno. Esta regra serve como uma limitacao
+--    caso um personagem adquira acoes de combate por diversos meios ainda
+--    assim precise respeitar tal limite."
+--
+-- DECISOES DA MESA (21/08/2026), porque o texto tem duas ambiguidades:
+--
+-- 1. O teto conta o TOTAL de acoes padrao + bonus SOMADAS, e nao cada tipo
+--    separado nem apenas as extras. Leitura literal do texto.
+--    CONSEQUENCIA CONHECIDA E ACEITA: o Tutorial de Ficha diz que todo
+--    personagem comeca com 1 acao padrao E 1 acao bonus, o que ja da 2 - ou
+--    seja, do nivel 1 ao 5 a base do personagem ja fica acima do teto. A
+--    ficha nao esconde isso: mostra o valor cheio e avisa. Se o mestre
+--    decidir que o Tutorial prevalece, muda-se so esta tabela.
+--
+-- 2. Os niveis sao 6 / 11 / 20, COMO ESTA ESCRITO. A versao anterior deste
+--    arquivo usava 10 em vez de 6, anotado como "a mesa usa na pratica";
+--    isso foi revertido para o texto do livro.
+--
+-- A ficha NAO corta o valor: ela soma tudo e avisa quando passa (decisao da
+-- mesa). Ver a nota do bloco de Acoes na aba de Combate.
+-- ---------------------------------------------------------------------
 function DadosSistema.limiteAcoesPorNivel(nivel)
+    nivel = tonumber(nivel) or 1
     if nivel >= 20 then return 4
     elseif nivel >= 11 then return 3
-    elseif nivel >= 10 then return 2
+    elseif nivel >= 6 then return 2
     else return 1 end
 end
 
