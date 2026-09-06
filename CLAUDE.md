@@ -23,6 +23,26 @@ rdk i       →  instala; depois FECHE o Firecast por completo
 E **confira o zip depois de gerado** — conferir o que você editou não prova
 nada sobre o que o usuário instala.
 
+**O mestre autorizou instalar ao fim de cada entrega** (06/09/2026): terminados
+os updates da ficha, rode o `rdk i` sem perguntar. Depois **feche o Firecast por
+completo**, que guarda cache do plug-in.
+
+Três coisas medidas em 06/09/2026 ao usar o servidor MCP para isso, e as três
+enganam quem lê rápido:
+
+- **`limparIntrusos=true` apagaria o `.git`.** A lista de "pastas que não são do
+  plugin" que o servidor imprime inclui o `.git` junto da `NVIDIA Corporation`.
+  Ligar essa opção destrói o histórico do plugin. O padrão é `false`, e é para
+  continuar assim.
+- **O aviso "vai para dentro do .rpk" é falso.** É a mesma previsão que a
+  checagem 36 abandonou quando foi medida: o `rdk` pula `.git` e
+  `NVIDIA Corporation`. Medido de novo no pacote da v0.48.0 — 200 entradas,
+  zero vindas das duas.
+- **O "O ARQUIVO INSTALADO NAO MUDOU" pode ser alarme falso.** O servidor tira a
+  foto do "depois" ao devolver a resposta parcial (40s), e o `rdk i` deste
+  projeto leva ~48s. Confirme com `versoes`, que abre o `module.xml` de dentro
+  do `.rpk` instalado, em vez de acreditar na foto.
+
 Ao mexer num kit divino, rode `verif/gera_catalogo_poderes.py`: a lista do
 catálogo de poderes é gerada, e a checagem 44 acusa até você regerar.
 
