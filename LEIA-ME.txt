@@ -1,4 +1,4 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.49.2
+FICHA DE PERSONAGEM - PETRICHOR - v0.49.3
 
 
 =======================================================================
@@ -74,14 +74,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.49.2, o que esta rodando nao e este pacote.
+disser v0.49.3, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.49.2)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.49.3)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que

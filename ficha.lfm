@@ -4837,6 +4837,93 @@
             return true
         end
 
+        -- A dobra da busca e chavePoder(): ela ja tira acento e tudo que nao
+        -- e alfanumerico, e e ELA que gera o sufixo do nome do widget. Buscar
+        -- com a mesma funcao que batizou o card e o que faz "pocao" achar
+        -- "Pocao de Cura" sem uma tabela de acentos paralela para envelhecer
+        -- -- e a checagem 25 ja cobra essa funcao, deus a deus.
+        function dobrarBusca(texto)
+            return string.lower(chavePoder(texto))
+        end
+
+        function buscaCasa(alvoDobrado, agulhaDobrada)
+            if agulhaDobrada == "" then return true end
+            return string.find(alvoDobrado, agulhaDobrada, 1, true) ~= nil
+        end
+
+        -- OS INDICES, montados UMA vez por catalogo.
+        --
+        -- Cada entrada ja traz o nome do widget e o texto dobrado contra o
+        -- qual comparar. Depois disto, uma tecla custa um string.find por
+        -- linha -- e nao uma dobra inteira.
+        local indiceQD, indiceItens, indicePoderes
+
+        local function montarIndiceQD()
+            if indiceQD ~= nil then return indiceQD end
+            indiceQD = {}
+            for _, it in ipairs(CatalogoQD.itens) do
+                indiceQD[#indiceQD + 1] = {
+                    w = "rectLinhaQD_" .. tostring(it.chave),
+                    tipo = tostring(it.tipo),
+                    alvo = dobrarBusca(it.nome or it.chave),
+                }
+            end
+            return indiceQD
+        end
+
+        local function montarIndiceItens()
+            if indiceItens ~= nil then return indiceItens end
+            local linhas, faixas, subs = {}, {}, {}
+            local vistas, vistosSub = {}, {}
+            for _, it in ipairs(CatalogoItens.itens) do
+                local cat = tostring(it.categoria)
+                local sub = it.subtipo ~= nil and tostring(it.subtipo) or nil
+                linhas[#linhas + 1] = {
+                    w = "itmL_" .. chavePoder(it.nome) .. chavePoder(it.qualidade),
+                    alvo = dobrarBusca(tostring(it.nome) .. tostring(it.qualidade)),
+                    cat = cat, sub = sub,
+                }
+                if not vistas[cat] then
+                    vistas[cat] = true
+                    faixas[#faixas + 1] = {chave = cat, w = "itmCab_" .. chavePoder(cat)}
+                end
+                if sub ~= nil and not vistosSub[sub] then
+                    vistosSub[sub] = true
+                    subs[#subs + 1] = {chave = sub, w = "itmSub_" .. chavePoder(sub)}
+                end
+            end
+            indiceItens = {linhas = linhas, faixas = faixas, subs = subs}
+            return indiceItens
+        end
+
+        local function montarIndicePoderes()
+            if indicePoderes ~= nil then return indicePoderes end
+            local kits = {}
+            for _, deus in ipairs(CatalogoDeuses.itens) do
+                local chaveDeus = chavePoder(deus.nome)
+                local kit = {cab = "podCab_" .. chaveDeus, slots = {}}
+                for i, slot in ipairs(deus.slots or {}) do
+                    local s = {rotulo = (#slot > 1) and ("podSlot_" .. chaveDeus .. "_" .. i) or nil,
+                               cards = {}}
+                    for _, nomePoder in ipairs(slot) do
+                        s.cards[#s.cards + 1] = {
+                            w = "rectPod_" .. chaveDeus .. "_" .. chavePoder(nomePoder),
+                            alvo = dobrarBusca(nomePoder),
+                        }
+                    end
+                    kit.slots[#kit.slots + 1] = s
+                end
+                kits[#kits + 1] = kit
+            end
+            local fora = {}
+            for _, nomePoder in ipairs({"Magia", "Hemocinese"}) do
+                fora[#fora + 1] = {w = "rectPod_" .. chavePoder(nomePoder),
+                                   alvo = dobrarBusca(nomePoder)}
+            end
+            indicePoderes = {kits = kits, fora = fora}
+            return indicePoderes
+        end
+
         -- ===============================================================
         -- FAREJADOR DA BUSCA
         -- ===============================================================
@@ -4929,92 +5016,6 @@
             pcall(function() lbl:setHeight(34) end)
         end
 
-        -- A dobra da busca e chavePoder(): ela ja tira acento e tudo que nao
-        -- e alfanumerico, e e ELA que gera o sufixo do nome do widget. Buscar
-        -- com a mesma funcao que batizou o card e o que faz "pocao" achar
-        -- "Pocao de Cura" sem uma tabela de acentos paralela para envelhecer
-        -- -- e a checagem 25 ja cobra essa funcao, deus a deus.
-        function dobrarBusca(texto)
-            return string.lower(chavePoder(texto))
-        end
-
-        function buscaCasa(alvoDobrado, agulhaDobrada)
-            if agulhaDobrada == "" then return true end
-            return string.find(alvoDobrado, agulhaDobrada, 1, true) ~= nil
-        end
-
-        -- OS INDICES, montados UMA vez por catalogo.
-        --
-        -- Cada entrada ja traz o nome do widget e o texto dobrado contra o
-        -- qual comparar. Depois disto, uma tecla custa um string.find por
-        -- linha -- e nao uma dobra inteira.
-        local indiceQD, indiceItens, indicePoderes
-
-        local function montarIndiceQD()
-            if indiceQD ~= nil then return indiceQD end
-            indiceQD = {}
-            for _, it in ipairs(CatalogoQD.itens) do
-                indiceQD[#indiceQD + 1] = {
-                    w = "rectLinhaQD_" .. tostring(it.chave),
-                    tipo = tostring(it.tipo),
-                    alvo = dobrarBusca(it.nome or it.chave),
-                }
-            end
-            return indiceQD
-        end
-
-        local function montarIndiceItens()
-            if indiceItens ~= nil then return indiceItens end
-            local linhas, faixas, subs = {}, {}, {}
-            local vistas, vistosSub = {}, {}
-            for _, it in ipairs(CatalogoItens.itens) do
-                local cat = tostring(it.categoria)
-                local sub = it.subtipo ~= nil and tostring(it.subtipo) or nil
-                linhas[#linhas + 1] = {
-                    w = "itmL_" .. chavePoder(it.nome) .. chavePoder(it.qualidade),
-                    alvo = dobrarBusca(tostring(it.nome) .. tostring(it.qualidade)),
-                    cat = cat, sub = sub,
-                }
-                if not vistas[cat] then
-                    vistas[cat] = true
-                    faixas[#faixas + 1] = {chave = cat, w = "itmCab_" .. chavePoder(cat)}
-                end
-                if sub ~= nil and not vistosSub[sub] then
-                    vistosSub[sub] = true
-                    subs[#subs + 1] = {chave = sub, w = "itmSub_" .. chavePoder(sub)}
-                end
-            end
-            indiceItens = {linhas = linhas, faixas = faixas, subs = subs}
-            return indiceItens
-        end
-
-        local function montarIndicePoderes()
-            if indicePoderes ~= nil then return indicePoderes end
-            local kits = {}
-            for _, deus in ipairs(CatalogoDeuses.itens) do
-                local chaveDeus = chavePoder(deus.nome)
-                local kit = {cab = "podCab_" .. chaveDeus, slots = {}}
-                for i, slot in ipairs(deus.slots or {}) do
-                    local s = {rotulo = (#slot > 1) and ("podSlot_" .. chaveDeus .. "_" .. i) or nil,
-                               cards = {}}
-                    for _, nomePoder in ipairs(slot) do
-                        s.cards[#s.cards + 1] = {
-                            w = "rectPod_" .. chaveDeus .. "_" .. chavePoder(nomePoder),
-                            alvo = dobrarBusca(nomePoder),
-                        }
-                    end
-                    kit.slots[#kit.slots + 1] = s
-                end
-                kits[#kits + 1] = kit
-            end
-            local fora = {}
-            for _, nomePoder in ipairs({"Magia", "Hemocinese"}) do
-                fora[#fora + 1] = {w = "rectPod_" .. chavePoder(nomePoder),
-                                   alvo = dobrarBusca(nomePoder)}
-            end
-            indicePoderes = {kits = kits, fora = fora}
-            return indicePoderes
-        end
 
         -- QUALIDADES E DEFEITOS -- o caso limpo dos tres.
         --
@@ -13567,7 +13568,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.2" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.3" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14319,12 +14320,12 @@
                             <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE VIDA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="15 + Dado de vida + (Constituição ÷ 2 × Nível), mais o acumulado por nível."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle align="left" width="82" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3">
-                                    <edit name="cmb_edAtualHp" align="client" field="hpAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#8B2332" fontSize="22" fontStyle="bold" horzTextAlign="center" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                <rectangle align="left" width="88" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                    <edit name="cmb_edAtualHp" align="client" horzTextAlign="trailing" margins="{right=6}" field="hpAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#8B2332" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
-                                <label name="cmb_lblHp" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#8B2332" fontSize="22" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <label name="cmb_lblHp" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#8B2332" fontSize="22" fontStyle="bold" horzTextAlign="leading" vertTextAlign="center" hitTest="false"/>
                             </layout>
                             <label name="cmb_contaHp" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
                             <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=6}">
@@ -14342,12 +14343,12 @@
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE AURA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="(20 + Sabedoria + Nível) × Rank, mais os dados acumulados por nível."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle align="left" width="82" color="#080B0E" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3">
-                                    <edit name="cmb_edAtualAp" align="client" field="apAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="22" fontStyle="bold" horzTextAlign="center" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                <rectangle align="left" width="88" color="#080B0E" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                    <edit name="cmb_edAtualAp" align="client" horzTextAlign="trailing" margins="{right=6}" field="apAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
-                                <label name="cmb_lblAp" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="22" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <label name="cmb_lblAp" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="22" fontStyle="bold" horzTextAlign="leading" vertTextAlign="center" hitTest="false"/>
                             </layout>
                             <label name="cmb_contaAp" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
                             <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=6}">
@@ -14365,12 +14366,12 @@
                             <rectangle align="top" height="3" color="#7FA8B8" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE MANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="15 + base por idade + (Nível × 2). Exige a qualidade Coração de mana."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle align="left" width="82" color="#080B0E" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3">
-                                    <edit name="cmb_edAtualMp" align="client" field="mpAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="22" fontStyle="bold" horzTextAlign="center" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                <rectangle align="left" width="88" color="#080B0E" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                    <edit name="cmb_edAtualMp" align="client" horzTextAlign="trailing" margins="{right=6}" field="mpAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
-                                <label name="cmb_lblMp" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="22" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <label name="cmb_lblMp" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="22" fontStyle="bold" horzTextAlign="leading" vertTextAlign="center" hitTest="false"/>
                             </layout>
                             <label name="cmb_contaMp" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
                             <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=6}">
@@ -14388,12 +14389,12 @@
                             <rectangle align="top" height="3" color="#8A63C9" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE PRANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Mana + Aura somadas. Exclusivo de Bruxas (Linhagem de Unaris)."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle align="left" width="82" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3">
-                                    <edit name="cmb_edAtualPrana" align="client" field="pranaAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#8A63C9" fontSize="22" fontStyle="bold" horzTextAlign="center" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                <rectangle align="left" width="88" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                    <edit name="cmb_edAtualPrana" align="client" horzTextAlign="trailing" margins="{right=6}" field="pranaAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#8A63C9" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
-                                <label name="cmb_lblPrana" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#8A63C9" fontSize="22" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <label name="cmb_lblPrana" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#8A63C9" fontSize="22" fontStyle="bold" horzTextAlign="leading" vertTextAlign="center" hitTest="false"/>
                             </layout>
                             <label name="cmb_contaPrana" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
                             <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=6}">
@@ -14411,12 +14412,12 @@
                             <rectangle align="top" height="3" color="#9E3B4A" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE VITAE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="10 + (Constituição × 1,5) + (Rank × 30). Apenas vampiros."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle align="left" width="82" color="#080B0E" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3">
-                                    <edit name="cmb_edAtualPv" align="client" field="pvAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#9E3B4A" fontSize="22" fontStyle="bold" horzTextAlign="center" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
+                                <rectangle align="left" width="88" color="#080B0E" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                    <edit name="cmb_edAtualPv" align="client" horzTextAlign="trailing" margins="{right=6}" field="pvAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#9E3B4A" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
-                                <label name="cmb_lblPv" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#9E3B4A" fontSize="22" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <label name="cmb_lblPv" align="client" text="/ 0" fontFamily="Cinzel" fontColor="#9E3B4A" fontSize="22" fontStyle="bold" horzTextAlign="leading" vertTextAlign="center" hitTest="false"/>
                             </layout>
                             <label name="cmb_contaPv" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
                             <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=6}">
