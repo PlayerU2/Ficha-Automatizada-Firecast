@@ -575,12 +575,31 @@
             -- Vitae da vampibruxa sai sem a parcela e ninguem percebe - o
             -- numero continua "plausivel". A bateria de teste
             -- "Vitae da vampibruxa" existe para pegar exatamente isso.
+            -- A RESERVA do vampiro e mana + aura, SEMPRE - nao so na
+            -- vampibruxa, como era ate a v0.48.0. O ajuste do Prana entra
+            -- junto quando a personagem e bruxa, porque nesse caso o card
+            -- do Prana esta escondido e o campo de ajuste dele ficaria sem
+            -- destino nenhum. Ver o comentario longo em Calculos.pv.
+            local reservaVitae = 0
+            local ganhoVitae, baseVitae = 0, 0
             if sheet.ehVampiro then
-                sheet.pv = Calculos.pv({
+                reservaVitae = n(sheet.mp) + n(sheet.ap)
+                if personagemEhBruxa() then
+                    reservaVitae = reservaVitae + n(sheet.ajustePrana)
+                end
+                sheet.pv, baseVitae, ganhoVitae = Calculos.pv({
                     ehVampiro = true, constituicao = valores.constituicao,
                     rank = dadosNivel.rank, ajusteManual = sheet.ajustePv,
-                    prana = sheet.prana,
+                    hpPercent = efeitosQD.hpPercent or 0,
+                    reserva = reservaVitae,
                 })
+                -- O "+N pontos de vida" da forma bestial paga no Vitae, que
+                -- passou a ser a vida do vampiro. Hoje inalcancavel (so
+                -- Lobisomens e Ursari tem forma alternativa, e o livro
+                -- exclui as duas de Mesticagem e de Sangue das racas
+                -- antigas), mas mandar o bonus para sheet.hp deixaria um
+                -- numero morto numa barra que o vampiro nem ve.
+                sheet.pv = n(sheet.pv) + bonusBesta.vida
             else
                 sheet.pv = 0
             end
@@ -590,18 +609,29 @@
                 CONTAS.Prana = "mana " .. n(sheet.mp) .. " + aura " .. n(sheet.ap) ..
                     parcela(sheet.ajustePrana, "ajuste")
                 if sheet.ehVampiro then
-                    -- A parcela do Prana aparece na conta justamente porque o
-                    -- card do Prana some para a vampibruxa: sem isto o Vitae
-                    -- saltaria de 73 para 156 sem nada na tela explicando.
-                    -- Sem parenteses no "Con × 1,5" de proposito: a meia
-                    -- unidade (Con impar) so e arredondada no TOTAL, como
-                    -- Calculos.pv faz. Parentese aqui e "arredonda o grupo".
+                    -- Aura e Mana aparecem como PARCELAS porque os dois cards
+                    -- estao escondidos para o vampiro: sem isto o Vitae
+                    -- saltaria dezenas de pontos sem nada na tela explicando.
+                    --
+                    -- Sem parenteses em lugar nenhum, de proposito. A meia
+                    -- unidade do "Con × 1,5" so e arredondada no TOTAL, como
+                    -- Calculos.pv faz, e parentese aqui significa "arredonda
+                    -- o grupo" para a bateria. Pelo mesmo motivo o ganho das
+                    -- qualidades entra como numero somado, e nao como "× 1,3".
                     local contaPv = "10 + Con " .. valores.constituicao .. " × 1,5 + rank " ..
                         rankNum .. " × 30"
-                    if personagemEhBruxa() then
-                        contaPv = contaPv .. " + prana " .. n(sheet.prana)
+                    if ganhoVitae ~= 0 then
+                        contaPv = contaPv .. " + " .. fmtNumero(ganhoVitae) ..
+                            " [Vigor expandido " .. ((efeitosQD.hpPercent or 0) > 0 and "+" or "") ..
+                            (efeitosQD.hpPercent or 0) .. "%]"
                     end
-                    CONTAS.Pv = contaPv .. parcela(sheet.ajustePv, "ajuste")
+                    contaPv = contaPv .. parcela(n(sheet.ap), "aura") ..
+                        parcela(n(sheet.mp), "mana")
+                    if personagemEhBruxa() then
+                        contaPv = contaPv .. parcela(sheet.ajustePrana, "ajuste do prana")
+                    end
+                    CONTAS.Pv = contaPv .. parcela(sheet.ajustePv, "ajuste") ..
+                        parcela(bonusBesta.vida, "forma bestial")
                 else
                     CONTAS.Pv = "apenas vampiros"
                 end
@@ -8774,7 +8804,7 @@
         -- Roda no onResize do scrollBox e ao fim de cada recalculo.
         -- ---------------------------------------------------------------
         local GRADE_COMBATE = {
-            {linha = "cmb_linhaRecursos",  cards = {"Hp", "Ap", "Mp", "Prana", "Pv", "Lua"}},
+            {linha = "cmb_linhaRecursos",  cards = {"Hp", "Ap", "Mp", "Prana", "Pv", "Sangue", "Lua"}},
             {linha = "cmb_linhaDefesas",   cards = {"DefAparar", "DefEsquiva", "DefEmpatica", "DefTelepatica"}},
             -- MOVIMENTO tem uma linha só para ele. Voo e nado sao FIXOS: uma
             -- raça que não voa mostra "—" e o campo de ajuste continua ali,
@@ -8824,6 +8854,23 @@
                 return personagemEhBruxa() and sheet.ehVampiro ~= true
             elseif nome == "Pv" then
                 return sheet.ehVampiro == true
+            elseif nome == "Sangue" then
+                -- Cada 50ml = 1 ponto de Vitae ([1.6], [Sede de sangue]).
+                -- So o vampiro recupera assim, entao so ele ve o card.
+                return sheet.ehVampiro == true
+            elseif nome == "Hp" then
+                -- DECISAO DA MESA, 06/09/2026: "retira o campo de vida dos
+                -- vampiros, deixa so vitae". Para o vampiro o Vitae E a
+                -- vida, e as duas barras lado a lado diziam que ele tinha
+                -- duas coisas para gastar.
+                --
+                -- sheet.hp CONTINUA sendo calculado de proposito: e o que
+                -- faz a barra voltar certa no instante em que a raca deixa
+                -- de ser Vampiros, sem migracao nenhuma. O numero fica
+                -- invisivel e nao alimenta nada enquanto durar a vampirice
+                -- - o que e aceitavel porque nenhuma outra rotina o le
+                -- (medido em 06/09/2026: tres sitios, todos aqui).
+                return sheet.ehVampiro ~= true
             elseif nome == "Ap" then
                 return sheet.ehVampiro ~= true
             elseif nome == "Lua" then
@@ -9013,6 +9060,20 @@
             -- valor e com as mesmas parcelas (v0.42.1). Aqui so se copia.
             porValor("Hp", n(sheet.hp))
             porTexto("Hp", CONTAS.Hp)
+
+            -- SANGUE BEBIDO. Livro, Racas/Vampiros [1.6], "[Sede de sangue]":
+            -- "Cada 50ml recupera 1 ponto de Vitae."
+            --
+            -- Divisao INTEIRA, e nao proporcional: o livro escreve "cada
+            -- 50ml", que e degrau. 149 ml sao 2 pontos, nao 2,98 - e por
+            -- isso a conta usa parenteses, que na gramatica das contas
+            -- desta ficha significa "arredonda o grupo para baixo".
+            do
+                local ml = n(sheet.sangueBebidoMl)
+                porValor("Sangue", math.floor(ml / 50))
+                CONTAS.Sangue = "(" .. ml .. " ÷ 50) [ml de sangue]"
+                porTexto("Sangue", CONTAS.Sangue)
+            end
 
             -- A Aura e SEMPRE calculada e nunca zera: todo ser vivo tem
             -- Aura. O que muda entre magos, bruxas e vampiros e de qual
@@ -13452,6 +13513,35 @@
                                 <label align="left" width="40" text="AJUSTE" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
                                     <edit align="client" field="ajustePv" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Correção manual — some ou subtraia o que o sistema não cobre.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit>
+                                </rectangle>
+                            </layout>
+                        </rectangle>
+                    </layout>
+
+                    <!-- SANGUE BEBIDO (v0.48.0), so para vampiros, ao lado do
+                         Vitae e na cor dele.
+
+                         LIVRO, Racas/Vampiros [1.6], "[Sede de sangue]":
+                         "voce apenas recupera esta barra de energia se
+                         alimentando do sangue de outros seres vivos. Cada
+                         50ml recupera 1 ponto de Vitae."
+
+                         O card CONVERTE e REGISTRA; nao soma em lugar nenhum.
+                         A ficha nao rastreia recurso ATUAL para o personagem -
+                         so maximos - entao somar aqui inventaria um rastreio
+                         que nao existe e sumiria com a metade dele. -->
+                    <layout name="cmb_wrapSangue" align="left" width="0">
+                        <rectangle name="cmb_secSangue" align="client" color="#0D1317" strokeColor="#8B2332" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
+                            <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
+                            <label align="top" height="26" text="SANGUE BEBIDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Cada 50 ml de sangue bebido recupera 1 ponto de Vitae (Raças/Vampiros, [Sede de sangue])."/>
+                            <label name="cmb_lblSangue" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#8B2332" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
+                            <label name="cmb_contaSangue" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
+                            <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=6}">
+                                <label align="left" width="40" text="ML" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                <rectangle align="client" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3">
+                                    <edit name="cmb_edSangueMl" align="client" field="sangueBebidoMl" type="number" text="0" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="12" horzTextAlign="center" transparent="true" hint="Quantos ml o vampiro bebeu. É campo de JOGO: continua livre com a ficha finalizada.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>

@@ -204,6 +204,17 @@ NOVO NA v0.48.0 - BUSCA nos catalogos. Confira, nesta ordem:
   5. Em qualquer um dos tres, digite depressa varias letras seguidas e
      veja se a ficha responde sem travar.
 
+  6. ABA 06 (Calculos & Combate) com um VAMPIRO: a linha de recursos
+     deve mostrar VITAE e SANGUE BEBIDO, e mais NENHUMA barra - sem
+     VIDA, sem AURA, sem MANA. Se a barra de VIDA ainda aparecer ao
+     lado do Vitae, a decisao de 06/09/2026 nao subiu.
+     Confira a conta embaixo do Vitae: ela tem de citar "aura" e
+     "mana" como parcelas, porque esses cards estao escondidos.
+     Compre Vigor expandido e veja o Vitae subir; compre Aura
+     expandida e veja subir tambem - as duas pagam nele agora.
+     Digite 149 no campo ML do card de sangue: tem que mostrar 2, e
+     nao 3. E troque a raca para Humanos: a barra de VIDA volta.
+
 ANTES, NA v0.47.0 - as 29 racas tem brasao, e o mestico mostra os DOIS.
 Confira:
 

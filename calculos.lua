@@ -116,13 +116,54 @@ end
 -- Vitae. A visibilidade era o sintoma; o erro de verdade era este calculo,
 -- que ignorava o Prana.
 -- ---------------------------------------------------------------------
+-- ---------------------------------------------------------------------
+-- DECISAO DA MESA, 06/09/2026 - o mestre, revogando o que estava aqui:
+--
+--   "para o vampiro tudo que vale e o vitae, e ele pode se beneficiar
+--    tanto da qualidade aura expandida, quanto vigor expandido (...)
+--    retira o campo de vida dos vampiros, deixa so vitae"
+--
+--   Vitae = (base + Vigor expandido) + [(Aura + Aura expandida) + Mana]
+--
+-- O QUE ISSO REVOGA. Ate a v0.48.0 este projeto seguia a leitura literal
+-- do livro (3.2.md:74): o Vitae ficava "no lugar da Aura e da Mana", e o
+-- vampiro mantinha uma barra de Vida separada; Vigor expandido incidia na
+-- Vida e Aura expandida na Aura (decisao de 22/08/2026). O mestre manda
+-- sobre o livro, e mandou: o vampiro NAO tem Vida, e as duas qualidades
+-- pagam no Vitae.
+--
+-- O QUE ISSO SIMPLIFICA. O colchete e exatamente o Prana ja existente
+-- (mana + aura). Antes, so a vampibruxa somava o Prana ao Vitae; agora
+-- TODO vampiro soma Aura e Mana, e por isso ele se beneficia da Aura
+-- expandida mesmo sem a Linhagem de Unaris - era ali que o beneficio se
+-- perdia calado, porque a Aura do vampiro nao alimentava nada.
+--
+-- ORDEM DE OPERACOES, conforme a formula do mestre: o percentual do Vigor
+-- multiplica SO A BASE. A Aura expandida nao multiplica o Vitae inteiro:
+-- ela ja veio somada dentro da Aura, e aplica-la de novo aqui dobraria o
+-- mesmo numero.
+-- ---------------------------------------------------------------------
+--
+-- DEVOLVE TRES VALORES: total, base e o ganho das qualidades. Os dois
+-- extras existem para a CONTA do card, e nao para calcular nada de novo -
+-- e o que impede a linha da tela de recalcular a formula por conta
+-- propria e divergir (foi assim que, ate a v0.41.1, a conta do
+-- deslocamento mostrava 16 e o card 6).
+--
+-- O ganho vai para a conta como PARCELA ABSOLUTA, e nao como "x 1,30".
+-- Motivo medido: o avaliador da bateria arredonda para baixo TODO grupo
+-- entre parenteses, entao "(10 + Con 5 x 1,5 + rank 2 x 30) x 1,3" leria
+-- 77 x 1,3 enquanto o codigo faz 77,5 x 1,3 - e a conta deixaria de
+-- fechar exatamente nos vampiros de Constituicao impar.
 function Calculos.pv(ctx)
-    if not ctx.ehVampiro then return 0 end
-    local total = 10 + (n(ctx.constituicao) * 1.5) + (rankNumero(ctx.rank) * 30)
-    -- ctx.prana ja vem com o ajuste manual do Prana somado; por isso o
-    -- Prana e calculado ANTES do Vitae em recalcularTudo().
-    total = total + n(ctx.prana)
-    return math.floor(total + 0.5) + n(ctx.ajusteManual)
+    if not ctx.ehVampiro then return 0, 0, 0 end
+    local base = 10 + (n(ctx.constituicao) * 1.5) + (rankNumero(ctx.rank) * 30)
+    local ganho = base * (n(ctx.hpPercent) / 100)
+    -- ctx.reserva = mana + aura, a aura ja com o percentual dela dentro.
+    -- Calculada ANTES do Vitae em recalcularTudo(); mover o bloco faz o
+    -- Vitae sair sem a parcela, e o numero continua "plausivel".
+    local total = math.floor(base + ganho + n(ctx.reserva) + 0.5) + n(ctx.ajusteManual)
+    return total, base, ganho
 end
 
 -- ---------------------------------------------------------------------

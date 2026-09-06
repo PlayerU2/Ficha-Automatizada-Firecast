@@ -93,6 +93,64 @@ As quatro sondas de mutação estão ancoradas em **código** — nome de widget
 expressão de tabela — nunca em alinhamento nem em comentário, que foi o que
 apodreceu seis sondas até a v0.47.0.
 
+### O vampiro perdeu a barra de Vida (decisão do mestre, 06/09/2026)
+
+Até aqui o vampiro tinha **duas** barras: Vida e Vitae. O livro (`3.2.md:74`)
+diz que o Vitae fica *"no lugar da Aura e da Mana"* — nomeia só essas duas — e
+era assim que a ficha fazia desde a v0.34.4, com **Vigor expandido incidindo na
+Vida** e **Aura expandida na Aura**.
+
+O mestre revogou:
+
+> "para o vampiro tudo que vale é o vitae, e ele pode se beneficiar tanto da
+> qualidade aura expandida, quanto vigor expandido (…) retira o campo de vida
+> dos vampiros, deixa só vitae"
+
+```
+Vitae = (base + Vigor expandido) + [(Aura + Aura expandida) + Mana]
+base  = 10 + (Con × 1,5) + (rank × 30)
+```
+
+**A regra nova é mais simples que a antiga.** O colchete é exatamente o Prana
+que já existia (mana + aura), então **acabou o caso especial da vampibruxa**:
+agora *todo* vampiro soma Aura e Mana no Vitae. Era aí que a Aura expandida se
+perdia calada num vampiro sem Linhagem de Unaris — a Aura dele não alimentava
+nada, e o jogador pagava pontos por uma qualidade inerte.
+
+Duas coisas que exigiram medida, não dedução:
+
+* **ordem de operações.** O percentual do Vigor multiplica **só a base**. A Aura
+  expandida não multiplica o Vitae inteiro — ela já veio somada dentro da Aura, e
+  aplicá-la de novo dobraria o mesmo número;
+* **o ganho das qualidades aparece na conta como parcela absoluta**, nunca como
+  `× 1,3`. O avaliador da bateria arredonda para baixo **todo** grupo entre
+  parênteses, então `(10 + Con 5 × 1,5 + rank 2 × 30) × 1,3` leria 77 × 1,3
+  enquanto o código faz 77,5 × 1,3 — a conta deixaria de fechar exatamente nos
+  vampiros de Constituição ímpar.
+
+`sheet.hp` continua sendo calculado por baixo, invisível: é o que faz a barra de
+Vida voltar certa no instante em que a raça deixa de ser Vampiros, sem migração.
+Há asserção cobrando as duas pontas — que some, e que **volte**.
+
+**E a asserção que protegia a regra antiga apareceu na primeira rodada.** Ela
+dizia, com todas as letras, "DECISÃO DA MESA 22/08/2026: o Prana entra DENTRO do
+Vitae", e falhou assim que o parâmetro mudou de nome. É o que a lei da casa
+manda procurar: ao consertar, ache o teste que estava protegendo o
+comportamento antigo. O número dela, aliás, **não mudou** — 119 antes e depois.
+
+### Card SANGUE BEBIDO
+
+Ao lado do Vitae, na cor dele, só para vampiros.
+
+`[1.6]`, Raças/Vampiros, **[Sede de sangue]**: *"você apenas recupera esta barra
+de energia se alimentando do sangue de outros seres vivos. Cada 50ml recupera 1
+ponto de Vitae."*
+
+É **degrau, não proporção**: 149 ml são 2 pontos, não 2,98. O card **converte e
+registra, e não soma em lugar nenhum** — a ficha não rastreia recurso *atual*
+para o personagem, só máximos, e somar ali entregaria metade de um rastreio que
+não existe.
+
 ### A sonda que não podia falhar
 
 A bateria de mutação vinha reportando **uma** "checagem decorativa" desde a
