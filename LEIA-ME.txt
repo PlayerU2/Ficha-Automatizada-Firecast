@@ -1,4 +1,4 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.47.0
+FICHA DE PERSONAGEM - PETRICHOR - v0.48.0
 
 
 =======================================================================
@@ -74,14 +74,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.47.0, o que esta rodando nao e este pacote.
+disser v0.48.0, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.47.0)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.48.0)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que
@@ -174,7 +174,37 @@ Detalhes das divergencias de grafia do proprio .bib estao no CHANGELOG.
  6. O QUE TESTAR PRIMEIRO
 =======================================================================
 
-NOVO NA v0.47.0 - as 29 racas tem brasao, e o mestico mostra os DOIS.
+NOVO NA v0.48.0 - BUSCA nos catalogos. Confira, nesta ordem:
+
+  1. ABA 03 (Qualidades & Defeitos), botao CATALOGO: acima da lista ha
+     uma caixa de texto. Digite "aliado" e a lista deve ficar so com
+     Aliado. Apague e as 49 voltam.
+     Digite "graca" SEM acento: tem que achar "Graca". Digite "graça"
+     COM acento: tem que achar a mesma.
+     FECHE e reabra o pop-up: a caixa volta vazia e a lista inteira.
+
+  2. Mesmo botao para DEFEITOS. Filtre as Qualidades, feche, abra os
+     Defeitos: a lista de Defeitos tem que estar INTEIRA. Se vier
+     filtrada, os dois pop-ups estao dividindo o filtro.
+
+  3. ABA 07 (Inventario), botao do CATALOGO DE EQUIPAMENTOS: digite
+     "armadura". Os cards de armadura ficam, e o TITULO "ARMADURA"
+     tambem. Os titulos das outras faixas - ARMAS, CONSUMIVEIS, KITS -
+     tem que SUMIR junto com os itens deles. Titulo sozinho sobre o
+     vazio e o bug que esta versao veio consertar.
+     Digite "zzz": a lista fica VAZIA de verdade, sem nenhum titulo.
+     Olhe tambem se nao sobrou VAO BRANCO grande entre os cards.
+
+  4. ABA 05 (Poderes), botao CATALOGO DE PODERES: digite "cura". Os
+     nomes das divindades sem poder de cura tem que sumir, e os rotulos
+     "SLOT n - um dos dois" tambem. Confira que o RECUO das alternativas
+     de slot continua la depois de filtrar e apagar o filtro.
+     Digite "magia": a secao FORA DOS KITS reaparece com o card Magia.
+
+  5. Em qualquer um dos tres, digite depressa varias letras seguidas e
+     veja se a ficha responde sem travar.
+
+ANTES, NA v0.47.0 - as 29 racas tem brasao, e o mestico mostra os DOIS.
 Confira:
 
   1. ABA 04: escolha uma raca jogavel. Ao lado dos cards SITUACAO e

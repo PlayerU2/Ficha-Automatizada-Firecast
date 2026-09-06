@@ -4211,6 +4211,247 @@
             return s
         end
 
+        -- =============================================================
+        -- BUSCA NOS CATALOGOS (v0.48.0)
+        -- =============================================================
+        -- UX, nao regra. O livro nao versa sobre interface e nada aqui
+        -- decide numero de jogo -- por isso este bloco nao cita o livro, e
+        -- a ausencia e proposital, nao esquecimento.
+        --
+        -- FILTRAR NAO RECONSTROI A LISTA. Os 412 cards dos tres catalogos
+        -- sao estaticos no XML e cada um ja carrega sua chave dentro do
+        -- proprio onClick. Reconstruir e que perderia a chave (foi assim
+        -- que creditoEmbutido sumiu na v0.28 e imagem na v0.33) e, no
+        -- popItens, quebraria os 250 indices posicionais que a checagem 20
+        -- amarra. Aqui a busca so ESCONDE card que ja existe: quem sobra
+        -- continua com exatamente o mesmo onClick de sempre.
+        --
+        -- ESCONDER E POR ALTURA ZERO, nunca por visible=: visible em
+        -- align="top" REORDENA o layout neste SDK.
+        --
+        -- E A MARGEM SOBRA quando a altura vai a zero: sao 3px em 250
+        -- cards (750px de vao fantasma) e 4px em 49. Dai o cuidado com a
+        -- margem abaixo, que NAO e detalhe de acabamento.
+        -- -------------------------------------------------------------
+
+        -- Altura do card de cada lista, MEDIDA no XML em 05/09/2026:
+        -- 49 cards de 44px, 250 de 28px, 113 de 26px -- uniforme dentro de
+        -- cada lista. A checagem 51 confere estes tres numeros contra o
+        -- XML, porque medida copiada a mao para dentro do Lua envelhece
+        -- calada e o card volta com a altura errada.
+        local ALTURA_CARD_CATALOGO = { qd = 44, item = 28, poder = 26 }
+
+        -- Margem original de cada widget, LIDA do proprio widget na
+        -- primeira vez e guardada. Ler em vez de repetir aqui a tabela do
+        -- XML e o que faz as TRES formas de margem do catalogo de poderes
+        -- (bottom=3 / left=12,bottom=2 / left=12,bottom=6) e as duas dos
+        -- cabecalhos do popItens sobreviverem sem uma segunda copia para
+        -- divergir da primeira.
+        local margemDoWidget = {}
+        local margemFoiLida = {}
+
+        local ZERO_MARGENS = { left = 0, top = 0, right = 0, bottom = 0 }
+
+        local function guardarMargem(nome, ctrl)
+            if margemFoiLida[nome] == nil then
+                local ok, m = pcall(function() return ctrl:getMargins() end)
+                margemFoiLida[nome] = (ok and m ~= nil)
+                if margemFoiLida[nome] then margemDoWidget[nome] = m end
+            end
+            return margemFoiLida[nome]
+        end
+
+        -- Mostra ou esconde uma linha de catalogo (card ou cabecalho).
+        --
+        -- A margem so e mexida quando a original pode ser LIDA antes.
+        -- Zerar sem saber restaurar apagaria o recuo left=12 dos 41 cards
+        -- que sao as alternativas do mesmo slot ("um dos dois") e o left=6
+        -- dos subtitulos de consumivel -- e card mentindo sobre a
+        -- estrutura do kit e pior que vao em branco. Nao conseguiu ler ->
+        -- so a altura muda, e o vao fica. Escada, nao aposta: funciona
+        -- mesmo se _gui_setMargins/_obj_getProp nao responderem.
+        local function mostrarLinhaCatalogo(nome, altura, mostrar)
+            local ctrl = self[nome]
+            if ctrl == nil then return false end
+            pcall(function() ctrl:setHeight(mostrar and altura or 0) end)
+            if guardarMargem(nome, ctrl) then
+                pcall(function()
+                    ctrl:setMargins(mostrar and margemDoWidget[nome] or ZERO_MARGENS)
+                end)
+            end
+            return true
+        end
+
+        -- A dobra da busca e chavePoder(): ela ja tira acento e tudo que
+        -- nao e alfanumerico, e e ELA que gera o sufixo do nome do widget.
+        -- Buscar com a mesma funcao que batizou o card e o que faz "pocao"
+        -- achar "Pocao de Cura" sem uma tabela de acentos paralela para
+        -- envelhecer -- e a checagem 25 ja cobra essa funcao, deus a deus.
+        function dobrarBusca(texto)
+            return string.lower(chavePoder(texto))
+        end
+
+        function buscaCasa(alvoDobrado, agulhaDobrada)
+            if agulhaDobrada == "" then return true end
+            return string.find(alvoDobrado, agulhaDobrada, 1, true) ~= nil
+        end
+
+        -- QUALIDADES E DEFEITOS -- o caso limpo dos tres.
+        --
+        -- Os dois popups (Qualidades e Defeitos) dividem o prefixo
+        -- rectLinhaQD_ e sao listas planas: nenhum cabecalho de secao
+        -- dentro do scrollBox. Mas cada um tem sua PROPRIA caixa de busca,
+        -- entao o filtro recebe o TIPO e so mexe nos cards daquele popup.
+        -- Filtrar os dois de uma passada esconderia cards do popup vizinho
+        -- com a caixa dele vazia -- exatamente o susto de "o catalogo
+        -- quebrou" que a decisao de zerar ao abrir existe para evitar.
+        --
+        -- it.chave JA E a forma dobrada ("Anjoguardiao") e it.nome e a de
+        -- tela ("Anjo guardiao"): 37 das 49 entradas divergem. O widget vem
+        -- da CHAVE; a busca casa contra o NOME, que e o que o jogador esta
+        -- lendo quando digita.
+        function filtrarCatalogoQD(texto, tipo)
+            local agulha = dobrarBusca(texto)
+            for _, it in ipairs(CatalogoQD.itens) do
+                if tipo == nil or tostring(it.tipo) == tipo then
+                    mostrarLinhaCatalogo(
+                        "rectLinhaQD_" .. tostring(it.chave),
+                        ALTURA_CARD_CATALOGO.qd,
+                        buscaCasa(dobrarBusca(it.nome or it.chave), agulha))
+                end
+            end
+        end
+
+        -- LOJA -- 250 cards, 9 cabecalhos de categoria e 6 subtitulos de
+        -- consumivel.
+        --
+        -- Ate a v0.47.0 os 15 cabecalhos NAO TINHAM name=, entao o Lua nao
+        -- os alcancava. Batizados nesta versao (itmCab_/itmSub_), porque
+        -- filtrar sem eles deixaria "ARMADURA" flutuando sem nada embaixo
+        -- -- a lista pareceria quebrada sem erro nenhum, que e a forma que
+        -- este projeto ja viu cinco vezes.
+        --
+        -- Cabecalho some quando NENHUM item da sua faixa sobreviveu ao
+        -- filtro. E derivado do resultado da busca, recalculado a cada
+        -- tecla: nao existe estado de cabecalho para dessincronizar.
+        function filtrarCatalogoItens(texto)
+            local agulha = dobrarBusca(texto)
+            local sobrouCategoria, sobrouSubtipo = {}, {}
+            for _, it in ipairs(CatalogoItens.itens) do
+                local casa = buscaCasa(
+                    dobrarBusca(tostring(it.nome) .. tostring(it.qualidade)), agulha)
+                mostrarLinhaCatalogo(
+                    "itmL_" .. chavePoder(it.nome) .. chavePoder(it.qualidade),
+                    ALTURA_CARD_CATALOGO.item, casa)
+                if casa then
+                    sobrouCategoria[tostring(it.categoria)] = true
+                    if it.subtipo ~= nil then sobrouSubtipo[tostring(it.subtipo)] = true end
+                end
+            end
+            -- As faixas saem do proprio catalogo, nao de uma lista escrita
+            -- a mao aqui: categoria nova no catalogo ganha cabecalho no
+            -- XML e passa a ser filtrada sem ninguem lembrar de voltar
+            -- neste laco. A checagem 51 cobra o par (faixa, cabecalho).
+            local vistas, vistosSub = {}, {}
+            for _, it in ipairs(CatalogoItens.itens) do
+                local cat = tostring(it.categoria)
+                if not vistas[cat] then
+                    vistas[cat] = true
+                    mostrarLinhaCatalogo("itmCab_" .. chavePoder(cat), 24,
+                                         sobrouCategoria[cat] == true)
+                end
+                if it.subtipo ~= nil then
+                    local sub = tostring(it.subtipo)
+                    if not vistosSub[sub] then
+                        vistosSub[sub] = true
+                        mostrarLinhaCatalogo("itmSub_" .. chavePoder(sub), 18,
+                                             sobrouSubtipo[sub] == true)
+                    end
+                end
+            end
+        end
+
+        -- PODERES -- 113 cards em 18 kits, mais os dois de FORA DOS KITS.
+        --
+        -- E o unico dos tres com hierarquia: rotulo de divindade, rotulo de
+        -- slot ("SLOT 2 - um dos dois") e card. Os dois rotulos so ganharam
+        -- name= na v0.48.0, e pelo GERADOR (verif/gera_catalogo_poderes.py),
+        -- nunca a mao -- batizar aqui faria a checagem 44 acusar na proxima
+        -- regeracao, que e como um arquivo irmao fica para tras.
+        --
+        -- O cabecalho e derivado do resultado da busca, recalculado a cada
+        -- tecla: some quando nenhum card daquela faixa sobreviveu. Nao ha
+        -- estado de cabecalho para dessincronizar do estado dos cards.
+        --
+        -- ATENCAO A MARGEM: 41 destes cards tem left=12, o recuo que mostra
+        -- que sao as alternativas do MESMO slot. mostrarLinhaCatalogo so
+        -- mexe na margem quando conseguiu ler a original antes, exatamente
+        -- para nao apagar esse recuo -- card mentindo sobre a estrutura do
+        -- kit e pior que um vao em branco.
+        function filtrarCatalogoPoderes(texto)
+            local agulha = dobrarBusca(texto)
+            for _, deus in ipairs(CatalogoDeuses.itens) do
+                local chaveDeus = chavePoder(deus.nome)
+                local sobrouNoKit = false
+                for i, slot in ipairs(deus.slots or {}) do
+                    local sobrouNoSlot = false
+                    for _, nomePoder in ipairs(slot) do
+                        local casa = buscaCasa(dobrarBusca(nomePoder), agulha)
+                        mostrarLinhaCatalogo(
+                            "rectPod_" .. chaveDeus .. "_" .. chavePoder(nomePoder),
+                            ALTURA_CARD_CATALOGO.poder, casa)
+                        if casa then sobrouNoSlot = true; sobrouNoKit = true end
+                    end
+                    -- o rotulo de slot so existe quando o slot tem "ou"
+                    if #slot > 1 then
+                        mostrarLinhaCatalogo("podSlot_" .. chaveDeus .. "_" .. i, 14, sobrouNoSlot)
+                    end
+                end
+                mostrarLinhaCatalogo("podCab_" .. chaveDeus, 20, sobrouNoKit)
+            end
+            -- FORA DOS KITS: os dois batizados pelo nome antigo
+            -- (rectPod_<poder>), porque nao vem de divindade nenhuma.
+            local sobrouFora = false
+            for _, nomePoder in ipairs({"Magia", "Hemocinese"}) do
+                local casa = buscaCasa(dobrarBusca(nomePoder), agulha)
+                mostrarLinhaCatalogo("rectPod_" .. chavePoder(nomePoder),
+                                     ALTURA_CARD_CATALOGO.poder, casa)
+                if casa then sobrouFora = true end
+            end
+            mostrarLinhaCatalogo("podCab_Foradoskits", 20, sobrouFora)
+        end
+
+        -- ABRIR ZERANDO O FILTRO (decisao de 05/09/2026).
+        --
+        -- Sem isto, reabrir o popup mostraria 3 de 250 por causa de um
+        -- filtro esquecido, e o catalogo pareceria quebrado -- declarado,
+        -- visivel na tela, alimentando nada, sem erro nenhum. E o texto
+        -- NAO e gravado no NDB de proposito: a caixa nao tem field=, entao
+        -- nao ha campo novo para serializar por uma preferencia de UI.
+        --
+        -- setText dispara onChange tambem quando e o SCRIPT que escreve --
+        -- documentado na caixa de vida da criatura, onde isso ja causou
+        -- recursao infinita. Aqui e inofensivo: o onChange refaz o filtro
+        -- vazio, e filtrar nao escreve na caixa. Mesmo assim o filtro e
+        -- chamado explicitamente logo abaixo, para a lista voltar inteira
+        -- mesmo se o onChange nao vier.
+        local function zerarCaixaBusca(caixa)
+            if caixa == nil then return end
+            pcall(function() caixa:setText("") end)
+        end
+
+        function abrirCatalogoQualidades()
+            zerarCaixaBusca(self.edBuscaQualidades)
+            filtrarCatalogoQD("", "Qualidade")
+            abrirPopupAjustado(self.popCatalogoQualidades, 920, 600)
+        end
+
+        function abrirCatalogoDefeitos()
+            zerarCaixaBusca(self.edBuscaDefeitos)
+            filtrarCatalogoQD("", "Defeito")
+            abrirPopupAjustado(self.popCatalogoDefeitos, 920, 600)
+        end
+
         function pontosPoderPorNivel(nivel)
             local total = 0
             for i = 1, math.min(math.max(n(nivel), 1), 20) do
@@ -4771,6 +5012,11 @@
                 esvaziarDetalhePoder()
             end
             destacarPoderSelecionado()
+            -- Zera o filtro a cada abertura, como nos outros dois catalogos.
+            if self.edBuscaPoderes ~= nil then
+                pcall(function() self.edBuscaPoderes:setText("") end)
+            end
+            filtrarCatalogoPoderes("")
             abrirPopupAjustado(self.popPoderes, 1080, 680)
         end
 
@@ -11195,6 +11441,14 @@
         function abrirPopupItens()
             if self.popItens == nil then return end
             esvaziarDetalheItem()
+            -- Zera o filtro a cada abertura, pelo mesmo motivo dos
+            -- catalogos de Qualidades e Defeitos: reabrir mostrando 3 de
+            -- 250 por causa de um filtro esquecido parece catalogo
+            -- quebrado, e nao ha erro nenhum na tela para desmentir.
+            if self.edBuscaItens ~= nil then
+                pcall(function() self.edBuscaItens:setText("") end)
+            end
+            filtrarCatalogoItens("")
             abrirPopupAjustado(self.popItens, 900, 640)
         end
 
@@ -12405,7 +12659,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.47.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.48.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -13689,7 +13943,7 @@
                                     <label align="top" height="24" text="QUALIDADES" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold"/>
                                     <label align="top" height="16" text="Vantagens compradas com pontos." fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=4}"/>
                                     <rectangle align="top" height="30" color="#16202A" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}" cursor="handPoint" hint="Abrir o catálogo de Qualidades">
-                                        <event name="onClick"><![CDATA[abrirPopupAjustado(self.popCatalogoQualidades, 920, 600);]]></event>
+                                        <event name="onClick"><![CDATA[abrirCatalogoQualidades();]]></event>
                                         <label align="client" text="+ ABRIR CATÁLOGO" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                     </rectangle>
                                     <recordList name="listaQualidades" align="client" field="listaQualidades" templateForm="frmItemQualidadeDefeito" itemHeight="58" selectable="true"/>
@@ -13702,7 +13956,7 @@
                                     <label align="top" height="24" text="DEFEITOS" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold"/>
                                     <label align="top" height="16" text="Limitações que devolvem pontos (máx. 7)." fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=4}"/>
                                     <rectangle align="top" height="30" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}" cursor="handPoint" hint="Abrir o catálogo de Defeitos">
-                                        <event name="onClick"><![CDATA[abrirPopupAjustado(self.popCatalogoDefeitos, 920, 600);]]></event>
+                                        <event name="onClick"><![CDATA[abrirCatalogoDefeitos();]]></event>
                                         <label align="client" text="+ ABRIR CATÁLOGO" fontFamily="Marcellus SC" fontColor="#D4838F" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                     </rectangle>
                                     <recordList name="listaDefeitos" align="client" field="listaDefeitos" templateForm="frmItemQualidadeDefeito" itemHeight="58" selectable="true"/>
@@ -20873,6 +21127,13 @@
                     <rectangle align="left" width="360" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
                         <layout align="client" margins="{left=8,right=8,top=8,bottom=8}">
                             <label align="top" height="18" text="Clique em um item para ver a descrição completa" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=4}" hitTest="false"/>
+                            <rectangle name="rectBuscaQualidades" align="top" height="26" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}">
+                                <layout align="client" margins="{left=6,right=6}">
+                                    <edit name="edBuscaQualidades" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
+                                        <event name="onChange"><![CDATA[filtrarCatalogoQD(self.edBuscaQualidades:getText(), "Qualidade");]]></event>
+                                    </edit>
+                                </layout>
+                            </rectangle>
                             <scrollBox align="client">
                         <rectangle name="rectLinhaQD_Aliado" align="top" height="44" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" cursor="handPoint" hint="Ver os detalhes de 'Aliado'">
                             <event name="onClick"><![CDATA[selecionarDetalheQD("Qualidade", "Aliado", "popCatalogoQualidades");]]></event>
@@ -21147,6 +21408,13 @@
                     <rectangle align="left" width="360" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
                         <layout align="client" margins="{left=8,right=8,top=8,bottom=8}">
                             <label align="top" height="18" text="Clique em um item para ver a descrição completa" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=4}" hitTest="false"/>
+                            <rectangle name="rectBuscaDefeitos" align="top" height="26" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}">
+                                <layout align="client" margins="{left=6,right=6}">
+                                    <edit name="edBuscaDefeitos" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
+                                        <event name="onChange"><![CDATA[filtrarCatalogoQD(self.edBuscaDefeitos:getText(), "Defeito");]]></event>
+                                    </edit>
+                                </layout>
+                            </rectangle>
                             <scrollBox align="client">
                         <rectangle name="rectLinhaQD_Amaldicoado" align="top" height="44" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" cursor="handPoint" hint="Ver os detalhes de 'Amaldiçoado'">
                             <event name="onClick"><![CDATA[selecionarDetalheQD("Defeito", "Amaldiçoado", "popCatalogoDefeitos");]]></event>
@@ -22933,8 +23201,15 @@
 
                 <!-- LISTA -->
                 <rectangle align="left" width="360" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
+                    <rectangle name="rectBuscaItens" align="top" height="26" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=8,right=8,top=6,bottom=2}">
+                        <layout align="client" margins="{left=6,right=6}">
+                            <edit name="edBuscaItens" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
+                                <event name="onChange"><![CDATA[filtrarCatalogoItens(self.edBuscaItens:getText());]]></event>
+                            </edit>
+                        </layout>
+                    </rectangle>
                     <scrollBox align="client" margins="{left=8,right=8,top=4,bottom=8}">
-                            <label align="top" height="24" text="ARMADURA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmCab_Armadura" align="top" height="24" text="ARMADURA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_ArmaduraleveComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_ArmaduraleveComum" align="client" text="Armadura leve" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -22965,7 +23240,7 @@
                                 <label align="right" width="70" text="ÓTIMA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(6);]]></event>
                             </rectangle>
-                            <label align="top" height="24" text="ARMAS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmCab_Armas" align="top" height="24" text="ARMAS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_ArmacorpoacorpodeumamaoComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_ArmacorpoacorpodeumamaoComum" align="client" text="Arma corpo-a-corpo de uma-mão" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -23046,7 +23321,7 @@
                                 <label align="right" width="70" text="ÓTIMA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(22);]]></event>
                             </rectangle>
-                            <label align="top" height="24" text="PROJÉTEIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmCab_Projeteis" align="top" height="24" text="PROJÉTEIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_FlechasComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_FlechasComum" align="client" text="Flechas" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -23077,7 +23352,7 @@
                                 <label align="right" width="70" text="ÓTIMA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(28);]]></event>
                             </rectangle>
-                            <label align="top" height="24" text="ACESSÓRIOS E FERRAMENTAS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmCab_AcessorioseFerramentas" align="top" height="24" text="ACESSÓRIOS E FERRAMENTAS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_AljavadoArqueiroComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_AljavadoArqueiroComum" align="client" text="Aljava do Arqueiro" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -23258,8 +23533,8 @@
                                 <label align="right" width="70" text="ÓTIMA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(64);]]></event>
                             </rectangle>
-                            <label align="top" height="24" text="CONSUMÍVEIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
-                            <label align="top" height="18" text="Alimentação" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
+                            <label name="itmCab_Consumiveis" align="top" height="24" text="CONSUMÍVEIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmSub_Alimentacao" align="top" height="18" text="Alimentação" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
                             <rectangle name="itmL_CantildeaguaComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_CantildeaguaComum" align="client" text="Cantil de água" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -23285,7 +23560,7 @@
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(69);]]></event>
                             </rectangle>
-                            <label align="top" height="18" text="Remédio" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
+                            <label name="itmSub_Remedio" align="top" height="18" text="Remédio" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
                             <rectangle name="itmL_PocaodeCuraAmadora" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_PocaodeCuraAmadora" align="client" text="Poção de Cura" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="AMADORA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -23361,7 +23636,7 @@
                                 <label align="right" width="70" text="SUPERIOR" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(84);]]></event>
                             </rectangle>
-                            <label align="top" height="18" text="Veneno" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
+                            <label name="itmSub_Veneno" align="top" height="18" text="Veneno" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
                             <rectangle name="itmL_PocaodeSonoAmadora" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_PocaodeSonoAmadora" align="client" text="Poção de Sono" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="AMADORA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -23392,7 +23667,7 @@
                                 <label align="right" width="70" text="SUPERIOR" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(90);]]></event>
                             </rectangle>
-                            <label align="top" height="18" text="Tônico" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
+                            <label name="itmSub_Tonico" align="top" height="18" text="Tônico" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
                             <rectangle name="itmL_ElixirdaIraAmadora" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_ElixirdaIraAmadora" align="client" text="Elixir da Ira" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="AMADORA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -23483,7 +23758,7 @@
                                 <label align="right" width="70" text="SUPERIOR" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(108);]]></event>
                             </rectangle>
-                            <label align="top" height="18" text="Bomba" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
+                            <label name="itmSub_Bomba" align="top" height="18" text="Bomba" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
                             <rectangle name="itmL_BombaFlamejanteAmadora" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_BombaFlamejanteAmadora" align="client" text="Bomba Flamejante" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="AMADORA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -23654,7 +23929,7 @@
                                 <label align="right" width="70" text="LENDÁRIA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(142);]]></event>
                             </rectangle>
-                            <label align="top" height="18" text="Pergaminho" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
+                            <label name="itmSub_Pergaminho" align="top" height="18" text="Pergaminho" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" margins="{top=4,bottom=1,left=6}" hitTest="false"/>
                             <rectangle name="itmL_ArmaduradeareiaRankD" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_ArmaduradeareiaRankD" align="client" text="Armadura de areia" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="RANK D" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -24015,7 +24290,7 @@
                                 <label align="right" width="70" text="RANK C" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(214);]]></event>
                             </rectangle>
-                            <label align="top" height="24" text="ESPÓLIOS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmCab_Espolios" align="top" height="24" text="ESPÓLIOS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_ChifresComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_ChifresComum" align="client" text="Chifres" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -24041,7 +24316,7 @@
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(219);]]></event>
                             </rectangle>
-                            <label align="top" height="24" text="MONTARIAS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmCab_Montarias" align="top" height="24" text="MONTARIAS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_CarrocaComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_CarrocaComum" align="client" text="Carroça" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -24092,7 +24367,7 @@
                                 <label align="right" width="70" text="ÓTIMA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(229);]]></event>
                             </rectangle>
-                            <label align="top" height="24" text="UTILIDADES" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmCab_Utilidades" align="top" height="24" text="UTILIDADES" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_30mdecordaComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_30mdecordaComum" align="client" text="30m de corda" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -24143,7 +24418,7 @@
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                                 <event name="onClick"><![CDATA[verDetalheItem(239);]]></event>
                             </rectangle>
-                            <label align="top" height="24" text="KITS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
+                            <label name="itmCab_Kits" align="top" height="24" text="KITS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=2}" hitTest="false"/>
                             <rectangle name="itmL_KitdeacampamentoComum" align="top" height="28" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver detalhes">
                                 <label name="itmLb_KitdeacampamentoComum" align="client" text="Kit de acampamento" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" vertTextAlign="center" margins="{left=8}" wordWrap="false" hitTest="false"/>
                                 <label align="right" width="70" text="COMUM" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -25661,14 +25936,21 @@
 
                 <layout align="client">
                     <rectangle align="left" width="300" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=14}" hitTest="false">
+                        <rectangle name="rectBuscaPoderes" align="top" height="26" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=8,right=8,top=6,bottom=2}">
+                            <layout align="client" margins="{left=6,right=6}">
+                                <edit name="edBuscaPoderes" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" hint="Filtra a lista pelo nome do poder. Ignora acento e maiúscula, e zera ao reabrir o pop-up.">
+                                    <event name="onChange"><![CDATA[filtrarCatalogoPoderes(self.edBuscaPoderes:getText());]]></event>
+                                </edit>
+                            </layout>
+                        </rectangle>
                         <scrollBox align="client" margins="{left=8,right=8,top=4,bottom=8}">
-                                <label align="top" height="20" text="AMMIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Ammis" align="top" height="20" text="AMMIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Ammis_Carismasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Carisma sobrenatural — kit de Ammis">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Carisma sobrenatural", "Ammis");]]></event>
                                     <label align="client" text="Carisma sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Ammis_2" align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Ammis_Cavaleiroepico" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Cavaleiro épico — kit de Ammis">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Cavaleiro épico", "Ammis");]]></event>
                                     <label align="client" text="Cavaleiro épico" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25694,8 +25976,8 @@
                                     <label align="client" text="Liderança absoluta" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="ASLOT" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
-                                <label align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podCab_Aslot" align="top" height="20" text="ASLOT" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podSlot_Aslot_1" align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Aslot_Manipulacaosobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Manipulação sobrenatural — kit de Aslot">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Manipulação sobrenatural", "Aslot");]]></event>
                                     <label align="client" text="Manipulação sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25711,7 +25993,7 @@
                                     <label align="client" text="Fator de aura regenerativa" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 3 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Aslot_3" align="top" height="14" text="SLOT 3 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Aslot_Inducaodomedo" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Indução do medo — kit de Aslot">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Indução do medo", "Aslot");]]></event>
                                     <label align="client" text="Indução do medo" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25732,13 +26014,13 @@
                                     <label align="client" text="Manipulação da água" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="DIN" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Din" align="top" height="20" text="DIN" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Din_Sabedoriasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Sabedoria sobrenatural — kit de Din">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Sabedoria sobrenatural", "Din");]]></event>
                                     <label align="client" text="Sabedoria sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Din_2" align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Din_Escudopsiquico" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Escudo psíquico — kit de Din">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Escudo psíquico", "Din");]]></event>
                                     <label align="client" text="Escudo psíquico" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25764,7 +26046,7 @@
                                     <label align="client" text="Manipulação de alimentos" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="DITRYS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Ditrys" align="top" height="20" text="DITRYS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Ditrys_Carismasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Carisma sobrenatural — kit de Ditrys">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Carisma sobrenatural", "Ditrys");]]></event>
                                     <label align="client" text="Carisma sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25790,8 +26072,8 @@
                                     <label align="client" text="Cura" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="GRÚN" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
-                                <label align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podCab_Grun" align="top" height="20" text="GRÚN" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podSlot_Grun_1" align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Grun_Constituicaosobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Constituição sobrenatural — kit de Grún">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Constituição sobrenatural", "Grún");]]></event>
                                     <label align="client" text="Constituição sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25822,8 +26104,8 @@
                                     <label align="client" text="Manipulação do fogo" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="KAERN" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
-                                <label align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podCab_Kaern" align="top" height="20" text="KAERN" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podSlot_Kaern_1" align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Kaern_Forcasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Força sobrenatural — kit de Kaern">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Força sobrenatural", "Kaern");]]></event>
                                     <label align="client" text="Força sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25834,7 +26116,7 @@
                                     <label align="client" text="Constituição sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Kaern_2" align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Kaern_Duelistaepico" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Duelista épico — kit de Kaern">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Duelista épico", "Kaern");]]></event>
                                     <label align="client" text="Duelista épico" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25860,13 +26142,13 @@
                                     <label align="client" text="Manipulação das armas" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="MEREWEN" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Merewen" align="top" height="20" text="MEREWEN" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Merewen_Destrezasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Destreza sobrenatural — kit de Merewen">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Destreza sobrenatural", "Merewen");]]></event>
                                     <label align="client" text="Destreza sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Merewen_2" align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Merewen_Intuicaoartistica" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Intuição artística — kit de Merewen">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Intuição artística", "Merewen");]]></event>
                                     <label align="client" text="Intuição artística" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25892,8 +26174,8 @@
                                     <label align="client" text="Manipulação do amor" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="MUNGUS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
-                                <label align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podCab_Mungus" align="top" height="20" text="MUNGUS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podSlot_Mungus_1" align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Mungus_Destrezasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Destreza sobrenatural — kit de Mungus">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Destreza sobrenatural", "Mungus");]]></event>
                                     <label align="client" text="Destreza sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25924,7 +26206,7 @@
                                     <label align="client" text="Manipulação das sombras" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="NELLIOS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Nellios" align="top" height="20" text="NELLIOS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Nellios_Inteligenciasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Inteligência sobrenatural — kit de Nellios">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Inteligência sobrenatural", "Nellios");]]></event>
                                     <label align="client" text="Inteligência sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25935,7 +26217,7 @@
                                     <label align="client" text="Ultra sensoriamento" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 3 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Nellios_3" align="top" height="14" text="SLOT 3 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Nellios_Telepatia" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Telepatia — kit de Nellios">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Telepatia", "Nellios");]]></event>
                                     <label align="client" text="Telepatia" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25956,7 +26238,7 @@
                                     <label align="client" text="Metamorfose animal" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="NOCTEFIR" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Noctefir" align="top" height="20" text="NOCTEFIR" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Noctefir_Constituicaosobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Constituição sobrenatural — kit de Noctefir">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Constituição sobrenatural", "Noctefir");]]></event>
                                     <label align="client" text="Constituição sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25977,7 +26259,7 @@
                                     <label align="client" text="Metamorfose mortal" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 5 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Noctefir_5" align="top" height="14" text="SLOT 5 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Noctefir_Telepatia" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Telepatia — kit de Noctefir">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Telepatia", "Noctefir");]]></event>
                                     <label align="client" text="Telepatia" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25988,7 +26270,7 @@
                                     <label align="client" text="Manipulação dos sonhos" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="ODUWA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Oduwa" align="top" height="20" text="ODUWA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Oduwa_Manipulacaosobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Manipulação sobrenatural — kit de Oduwa">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Manipulação sobrenatural", "Oduwa");]]></event>
                                     <label align="client" text="Manipulação sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -25999,7 +26281,7 @@
                                     <label align="client" text="Destreza sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 3 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Oduwa_3" align="top" height="14" text="SLOT 3 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Oduwa_Metamorfosemortal" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Metamorfose mortal — kit de Oduwa">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Metamorfose mortal", "Oduwa");]]></event>
                                     <label align="client" text="Metamorfose mortal" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26020,7 +26302,7 @@
                                     <label align="client" text="Ilusão" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="QHYRANA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Qhyrana" align="top" height="20" text="QHYRANA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Qhyrana_Sabedoriasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Sabedoria sobrenatural — kit de Qhyrana">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Sabedoria sobrenatural", "Qhyrana");]]></event>
                                     <label align="client" text="Sabedoria sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26036,7 +26318,7 @@
                                     <label align="client" text="Manipulação do ar" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 4 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Qhyrana_4" align="top" height="14" text="SLOT 4 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Qhyrana_Radiestesia" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Radiestesia — kit de Qhyrana">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Radiestesia", "Qhyrana");]]></event>
                                     <label align="client" text="Radiestesia" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26052,8 +26334,8 @@
                                     <label align="client" text="Manipulação dos sonhos" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="QOSIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
-                                <label align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podCab_Qosis" align="top" height="20" text="QOSIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podSlot_Qosis_1" align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Qosis_Constituicaosobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Constituição sobrenatural — kit de Qosis">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Constituição sobrenatural", "Qosis");]]></event>
                                     <label align="client" text="Constituição sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26079,7 +26361,7 @@
                                     <label align="client" text="Manipulação do clima" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 5 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Qosis_5" align="top" height="14" text="SLOT 5 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Qosis_Manipulacaodaeletricidade" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Manipulação da eletricidade — kit de Qosis">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Manipulação da eletricidade", "Qosis");]]></event>
                                     <label align="client" text="Manipulação da eletricidade" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26090,7 +26372,7 @@
                                     <label align="client" text="Manipulação da água" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="RAS'BUZ" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Rasbuz" align="top" height="20" text="RAS'BUZ" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Rasbuz_Forcasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Força sobrenatural — kit de Ras'buz">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Força sobrenatural", "Ras'buz");]]></event>
                                     <label align="client" text="Força sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26106,7 +26388,7 @@
                                     <label align="client" text="Metamorfose animal" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 4 — um dos três:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Rasbuz_4" align="top" height="14" text="SLOT 4 — um dos três:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Rasbuz_Manipulacaodaagua" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Manipulação da água — kit de Ras'buz">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Manipulação da água", "Ras'buz");]]></event>
                                     <label align="client" text="Manipulação da água" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26127,13 +26409,13 @@
                                     <label align="client" text="Liderança absoluta" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="SIDHARIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Sidharis" align="top" height="20" text="SIDHARIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Sidharis_Charmesobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Charme sobrenatural — kit de Sidharis">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Charme sobrenatural", "Sidharis");]]></event>
                                     <label align="client" text="Charme sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Sidharis_2" align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Sidharis_Fatordeauraregenerativa" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Fator de aura regenerativa — kit de Sidharis">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Fator de aura regenerativa", "Sidharis");]]></event>
                                     <label align="client" text="Fator de aura regenerativa" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26159,8 +26441,8 @@
                                     <label align="client" text="Ilusão" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="SÝDOS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
-                                <label align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podCab_Sydos" align="top" height="20" text="SÝDOS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podSlot_Sydos_1" align="top" height="14" text="SLOT 1 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Sydos_Carismasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Carisma sobrenatural — kit de Sýdos">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Carisma sobrenatural", "Sýdos");]]></event>
                                     <label align="client" text="Carisma sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26191,7 +26473,7 @@
                                     <label align="client" text="Cura" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="THALEESSA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Thaleessa" align="top" height="20" text="THALEESSA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Thaleessa_Forcasobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Força sobrenatural — kit de Thaleessa">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Força sobrenatural", "Thaleessa");]]></event>
                                     <label align="client" text="Força sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26207,7 +26489,7 @@
                                     <label align="client" text="Indução do medo" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 4 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Thaleessa_4" align="top" height="14" text="SLOT 4 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Thaleessa_Fitocinese" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Fitocinese — kit de Thaleessa">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Fitocinese", "Thaleessa");]]></event>
                                     <label align="client" text="Fitocinese" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26223,13 +26505,13 @@
                                     <label align="client" text="Metamorfose animal" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="WENTI" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Wenti" align="top" height="20" text="WENTI" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Wenti_Constituicaosobrenatural" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Constituição sobrenatural — kit de Wenti">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Constituição sobrenatural", "Wenti");]]></event>
                                     <label align="client" text="Constituição sobrenatural" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="passivo" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
+                                <label name="podSlot_Wenti_2" align="top" height="14" text="SLOT 2 — um dos dois:" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" margins="{left=4,top=2}" hitTest="false"/>
                                 <rectangle name="rectPod_Wenti_Ultrasensoriamento" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,bottom=2}" cursor="handPoint" hint="Ver Ultra sensoriamento — kit de Wenti">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Ultra sensoriamento", "Wenti");]]></event>
                                     <label align="client" text="Ultra sensoriamento" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
@@ -26255,7 +26537,7 @@
                                     <label align="client" text="Manipulação do clima" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                     <label align="right" width="52" text="ativo" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label align="top" height="20" text="FORA DOS KITS" fontFamily="Marcellus SC" fontColor="#7FA8B8" fontSize="11" margins="{top=14,bottom=4}" hitTest="false"/>
+                                <label name="podCab_Foradoskits" align="top" height="20" text="FORA DOS KITS" fontFamily="Marcellus SC" fontColor="#7FA8B8" fontSize="11" margins="{top=14,bottom=4}" hitTest="false"/>
                                 <rectangle name="rectPod_Magia" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Ver Magia — vem da qualidade Coração de Mana, não de uma divindade">
                                     <event name="onClick"><![CDATA[mostrarDetalhePoder("Magia", "Coração de Mana");]]></event>
                                     <label align="client" text="Magia" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>

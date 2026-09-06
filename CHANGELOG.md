@@ -1,3 +1,133 @@
+## v0.48.0 — busca nos catálogos, e o gerador que reescrevia o arquivo inteiro (05/09/2026)
+
+### Campo de busca nos três catálogos
+
+Qualidades, Defeitos, Loja e Poderes abrem com uma caixa de texto acima da
+lista. Digitar filtra; apagar devolve tudo.
+
+Como a mesa decidiu, e por quê:
+
+* **casa só com o nome**, não com a descrição — nos 250 itens da loja o nome já
+  carrega a qualidade ("Armadura leve · Ótima"), e varrer texto longo a cada
+  tecla traria falso-positivo em quase toda entrada;
+* **ignora acento e maiúscula**: digitar `pocao` acha *Poção de Cura*;
+* **filtra a cada tecla**;
+* **zera ao reabrir o pop-up**. O texto não é gravado no NDB de propósito — a
+  caixa não tem `field=`, então não há campo novo a serializar por uma
+  preferência de interface.
+
+### Filtrar não reconstrói a lista
+
+Esta é a decisão que sustenta o resto. Os **412 cards** dos três catálogos são
+estáticos no XML e cada um já carrega sua chave dentro do próprio `onClick`.
+Reconstruir a lista é que perderia a chave — foi assim que `creditoEmbutido`
+sumiu na v0.28 e `imagem` na v0.33 — e, no catálogo da loja, quebraria os **250
+índices posicionais** que a checagem 20 amarra. Então a busca só **esconde card
+que já existe**: quem sobra continua com exatamente o mesmo clique de sempre.
+
+Esconder é por **altura zero**, nunca por `visible=`, que neste SDK **reordena**
+um `align="top"`.
+
+### Os cabeçalhos de seção não tinham nome
+
+Filtrar por "cura" escondia os cards e deixava **"ARMADURA"** e as 18 divindades
+flutuando sobre o vazio: a lista parece quebrada e não há erro nenhum na tela
+para desmentir. Os 15 cabeçalhos do pop-up da loja e os 39 do de poderes não
+tinham `name=`, então o Lua não os alcançava.
+
+Agora têm, e somem junto quando a faixa deles esvazia. Os do catálogo de poderes
+foram batizados **pelo gerador** (`verif/gera_catalogo_poderes.py`), nunca à mão
+— batizar à mão faria a checagem 44 acusar na próxima regeração, que é como um
+arquivo irmão fica para trás.
+
+### A margem, que quase apagou o recuo do "um dos dois"
+
+A margem sobra quando a altura vai a zero: 3px em 250 cards deixariam **750px de
+vão fantasma**. A correção óbvia — zerar a margem ao esconder — apagaria o
+`left=12` dos **41 cards** que são as alternativas do mesmo slot no catálogo de
+poderes, que é o recuo que mostra a estrutura do kit. Card mentindo sobre o kit é
+pior que vão em branco.
+
+Então a margem original é **lida do próprio widget** antes de ser mexida, e só é
+mexida quando a leitura deu certo. Não conseguiu ler, só a altura muda e o vão
+fica. Funciona igual se `_gui_setMargins` não responder.
+
+### O gerador reescrevia o `ficha.lfm` inteiro em CRLF
+
+Achado durante este trabalho, e não tem a ver com busca:
+`verif/gera_catalogo_poderes.py` gravava o arquivo com `io.open(..., 'w')` sem
+`newline=''`. Em modo texto o Python no Windows traduz o fim de linha na
+escrita, então **uma** regeração do catálogo de poderes converteu as 27.514
+linhas do arquivo para CRLF de uma vez. O diff do git saiu com 27.294 linhas
+apagadas e nenhuma linha de conteúdo diferente.
+
+Não é cosmético: o `.gitattributes` tem `* -text` porque várias checagens medem
+o arquivo **byte a byte** (largura pelo TTF real, atributo com quebra de linha,
+contagem de caracteres), e conversão ligada muda o que a régua lê.
+
+**Procurando o irmão**, o mesmo defeito estava em mais três lugares — os três
+`write` de `verif/mutacao.py`. Esse era pior de um jeito silencioso: como toda
+mutação converteria o arquivo, a checagem nova acusaria em **todas as 97**, e
+cada uma reportaria "pegou" pelo motivo errado. Os quatro foram corrigidos, e os
+leitores também passaram a preservar, para o arquivo voltar byte a byte.
+
+### Duas checagens novas, e as quatro sondas
+
+| # | O que pega | Bug que a gerou |
+|---|---|---|
+| 51 | a busca alcança cada cabeçalho, e com a altura certa | cabeçalho sem `name=` flutuando sobre a lista filtrada |
+| 52 | nenhum arquivo de texto do plugin viaja com CRLF | o gerador convertendo o `ficha.lfm` inteiro |
+
+A **51** lê a tabela de alturas do próprio script em vez de repetir os números
+aqui, e cobra `name=` por **forma** — todo `<label align="top">` dentro de um
+`<scrollBox>` que contém cards de catálogo — e não por uma lista de nomes, para
+que cabeçalho novo nasça coberto.
+
+A **52** mede a **classe**: qualquer ferramenta que reescreva um arquivo do
+plugin em modo texto cai nela, não só o gerador. Tem uma exceção só, `sdk/`, com
+o motivo escrito ao lado dela no código: são os 21 arquivos do SDK como o
+fabricante distribui, 12 deles já em CRLF, e converter código de terceiro para
+encaixar na nossa régua é mexer no que não escrevemos para agradar a medição.
+
+As quatro sondas de mutação estão ancoradas em **código** — nome de widget e
+expressão de tabela — nunca em alinhamento nem em comentário, que foi o que
+apodreceu seis sondas até a v0.47.0.
+
+### A sonda que não podia falhar
+
+A bateria de mutação vinha reportando **uma** "checagem decorativa" desde a
+v0.47.0: a 36(b), o caso da pasta NVIDIA. O rótulo estava errado, e mandava
+consertar a coisa errada.
+
+A sonda criava a pasta intrusa **na árvore de fontes**, mas a checagem 36 parou
+de prever e passou a **medir o `.rpk`** na v0.47.0 — e como o arquivo recém-
+criado é sempre mais novo que o zip, a sonda caía por construção no ramo "não
+medido", que avisa e não reprova. Não era checagem frouxa ("não pegou") nem
+sonda com o alvo sumido do código ("não aplicou"): é um **terceiro formato** —
+sonda apontada para o artefato que a checagem deixou de ler.
+
+Agora ela põe o intruso **dentro do zip**, que é onde a 36 olha, e a checagem
+reprova como devia.
+
+Junto, uma contradição do próprio relatório: a 36 listava `NVIDIA Corporation`
+como "não entra no pacote" **uma linha acima** de "ESTÁ dentro do `.rpk`".
+Instrumento que afirma as duas coisas ensina a não ler nenhuma das duas.
+
+### As redes
+
+| rede | v0.47.0 | v0.48.0 |
+|---|---|---|
+| checagens de empacotamento | 41 | **43** |
+| asserções em Lua puro | 188 | **213** |
+
+As 25 asserções novas exercitam o filtro de verdade: a dobra de acento de ponta
+a ponta (`graça` e `graca` acham o mesmo card), o cabeçalho sumindo junto com a
+faixa vazia, a margem voltando inteira, o pop-up de Qualidades não mexendo na
+lista de Defeitos, e a busca sem resultado não deixando **nenhum** título
+flutuando.
+
+---
+
 ## v0.47.0 — as 29 raças, e as duas metades do mestiço (05/09/2026)
 
 ### O que a v0.46.0 afirmou, e estava errado
