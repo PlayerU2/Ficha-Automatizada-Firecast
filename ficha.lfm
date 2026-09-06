@@ -199,6 +199,46 @@
             {widget = "edBasemanipulacao",       campo = "manipulacaoBase"},
         }
 
+        -- A IRMA DECLARADA DA TABELA ACIMA.
+        --
+        -- Um <edit field=...> grava direto no NDB, sem passar por Lua, entao
+        -- a unica trava possivel e setEnabled(false) - e para isso o widget
+        -- precisa de name=. Dai o sinal que a checagem 53 usa: um campo do
+        -- NDB que ganhou name= e um campo que alguem quis que o Lua
+        -- alcancasse, e o unico motivo para alcancar um <edit field=> e
+        -- habilitar ou desabilitar. Os 39 campos SEM name= sao ajustes
+        -- comuns e ninguem pretende trava-los.
+        --
+        -- Entao todo campo do NDB COM name= tem de estar em uma das duas
+        -- tabelas. Nao e para o caso do Ferido: e para a CLASSE "campo de
+        -- jogo que alguem trancou por simetria" e para a irma dela, "campo
+        -- de criacao que ninguem lembrou de trancar" - que foi o bug B-09,
+        -- o jogador digitando NIVEL e IDADE com a ficha finalizada.
+        --
+        -- O motivo de cada entrada mora aqui, ao lado dela. Excecao sem
+        -- motivo escrito e como uma checagem comeca a mentir.
+        CAMPOS_LIVRES_EM_JOGO = {
+            -- Decisao da mesa, 05/09/2026: o mestre concede XP em narrativa,
+            -- o jogador anota, e o nivel sobe sozinho - inclusive com a ficha
+            -- finalizada. O campo NIVEL, esse sim, e criacao e esta na trava.
+            {widget = "edExperiencia",      campo = "experiencia"},
+            -- Equipar, desequipar e mover na mochila sao jogo; o teto da
+            -- mochila tem ajuste porque a mesa concede espaco por narrativa.
+            {widget = "cmb_edMochilaBonus", campo = "mochilaBonus"},
+            -- Pontos de poder concedidos por favor divino ou por narrativa:
+            -- e campo do MESTRE, e ele os concede com a ficha ja fechada.
+            {widget = "abaPod_edConcedidos", campo = "poderPontosConcedidos"},
+            -- Link do background: anotacao, nunca regra.
+            {widget = "abaBg_edLink",       campo = "bgLink"},
+            -- Sangue bebido (v0.48.0): quantos ml o vampiro bebeu. Beber e
+            -- jogo, como gastar municao ou marcar dano.
+            {widget = "cmb_edSangueMl",     campo = "sangueBebidoMl"},
+            -- Ajuste do Ferido (v0.48.0): marcar ferimento e JOGO, e o
+            -- mestre precisa poder sobrepor a penalidade no meio da sessao.
+            -- Travar este campo entregaria metade da regra.
+            {widget = "cmb_edAjusteFerido", campo = "ajusteFerido"},
+        }
+
         function aplicarTravaDeCriacao()
             local pode = podeEditarCriacao()
             for _, e in ipairs(CAMPOS_TRAVA_CRIACAO) do
@@ -365,6 +405,111 @@
             if v == 0 then return "" end
             if v < 0 then return " − " .. rotulo .. " " .. fmtNumero(-v) end
             return " + " .. rotulo .. " " .. fmtNumero(v)
+        end
+
+        -- ===============================================================
+        -- FERIDO (v0.48.0)
+        -- ===============================================================
+        -- LIVRO, [2.3] "Ferimentos", verbatim:
+        --
+        --   "Quando um personagem sofre um golpe que lhe aplica pelo menos
+        --    30% de sua vida maxima como dano, este recebera a condicao
+        --    'Ferido', que lhe trara consequencias significantes a depender
+        --    da situacao e da narracao, conforme abaixo:
+        --    -> 30% da vida maxima em um golpe - Ferido I: a area do golpe
+        --       fica quebrada ou danificada; Recupera 30% da vida maxima por
+        --       dia, ao inves do valor padrao; -2 em todos os testes.
+        --    -> 60% da vida maxima em um golpe - Ferido II: a area do golpe
+        --       fica esmagada ou triturada; Recupera 20% da vida maxima por
+        --       dia, ao inves do valor padrao; -4 em todos os testes.
+        --    -> 90% da vida maxima em um golpe - Ferido III: sofre amputacao
+        --       da area impactada; Recupera 10% da vida maxima por dia, ao
+        --       inves do valor padrao; -7 em todos os testes."
+        --
+        -- O gatilho e FRACAO DA VIDA MAXIMA e EM UM GOLPE - nao fracao da
+        -- vida atual, e nao dano acumulado.
+        --
+        -- SUBSTITUI, NAO ACUMULA (mestre, 06/09/2026). O livro nao diz na
+        -- tabela, mas sustenta: escreve "A condicao 'Ferido'" no singular, e
+        -- o Ungento medicinal "Elimina UM NIVEL de ferimento" ([2.9]) - cura
+        -- que remove nivel so faz sentido numa escada unica. Dois golpes, um
+        -- de 30% e outro de 60%, deixam Ferido II; nao I e II somados.
+        --
+        -- "EM TODOS OS TESTES" INCLUI AS QUATRO DEFESAS (mestre, 06/09/2026).
+        -- Isto CONTRARIA o vocabulario do proprio livro, e a divergencia fica
+        -- registrada: na Lista de Condicoes de Estado o livro escreve
+        -- "defesas" toda vez que quer inclui-las - Exausto: "todas as
+        -- rolagens de qualquer natureza E DEFESAS"; Desnutrido: "todos os
+        -- bonus E DEFESAS de natureza fisica" - e no Ferido nao escreve. O
+        -- mestre manda sobre o livro, e mandou.
+        --
+        -- O GATILHO NAO E INFERIDO, DE PROPOSITO. A ficha nao ve golpes: ela
+        -- ve um campo que alguem edita. Deduzir "caiu 41 pontos, logo foi um
+        -- golpe de 41" quebra assim que o jogador digita 45 e corrige para 4.
+        -- O nivel e MARCADO a mao; o que a ficha calcula sao os LIMIARES em
+        -- pontos, que e a conta que ninguem quer fazer na mesa. Ha ainda duas
+        -- rotas de gatilho que a ficha nunca vera: golpe em Orgaos-vitais com
+        -- 60% aplica Ferido III direto ([2.3], Areas de acerto) e venenos
+        -- podem "adicionar niveis de ferimento" ([2.8]).
+        FERIDO = {
+            [1] = {fracao = 0.30, penalidade = 2, recupera = 30, romano = "I"},
+            [2] = {fracao = 0.60, penalidade = 4, recupera = 20, romano = "II"},
+            [3] = {fracao = 0.90, penalidade = 7, recupera = 10, romano = "III"},
+        }
+
+        -- A barra que o Ferido mede.
+        --
+        -- DECISAO DA MESA, 06/09/2026: o vampiro nao tem Vida - o Vitae E a
+        -- vida dele -, entao os 30/60/90% saem do Vitae. Mora numa funcao so
+        -- para que corrigir esta leitura, se ela mudar, seja UMA linha e nao
+        -- uma varredura pela ficha inteira.
+        function vidaMaximaParaFerimento()
+            if sheet == nil then return 0 end
+            if sheet.ehVampiro then return n(sheet.pv) end
+            return n(sheet.hp)
+        end
+
+        -- O nivel, saturado em 0..3. Saturar aqui (e nao no campo) e o que
+        -- impede um valor velho ou digitado fora da faixa de indexar FERIDO
+        -- com nil e derrubar o recalculo inteiro.
+        function nivelFerido()
+            if sheet == nil then return 0 end
+            local v = math.floor(n(sheet.feridoNivel))
+            if v < 0 then return 0 end
+            if v > 3 then return 3 end
+            return v
+        end
+
+        -- MARCAR FERIDO E JOGO, NAO CRIACAO. Nao passa por <edit field=>:
+        -- e escrito por esta funcao, entao a trava de finalizar nao tem o
+        -- que desabilitar. A checagem 53 cobra que o campo de AJUSTE, esse
+        -- sim ligado ao NDB, esteja declarado como livre.
+        function mudarNivelFerido(delta)
+            if sheet == nil then return end
+            local novo = nivelFerido() + n(delta)
+            if novo < 0 then novo = 0 end
+            if novo > 3 then novo = 3 end
+            sheet.feridoNivel = novo
+            recalcularTudo()
+        end
+
+        function penalidadeFerido()
+            if sheet == nil then return 0 end
+            local nv = nivelFerido()
+            local base = (nv > 0) and FERIDO[nv].penalidade or 0
+            -- O ajuste do mestre vale MESMO sem nivel: e a valvula de escape
+            -- do metodo, e a mesa sempre tem um caso que o livro nao previu.
+            -- Para ele nunca ser silencioso, a linha do card o mostra
+            -- separado da penalidade da tabela.
+            return base + n(sheet.ajusteFerido)
+        end
+
+        -- O dano que dispara cada nivel, em PONTOS. math.ceil porque o livro
+        -- diz "pelo menos 30%": 23 num maximo de 77 sao 29,8% e nao bastam.
+        function limiarFerido(nivel)
+            local d = FERIDO[nivel]
+            if d == nil then return 0 end
+            return math.ceil(vidaMaximaParaFerimento() * d.fracao)
         end
 
         function recalcularTudo()
@@ -710,6 +855,29 @@
                 sheet.defesaEsquiva = n(sheet.defesaEsquiva) + bonusBesta.defesas
                 sheet.defesaEmpatica = n(sheet.defesaEmpatica) + bonusBesta.defesas
                 sheet.defesaTelepatica = n(sheet.defesaTelepatica) + bonusBesta.defesas
+            end
+
+            -- FERIDO: "-2/-4/-7 em todos os testes" [2.3], e a mesa incluiu
+            -- as QUATRO defesas (06/09/2026). Subtracao pura sobre o total,
+            -- depois de todos os bonus - e ela entra na conta de cada card,
+            -- porque um numero que desce sem explicacao vira mensagem para o
+            -- desenvolvedor.
+            do
+                local penFerido = penalidadeFerido()
+                if penFerido ~= 0 then
+                    local nv = nivelFerido()
+                    local rot = (nv > 0) and ("Ferido " .. FERIDO[nv].romano)
+                                          or "ajuste do mestre"
+                    for _, d in ipairs({
+                        {campo = "defesaAparar",     conta = "DefAparar"},
+                        {campo = "defesaEsquiva",    conta = "DefEsquiva"},
+                        {campo = "defesaEmpatica",   conta = "DefEmpatica"},
+                        {campo = "defesaTelepatica", conta = "DefTelepatica"},
+                    }) do
+                        sheet[d.campo] = n(sheet[d.campo]) - penFerido
+                        CONTAS[d.conta] = CONTAS[d.conta] .. parcela(-penFerido, rot)
+                    end
+                end
             end
 
             -- Armadura pesada tira metros do deslocamento; so conta o que
@@ -8805,7 +8973,7 @@
         -- ---------------------------------------------------------------
         local GRADE_COMBATE = {
             {linha = "cmb_linhaRecursos",  cards = {"Hp", "Ap", "Mp", "Prana", "Pv", "Sangue", "Lua"}},
-            {linha = "cmb_linhaDefesas",   cards = {"DefAparar", "DefEsquiva", "DefEmpatica", "DefTelepatica"}},
+            {linha = "cmb_linhaDefesas",   cards = {"DefAparar", "DefEsquiva", "DefEmpatica", "DefTelepatica", "Ferido"}},
             -- MOVIMENTO tem uma linha só para ele. Voo e nado sao FIXOS: uma
             -- raça que não voa mostra "—" e o campo de ajuste continua ali,
             -- para o mestre conceder voo por outra via. "Montado" é o único
@@ -8823,7 +8991,7 @@
         -- Cards cujo valor e uma PALAVRA. A escala de fonte do card e feita
         -- para numeros de ate tres digitos; "Minúsculo" no mesmo corpo
         -- transborda a caixa.
-        local CARDS_DE_TEXTO = {Tamanho = true, Lua = true}
+        local CARDS_DE_TEXTO = {Tamanho = true, Lua = true, Ferido = true}
 
         -- quais cards estao ativos para este personagem
         --
@@ -9143,6 +9311,40 @@
                     table.insert(extrasTexto, ROTULO_DEFESA[d.chave] .. " +" .. extra)
                 end
             end
+            -- FERIDO: o nivel em algarismo romano, a penalidade por extenso
+            -- e os LIMIARES em pontos - que e a conta que ninguem quer fazer
+            -- na mesa, e a unica parte disto que a ficha pode calcular
+            -- sozinha, ja que ela nao ve golpes.
+            do
+                local nv = nivelFerido()
+                local pen = penalidadeFerido()
+                local ajuste = n(sheet.ajusteFerido)
+                porValor("Ferido", (nv > 0) and FERIDO[nv].romano or "—")
+                local linha
+                if nv > 0 and ajuste == 0 then
+                    linha = "Ferido " .. FERIDO[nv].romano .. ": −" .. pen ..
+                            " em todos os testes"
+                elseif nv > 0 then
+                    linha = "Ferido " .. FERIDO[nv].romano .. ": −" .. pen ..
+                            " em todos os testes [" .. FERIDO[nv].penalidade ..
+                            (ajuste > 0 and " + ajuste " .. ajuste
+                                         or " − ajuste " .. -ajuste) .. "]"
+                elseif pen ~= 0 then
+                    linha = "ajuste do mestre: −" .. pen .. " em todos os testes"
+                else
+                    linha = "sem ferimento"
+                end
+                if self.cmb_contaFerido ~= nil then
+                    self.cmb_contaFerido:setText(linha)
+                end
+                if self.cmb_limiaresFerido ~= nil then
+                    self.cmb_limiaresFerido:setText(
+                        "num golpe: I ≥ " .. limiarFerido(1) ..
+                        " · II ≥ " .. limiarFerido(2) ..
+                        " · III ≥ " .. limiarFerido(3))
+                end
+            end
+
             if self.cmb_lblNotaDefesas ~= nil then
                 if #extrasTexto > 0 then
                     self.cmb_lblNotaDefesas:setText("Bônus vindos de poderes, raça ou escudo psíquico: " ..
@@ -13682,6 +13884,42 @@
                                 <label align="left" width="40" text="AJUSTE" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
                                     <edit align="client" field="ajusteDefesaTelepatica" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Correção manual — some ou subtraia o que o sistema não cobre.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit>
+                                </rectangle>
+                            </layout>
+                        </rectangle>
+                    </layout>
+
+                    <!-- FERIDO (v0.48.0). Mora na linha das DEFESAS, e nao na
+                         de recursos, porque e ali que a penalidade aterrissa:
+                         a conta de cada defesa ganha "− Ferido II 4", e o
+                         jogador ve o numero descer ao lado do motivo.
+
+                         O NIVEL nao e <edit field=>: e escrito pelas setas,
+                         via mudarNivelFerido(). Marcar Ferido e JOGO, entao a
+                         trava de finalizar nao pode ter o que desabilitar -
+                         e nao tem, porque nao ha widget ligado ao NDB aqui.
+                         O AJUSTE, esse sim, e campo do NDB, e por isso esta
+                         declarado em CAMPOS_LIVRES_EM_JOGO. -->
+                    <layout name="cmb_wrapFerido" align="left" width="196">
+                        <rectangle name="cmb_secFerido" align="client" color="#0D1317" strokeColor="#8B2332" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
+                            <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
+                            <label align="top" height="24" text="FERIDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="[2.3] Ferimentos: um GOLPE ÚNICO que aplique 30%, 60% ou 90% da vida máxima. Substitui, não acumula. A recuperação diária própria (30/20/10%) fica nos botões de descanso."/>
+                            <label name="cmb_lblFerido" align="top" height="30" text="—" fontFamily="Cinzel" fontColor="#8B2332" fontSize="24" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
+                            <label name="cmb_contaFerido" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
+                            <label name="cmb_limiaresFerido" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
+                            <layout align="bottom" height="26" margins="{top=2,left=10,right=10,bottom=6}">
+                                <rectangle name="cmb_btnFeridoMenos" align="left" width="28" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Baixar um nível de Ferido">
+                                    <label align="client" text="&#9664;" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    <event name="onClick"><![CDATA[mudarNivelFerido(-1);]]></event>
+                                </rectangle>
+                                <rectangle name="cmb_btnFeridoMais" align="right" width="28" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Subir um nível de Ferido">
+                                    <label align="client" text="&#9654;" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    <event name="onClick"><![CDATA[mudarNivelFerido(1);]]></event>
+                                </rectangle>
+                                <rectangle align="client" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{left=4,right=4}">
+                                    <edit name="cmb_edAjusteFerido" align="client" field="ajusteFerido" type="number" text="0" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="12" horzTextAlign="center" transparent="true" hint="AJUSTE DO MESTRE: soma na penalidade de todos os testes. Vale mesmo sem nível de Ferido, e aparece separado na linha do card.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>

@@ -151,6 +151,63 @@ registra, e não soma em lugar nenhum** — a ficha não rastreia recurso *atual
 para o personagem, só máximos, e somar ali entregaria metade de um rastreio que
 não existe.
 
+### Condição FERIDO, na linha das defesas
+
+`[2.3]` "Ferimentos": um **golpe único** que aplique 30%, 60% ou 90% da **vida
+máxima** dá Ferido I, II ou III — **−2, −4 e −7 em todos os testes**.
+
+Decisões da mesa (06/09/2026): **substitui, não acumula** (30% depois 60% dá
+Ferido II, não I+II) e **"todos os testes" inclui as quatro defesas**. A segunda
+contraria o vocabulário do próprio livro — na Lista de Condições de Estado ele
+escreve "defesas" toda vez que quer incluí-las, e no Ferido não escreve — e a
+divergência está registrada no CONTEXTO junto do texto.
+
+**O gatilho não é inferido, e isso é a decisão de arquitetura.** A ficha não vê
+golpes: vê um campo que alguém edita. Deduzir "caiu 41 pontos, logo foi um golpe
+de 41" quebra assim que o jogador digita 45 e corrige para 4. Então:
+
+* o **nível** é marcado à mão, com duas setas;
+* os **limiares** são calculados e mostrados em pontos — `num golpe: I ≥ 13 ·
+  II ≥ 26 · III ≥ 38` —, que é a conta que ninguém quer fazer na mesa;
+* a **penalidade desce nas quatro defesas** e entra na conta de cada uma
+  (`− Ferido II 4`), porque número que desce sem explicação vira mensagem para
+  o desenvolvedor;
+* o **ajuste do mestre** vale mesmo sem nível, e a linha mostra a conta —
+  `Ferido II: −6 em todos os testes [4 + ajuste 2]`.
+
+No vampiro o Ferido mede o **Vitae**, porque ele não tem Vida. Mora numa função
+só (`vidaMaximaParaFerimento`), para corrigir a leitura ser uma linha.
+
+Duas rotas de gatilho que a ficha nunca verá, e estão documentadas: golpe em
+**Órgãos-vitais** com 60% aplica **Ferido III direto** (`[2.3]`, Áreas de acerto
+— não Ferido II), e venenos podem "adicionar níveis de ferimento" (`[2.8]`).
+
+**Marcar Ferido é JOGO**: o nível não passa por `<edit field=>`, então a trava
+de finalizar não tem o que desabilitar. Há asserção rodando com a ficha
+**finalizada** e o usuário **não** sendo mestre — testar com a ficha aberta
+mediria o caso fácil.
+
+### Checagem 53: criação × jogo, agora dos dois lados
+
+A 42 cobrava um lado só — campo de criação que ficou fora da trava. Faltava o
+oposto, e ele é igualmente calado: **campo de jogo que alguém tranca por
+simetria**.
+
+`CAMPOS_TRAVA_CRIACAO` sempre teve uma irmã implícita, e implícito é o que a
+próxima sessão "corrige". Agora ela é explícita — `CAMPOS_LIVRES_EM_JOGO` — com
+o motivo de cada entrada ao lado dela.
+
+O sinal é estrutural, e não uma lista de nomes: um `<edit field=>` grava direto
+no NDB, e a única trava possível é `setEnabled(false)`, que exige `name=`. Logo
+**campo do NDB com `name=` é campo que alguém quis que o Lua alcançasse**, e a
+única coisa que o Lua faz com um desses é habilitar ou desabilitar. São 19 no
+`ficha.lfm`; os 39 sem `name=` são ajustes comuns.
+
+A checagem nasceu **acusando** `itens/itemPericia.lfm`, e a acusação mostrou o
+limite dela: em templates de linha de `recordList` o `field=` liga ao nó do
+registro e o `name=` é endereçamento interno, não pedido de trava. O escopo
+ficou no `ficha.lfm`, com o motivo escrito no código.
+
 ### A sonda que não podia falhar
 
 A bateria de mutação vinha reportando **uma** "checagem decorativa" desde a

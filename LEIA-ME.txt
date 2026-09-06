@@ -215,6 +215,19 @@ NOVO NA v0.48.0 - BUSCA nos catalogos. Confira, nesta ordem:
      Digite 149 no campo ML do card de sangue: tem que mostrar 2, e
      nao 3. E troque a raca para Humanos: a barra de VIDA volta.
 
+  7. ABA 06, card FERIDO (na linha das DEFESAS, na ponta direita):
+     ele mostra os LIMIARES em pontos - "num golpe: I >= 13 . II >= 26
+     . III >= 38". Confira que esses numeros batem com 30%, 60% e 90%
+     da sua VIDA MAXIMA (no vampiro, do VITAE).
+     Clique na seta direita: o card passa a "I" e a linha diz
+     "Ferido I: -2 em todos os testes". As QUATRO defesas tem que
+     baixar 2, e a conta de cada uma ganha "- Ferido I 2".
+     Suba ate III e confira -7. A seta nao passa de III.
+     Digite 2 no campo do meio: a linha vira "-4 em todos os testes
+     [2 + ajuste 2]" - a conta aparece, nao so o total.
+     E FINALIZE A FICHA como jogador comum: as setas do Ferido tem
+     que CONTINUAR funcionando. Marcar ferimento e jogo, nao criacao.
+
 ANTES, NA v0.47.0 - as 29 racas tem brasao, e o mestico mostra os DOIS.
 Confira:
 
