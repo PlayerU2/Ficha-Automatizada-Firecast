@@ -9674,6 +9674,25 @@
         -- deem exatamente isto.
         local MOLDURA_PAR_ATUAL = 26
 
+        -- LARGURA da caixa do ATUAL, por corpo de fonte que ajustarGradeCombate
+        -- aplica ao <edit> (27 / 24 / 21 / 18, conforme a largura do card).
+        --
+        -- O width= do XML e sobrescrito aqui a cada onResize, e o fontSize=
+        -- tambem: o XML diz 22 e o card largo desenha em 27. Foi por isso que
+        -- a v0.49.5 mediu "-0000" em 22px (65,8) e concluiu que 76 bastava --
+        -- em 27px o mesmo texto mede 80,8, e 76 CORTARIA O SINAL. Numero
+        -- negativo com o menos cortado parece positivo, e e o erro silencioso
+        -- que esta ficha existe para nao cometer.
+        --
+        -- MEDIDO com a fonte do pacote (fonts/Cinzel-Bold.ttf), texto "-0000",
+        -- que e o pior caso de quatro digitos com sinal:
+        --   18px 53,9  |  21px 62,8  |  24px 71,8  |  27px 80,8
+        -- Cada entrada = medida + 6 (margem direita do <edit>) + 2 (borda
+        -- de 1px de cada lado) + 4 de folga para o rasterizador do Windows.
+        -- A checagem 62 refaz esta conta com o TTF real: mudar a fonte, o
+        -- corpo ou a margem sem mudar aqui acusa.
+        local LARGURA_CAIXA_ATUAL = { [18] = 66, [21] = 75, [24] = 84, [27] = 93 }
+
         function ajustarGradeCombate()
             if self.cmb_linhaRecursos == nil then return end
             -- A largura util e medida uma vez por passada, na melhor fonte
@@ -9752,24 +9771,38 @@
                         local w = 0
                         if cardVisivelCombate(nome) then w = largura end
                         pcall(function() self["cmb_wrap" .. nome]:setWidth(w) end)
-                        -- A caixa do ATUAL vale METADE do miolo do card.
+                        -- O "/" cai no MEIO do card em qualquer largura, e a
+                        -- caixa do ATUAL tem o tamanho do NUMERO -- nao do card.
                         --
-                        -- Ate a v0.49.3 ela tinha 88px cravados no XML, o que
-                        -- centrava o par so na largura em que eu a desenhei:
-                        -- com a janela do mestre, os cards passam de 230px e o
-                        -- rotulo "/ maximo" -- que e align=client -- comia toda
-                        -- a sobra, empurrando os dois numeros para a esquerda.
-                        -- ACHADO NA TELA em 06/09/2026.
+                        -- Ate a v0.49.3 a caixa tinha 88px cravados no XML e o
+                        -- par escorregava para a esquerda em card largo (o
+                        -- rotulo "/ maximo" e align=client e comia a sobra).
+                        -- A v0.49.4 fez a caixa valer metade do miolo: centrou,
+                        -- mas em card de 240px a caixa ficou com 107px para um
+                        -- numero de 68 -- "o campo editavel se estende ate o
+                        -- limite da esquerda" (print de 07/09/2026).
                         --
-                        -- Com metade para cada lado, o "/" cai no meio do card
-                        -- em qualquer largura: o ATUAL termina a esquerda dele
-                        -- (o <edit> e trailing) e o maximo comeca a direita.
+                        -- A v0.49.5 tentou encolher pelo XML (width="76") e
+                        -- nao encolheu nada: ESTA LINHA sobrescreve o XML a
+                        -- cada onResize. So a margem left=12 que ela pos pegou,
+                        -- e o par saiu 12px do meio nos cinco cards.
+                        --
+                        -- Agora: a caixa mede o que LARGURA_CAIXA_ATUAL manda
+                        -- para o corpo em uso, e o que sobra ate o meio vai
+                        -- para o espacador cmb_vaoAtual<Barra>, por setWidth.
+                        -- NAO por setMargins: custa 35 ms por chamada (v0.49.4).
+                        -- Em card estreito a caixa cede ate a metade, como antes.
                         pcall(function()
                             local caixa = self["cmb_caixaAtual" .. nome]
+                            local vao   = self["cmb_vaoAtual" .. nome]
                             if caixa ~= nil then
                                 local miolo = largura - MOLDURA_PAR_ATUAL
                                 if miolo < 40 then miolo = 40 end
-                                caixa:setWidth(math.floor(miolo / 2))
+                                local metade = math.floor(miolo / 2)
+                                local caixaW = LARGURA_CAIXA_ATUAL[corpo] or LARGURA_CAIXA_ATUAL[27]
+                                if caixaW > metade then caixaW = metade end
+                                caixa:setWidth(caixaW)
+                                if vao ~= nil then vao:setWidth(metade - caixaW) end
                             end
                         end)
                         local tamanhoFonte = CARDS_DE_TEXTO[nome] and corpoTexto or corpo
@@ -13627,7 +13660,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.5" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.6" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14379,7 +14412,8 @@
                             <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE VIDA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="15 + Dado de vida + (Constituição ÷ 2 × Nível), mais o acumulado por nível."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualHp" align="left" width="76" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
+                                <layout name="cmb_vaoAtualHp" align="left" width="0"/>
+                                <rectangle name="cmb_caixaAtualHp" align="left" width="93" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
                                     <edit name="cmb_edAtualHp" align="client" horzTextAlign="trailing" margins="{right=6}" field="hpAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#8B2332" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
@@ -14402,7 +14436,8 @@
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE AURA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="(20 + Sabedoria + Nível) × Rank, mais os dados acumulados por nível."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualAp" align="left" width="76" color="#080B0E" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
+                                <layout name="cmb_vaoAtualAp" align="left" width="0"/>
+                                <rectangle name="cmb_caixaAtualAp" align="left" width="93" color="#080B0E" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
                                     <edit name="cmb_edAtualAp" align="client" horzTextAlign="trailing" margins="{right=6}" field="apAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
@@ -14425,7 +14460,8 @@
                             <rectangle align="top" height="3" color="#7FA8B8" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE MANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="15 + base por idade + (Nível × 2). Exige a qualidade Coração de mana."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualMp" align="left" width="76" color="#080B0E" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
+                                <layout name="cmb_vaoAtualMp" align="left" width="0"/>
+                                <rectangle name="cmb_caixaAtualMp" align="left" width="93" color="#080B0E" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
                                     <edit name="cmb_edAtualMp" align="client" horzTextAlign="trailing" margins="{right=6}" field="mpAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
@@ -14448,7 +14484,8 @@
                             <rectangle align="top" height="3" color="#8A63C9" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE PRANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Mana + Aura somadas. Exclusivo de Bruxas (Linhagem de Unaris)."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualPrana" align="left" width="76" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
+                                <layout name="cmb_vaoAtualPrana" align="left" width="0"/>
+                                <rectangle name="cmb_caixaAtualPrana" align="left" width="93" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
                                     <edit name="cmb_edAtualPrana" align="client" horzTextAlign="trailing" margins="{right=6}" field="pranaAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#8A63C9" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
@@ -14471,7 +14508,8 @@
                             <rectangle align="top" height="3" color="#9E3B4A" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE VITAE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="10 + (Constituição × 1,5) + (Rank × 30). Apenas vampiros."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualPv" align="left" width="76" color="#080B0E" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
+                                <layout name="cmb_vaoAtualPv" align="left" width="0"/>
+                                <rectangle name="cmb_caixaAtualPv" align="left" width="93" color="#080B0E" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
                                     <edit name="cmb_edAtualPv" align="client" horzTextAlign="trailing" margins="{right=6}" field="pvAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#9E3B4A" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>

@@ -1,3 +1,141 @@
+## v0.49.6 — o width do XML estava morto, e a medição foi na fonte errada (07/09/2026)
+
+### A busca destravou, e o "segundo ponto" da v0.49.5 deixou de ser hipótese
+
+Relatado na tela: *"agora não está mais travando o campo de busca, tá liso no
+pc do trabalho que no geral é ruinzinho, então deve passar em qualquer pc."*
+
+O `beginUpdate`/`endUpdate` do `scrollBox` era a causa que o farejador não
+podia ver — o custo estava no *reflow*, depois que o Lua devolvia. Confirmado
+com o pior juiz disponível: o catálogo de Itens, 250 cards, no PC do trabalho.
+
+### Os valores saíram do meio de novo — e a caixa não encolheu nada
+
+Relatado com print: *"os valores dos cards agora saíram da centralização."*
+
+A v0.49.5 encolheu a caixa do ATUAL pelo XML (`width="88"` → `76`) e devolveu
+os 12px como `margins="{left=12}"`, "para o valor ficar no mesmo pixel". Só que
+**o `width=` do XML dessas cinco caixas está morto desde a v0.49.4**: quem
+decide a largura é o `ajustarGradeCombate`, a cada `onResize` —
+`caixa:setWidth(math.floor(miolo / 2))`, metade do miolo do card. A sessão
+remota editou um número que o Lua sobrescreve, e a única parte da mudança que
+pegou foi a margem, que o Lua **não** toca. Resultado na tela: a mesma caixa de
+~107px, empurrada 12px para a direita, nos cinco cards — e `MOLDURA_PAR_ATUAL`
+(10 + 8 + 8 = 26) ficou desatualizado em 12.
+
+É exatamente o que a **checagem 58** do ferramental completo pega: a moldura
+escrita no Lua tem de bater com a soma das margens do XML. A sessão remota não
+a tinha; a cópia do ferramental deste PC também não (ver abaixo).
+
+### A medição da v0.49.5 foi em 22px, e a tela desenha em 27
+
+O XML diz `fontSize="22"` nos cinco `<edit>`, mas o mesmo `ajustarGradeCombate`
+aplica `ed:setFontSize(corpo)`, com **corpo 27** em card largo (24, 21 e 18 em
+cards mais estreitos). O `fontSize=` do XML é tão morto quanto o `width=`.
+
+Medido agora com a fonte do pacote (`fonts/Cinzel-Bold.ttf`), texto `-0000`,
+que é o pior caso de quatro dígitos com sinal:
+
+| corpo | `9999` | `-0000` |
+|---|---|---|
+| 18 | 45,4 | 53,9 |
+| 21 | 52,9 | 62,8 |
+| 24 | 60,5 | 71,8 |
+| **27** | 68,0 | **80,8** |
+
+Uma caixa de 76px (68 úteis, tirando a margem direita do `<edit>`) **cortaria
+o sinal** em corpo 27. O *hint* do campo diz que ele pode ficar negativo; um
+negativo sem o menos parece positivo, e é o tipo de erro silencioso que esta
+ficha existe para não cometer. Só não cortou porque o Lua ignorou o 76.
+
+### A correção: a caixa mede o número, e o que sobra até o meio é espaçador
+
+A caixa do ATUAL passa a ter largura **por corpo**, numa tabela medida na fonte
+real e escrita ao lado do `MOLDURA_PAR_ATUAL`:
+
+```
+LARGURA_CAIXA_ATUAL = { [18] = 66, [21] = 75, [24] = 84, [27] = 93 }
+```
+
+Cada entrada é a medida de `-0000` + 6 (margem direita do `<edit>`) + 2 (borda
+de 1px de cada lado) + 4 de folga para o rasterizador. E o que sobra entre a
+borda do card e a caixa vai para um `<layout name="cmb_vaoAtual<Barra>">` novo,
+antes da caixa, redimensionado por **`setWidth`** — não por `setMargins`, que a
+v0.49.4 mediu a 35 ms por chamada. O `/` continua caindo no meio do card em
+qualquer largura, como a v0.49.4 conquistou; a moldura visível fica do tamanho
+do número, como a v0.49.5 pediu. Em card estreito a caixa cede até a metade do
+miolo, que é o comportamento antigo.
+
+O `width="93"` que ficou no XML é o valor de **repouso** (o do corpo 27, que é
+o padrão) — o primeiro desenho, antes de o Lua rodar, já nasce certo. O
+comentário no Lua diz que ele é dono da largura e do corpo, e a checagem 62
+cobra que o repouso bata com a tabela.
+
+Vale para os cinco: Vida, Aura, Mana, Prana e Vitae.
+
+### O ferramental deste PC é uma cópia da v0.39.0
+
+O `firecast-mcp/` que existe neste PC não é o do outro. Tem 17 checagens (o
+`CLAUDE.md` promete 46), 49 asserções (289) e 21 mutações (195); não tem
+`docs/` (nem `CONTEXTO-PETRICHOR.md`, nem `METODO.md`), nem `CLAUDE.md`, nem
+`verif/gera_catalogo_poderes.py`. Duas mutações caçavam `0.39.0` literal e
+estavam inválidas; o `versoes` do servidor MCP só conhece o `ficha-cyber`.
+
+A linha de base rodada nele deu **um vermelho falso**: `Calculos.pv` com
+`prana=73` esperava 119 e veio 46. A ficha está certa — o contrato trocou
+`ctx.prana` por `ctx.reserva` em 06/09/2026 (`4d04493`), quando a decisão de
+22/08 foi ampliada para todo vampiro; a asserção ficou com o nome velho. E com
+a base vermelha, as 9 mutações de cálculo **abortavam**: a rede estava cega
+justamente para a conta.
+
+O que foi consertado nesta cópia, para ela voltar a valer alguma coisa:
+
+* a asserção do `pv` usa `reserva`, com a citação da decisão ampliada;
+* a mutação de cálculo "o Vitae ignora o Prana" passou a mirar `n(ctx.reserva)`;
+* as mutações 27 e 32 miram por padrão (`<version>…</version>`, `fontSize="11"`
+  do selo), em vez do literal `0.39.0`;
+* a cópia da pasta para mutação ignora `.git` e `output/` — o `rdk` segura o
+  `.rpk` de `output/` enquanto compila, e a mutação caía com `WinError 32`.
+
+O que **não** dá para recuperar aqui: as ~29 checagens, ~240 asserções e ~174
+mutações que só existem no outro PC. Verde nesta rede vale menos do que valia.
+
+### As redes
+
+Numeração: a **58** recria a do outro PC com o mesmo número e o mesmo contrato,
+para fundir sem colisão; **60, 61 e 62** são novas e podem precisar de
+renumeração na fusão.
+
+* **checagem 58** — a moldura do par atual/máximo escrita no Lua bate com a
+  soma das margens do XML nos cinco cards, contando irmão anterior à caixa
+  (o espaçador entra com `width="0"`; largura fixa nele seria o mesmo número
+  morto). Pega a **classe**: qualquer margem que mude em qualquer dos cinco
+  cards, ou espaçador com largura no XML. Mutações: o `left=12` literal da
+  v0.49.5; largura fixa no espaçador de um card;
+* **checagem 60** — toda função ligada a uma caixa de busca passa por
+  `buscaRepetida()`, e `onChange`/`onKeyUp` chamam a mesma coisa. Não é a
+  checagem "nenhuma caixa declara os dois eventos": essa ficaria vermelha na
+  v0.49.5, porque os dois eventos ficaram **de propósito** (qual o host dispara
+  não é mensurável fora do Firecast) e a proteção é a guarda. Pega a classe:
+  caixa nova ligada a filtro sem guarda, filtro que perde a guarda, e os dois
+  eventos divergindo (aí a guarda por texto não vale). Mutações: tirar a guarda
+  de um filtro; `onKeyUp` chamando com outro argumento;
+* **checagem 61** — toda `filtrarCatalogo*` chama `mostrarLinhaCatalogo` só
+  **dentro** de `comLayoutSuspenso`, e o próprio wrapper tem `beginUpdate`,
+  `endUpdate` e o `pcall(corpo)` que garante o `endUpdate`. Pega a classe:
+  filtro novo sem wrapper, linha movida para fora dele, wrapper esvaziado.
+  Mutações: trocar o wrapper de um filtro por uma closure que nunca roda; tirar
+  o `endUpdate`;
+* **checagem 62** — a caixa do ATUAL comporta `-0000` medido no TTF real da
+  Cinzel Bold, em **cada corpo que o Lua aplica** (lê os `corpo = N` do
+  `ajustarGradeCombate`, a tabela, a margem do `<edit>` e a borda do XML), e o
+  `width=` de repouso bate com a entrada do maior corpo. Pega a classe: corpo
+  novo sem entrada, entrada apertada, margem ou borda que cresça, fonte trocada.
+  Mutações: `[27] = 60` (o pedido literal); `width="60"` no XML de um card;
+  corpo 25 no Lua sem entrada.
+
+Todas as 30 mutações de empacotamento e as 9 de cálculo pegas (registro abaixo).
+
 ## v0.49.5 — a caixa media 88px para um número de 55 (07/09/2026)
 
 ### O campo de valor era 60% maior que o maior valor possível
