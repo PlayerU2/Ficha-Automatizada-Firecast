@@ -4768,8 +4768,59 @@
         -- que e o unico momento em que alguem pode ter mexido por fora.
         local estadoLinha = {}
 
+        -- DOIS EVENTOS, UMA PASSADA (07/09/2026).
+        --
+        -- As quatro caixas de busca disparam o filtro em onChange E em
+        -- onKeyUp -- MEDIDO no XML: 4 onKeyUp, um por caixa, cada um
+        -- chamando a mesma funcao com o mesmo argumento. Sao duas passadas
+        -- completas por tecla desde que a busca existe.
+        --
+        -- E NAO DA PARA SO APAGAR UM DELES. Qual dos dois chega primeiro --
+        -- e se os dois chegam -- e decisao do host, e este projeto nao tem
+        -- como medir isso fora do Firecast. Apagar o que o host de fato
+        -- dispara mataria a busca inteira, e mataria do jeito que dói aqui:
+        -- sem erro, com a lista parada parecendo certa.
+        --
+        -- Entao os dois eventos ficam, e a SEGUNDA chamada da mesma tecla
+        -- sai numa comparacao de string. Funciona se vier so onChange, se
+        -- vier so onKeyUp, e se vierem os dois.
+        local ultimaBusca = {}
+
+        local function buscaRepetida(qual, texto)
+            if ultimaBusca[qual] == texto then return true end
+            ultimaBusca[qual] = texto
+            return false
+        end
+
+        -- SUSPENDER O LAYOUT ENQUANTO 250 ALTURAS MUDAM (07/09/2026).
+        --
+        -- gui.Control:beginUpdate() existe em sdk/rrpgGUI.lua:59 e invoca o
+        -- BeginUpdate do host. A ficha usava beginUpdate SO no NDB; nenhum
+        -- widget jamais o usou. A busca vinha mudando a altura de ate 250
+        -- filhos com o scrollBox ao vivo.
+        --
+        -- HIPOTESE, NAO MEDICAO -- e a distincao importa. O farejador (!t)
+        -- mediu "MUDAR altura 0 ms" para 250 cards, o que e rapido demais
+        -- para 250 chamadas reais ao host: sugere que setHeight so marca o
+        -- layout como sujo e o custo aparece depois, no reflow, DEPOIS que o
+        -- Lua devolveu. Se for isso, o farejador nunca poderia te-lo visto --
+        -- ele mede a si mesmo, que e a armadilha n2 da casa. Um print da
+        -- busca depois desta versao e o que decide.
+        --
+        -- endUpdate TEM de rodar mesmo se o corpo estourar: scrollBox que
+        -- fica com update suspenso para de repintar e nao acusa nada.
+        local function comLayoutSuspenso(nomeScrollBox, corpo)
+            local sb = nomeScrollBox ~= nil and self[nomeScrollBox] or nil
+            if sb == nil then return corpo() end
+            pcall(function() sb:beginUpdate() end)
+            local ok, err = pcall(corpo)
+            pcall(function() sb:endUpdate() end)
+            if not ok then error(err, 0) end
+        end
+
         local function zerarEstadoCatalogo()
             estadoLinha = {}
+            ultimaBusca = {}
         end
 
         -- Mostra ou esconde uma linha de catalogo (card ou cabecalho).
@@ -4985,13 +5036,22 @@
         -- da CHAVE; a busca casa contra o NOME, que e o que o jogador esta
         -- lendo quando digita.
         function filtrarCatalogoQD(texto, tipo)
-            local agulha = dobrarBusca(texto)
-            for _, e in ipairs(montarIndiceQD()) do
-                if tipo == nil or e.tipo == tipo then
-                    mostrarLinhaCatalogo(e.w, ALTURA_CARD_CATALOGO.qd,
-                                         buscaCasa(e.alvo, agulha))
+            -- A chave do estado inclui o TIPO: os dois popups dividem o
+            -- prefixo rectLinhaQD_ mas tem caixas de busca separadas, e uma
+            -- chave so faria a caixa de Defeitos calar a de Qualidades.
+            local qual = "QD:" .. tostring(tipo)
+            if buscaRepetida(qual, tostring(texto)) then return end
+            local sb = (tipo == "Qualidade" and "sbListaQualidades")
+                    or (tipo == "Defeito" and "sbListaDefeitos") or nil
+            comLayoutSuspenso(sb, function()
+                local agulha = dobrarBusca(texto)
+                for _, e in ipairs(montarIndiceQD()) do
+                    if tipo == nil or e.tipo == tipo then
+                        mostrarLinhaCatalogo(e.w, ALTURA_CARD_CATALOGO.qd,
+                                             buscaCasa(e.alvo, agulha))
+                    end
                 end
-            end
+            end)
         end
 
         -- LOJA -- 250 cards, 9 cabecalhos de categoria e 6 subtitulos.
@@ -5004,24 +5064,29 @@
         -- derivado do resultado da busca, recalculado a cada tecla. Nao
         -- existe estado de cabecalho para dessincronizar.
         function filtrarCatalogoItens(texto)
+            -- O farejador vem ANTES da guarda: !t precisa poder rodar de novo
+            -- com o mesmo texto na caixa, que e como se mede duas vezes.
             if tostring(texto) == "!t" then return farejarBusca("Itens") end
-            local agulha = dobrarBusca(texto)
-            local ix = montarIndiceItens()
-            local sobrouCat, sobrouSub = {}, {}
-            for _, e in ipairs(ix.linhas) do
-                local casa = buscaCasa(e.alvo, agulha)
-                mostrarLinhaCatalogo(e.w, ALTURA_CARD_CATALOGO.item, casa)
-                if casa then
-                    sobrouCat[e.cat] = true
-                    if e.sub ~= nil then sobrouSub[e.sub] = true end
+            if buscaRepetida("Itens", tostring(texto)) then return end
+            comLayoutSuspenso("sbListaItens", function()
+                local agulha = dobrarBusca(texto)
+                local ix = montarIndiceItens()
+                local sobrouCat, sobrouSub = {}, {}
+                for _, e in ipairs(ix.linhas) do
+                    local casa = buscaCasa(e.alvo, agulha)
+                    mostrarLinhaCatalogo(e.w, ALTURA_CARD_CATALOGO.item, casa)
+                    if casa then
+                        sobrouCat[e.cat] = true
+                        if e.sub ~= nil then sobrouSub[e.sub] = true end
+                    end
                 end
-            end
-            for _, f in ipairs(ix.faixas) do
-                mostrarLinhaCatalogo(f.w, 36, sobrouCat[f.chave] == true)
-            end
-            for _, s in ipairs(ix.subs) do
-                mostrarLinhaCatalogo(s.w, 23, sobrouSub[s.chave] == true)
-            end
+                for _, f in ipairs(ix.faixas) do
+                    mostrarLinhaCatalogo(f.w, 36, sobrouCat[f.chave] == true)
+                end
+                for _, s in ipairs(ix.subs) do
+                    mostrarLinhaCatalogo(s.w, 23, sobrouSub[s.chave] == true)
+                end
+            end)
         end
 
         -- PODERES -- 113 cards em 18 kits, mais os dois de FORA DOS KITS.
@@ -5037,30 +5102,33 @@
         -- apagar esse recuo.
         function filtrarCatalogoPoderes(texto)
             if tostring(texto) == "!t" then return farejarBusca("Poderes") end
-            local agulha = dobrarBusca(texto)
-            local ix = montarIndicePoderes()
-            for _, kit in ipairs(ix.kits) do
-                local sobrouNoKit = false
-                for _, s in ipairs(kit.slots) do
-                    local sobrouNoSlot = false
-                    for _, c in ipairs(s.cards) do
-                        local casa = buscaCasa(c.alvo, agulha)
-                        mostrarLinhaCatalogo(c.w, ALTURA_CARD_CATALOGO.poder, casa)
-                        if casa then sobrouNoSlot = true; sobrouNoKit = true end
+            if buscaRepetida("Poderes", tostring(texto)) then return end
+            comLayoutSuspenso("sbListaPoderes", function()
+                local agulha = dobrarBusca(texto)
+                local ix = montarIndicePoderes()
+                for _, kit in ipairs(ix.kits) do
+                    local sobrouNoKit = false
+                    for _, s in ipairs(kit.slots) do
+                        local sobrouNoSlot = false
+                        for _, c in ipairs(s.cards) do
+                            local casa = buscaCasa(c.alvo, agulha)
+                            mostrarLinhaCatalogo(c.w, ALTURA_CARD_CATALOGO.poder, casa)
+                            if casa then sobrouNoSlot = true; sobrouNoKit = true end
+                        end
+                        if s.rotulo ~= nil then
+                            mostrarLinhaCatalogo(s.rotulo, 16, sobrouNoSlot)
+                        end
                     end
-                    if s.rotulo ~= nil then
-                        mostrarLinhaCatalogo(s.rotulo, 16, sobrouNoSlot)
-                    end
+                    mostrarLinhaCatalogo(kit.cab, 34, sobrouNoKit)
                 end
-                mostrarLinhaCatalogo(kit.cab, 34, sobrouNoKit)
-            end
-            local sobrouFora = false
-            for _, c in ipairs(ix.fora) do
-                local casa = buscaCasa(c.alvo, agulha)
-                mostrarLinhaCatalogo(c.w, ALTURA_CARD_CATALOGO.poder, casa)
-                if casa then sobrouFora = true end
-            end
-            mostrarLinhaCatalogo("podCab_Foradoskits", 34, sobrouFora)
+                local sobrouFora = false
+                for _, c in ipairs(ix.fora) do
+                    local casa = buscaCasa(c.alvo, agulha)
+                    mostrarLinhaCatalogo(c.w, ALTURA_CARD_CATALOGO.poder, casa)
+                    if casa then sobrouFora = true end
+                end
+                mostrarLinhaCatalogo("podCab_Foradoskits", 34, sobrouFora)
+            end)
         end
 
         -- ABRIR ZERANDO O FILTRO (decisao de 05/09/2026).
@@ -13559,7 +13627,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.4" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.5" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14311,7 +14379,7 @@
                             <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE VIDA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="15 + Dado de vida + (Constituição ÷ 2 × Nível), mais o acumulado por nível."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualHp" align="left" width="88" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                <rectangle name="cmb_caixaAtualHp" align="left" width="76" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
                                     <edit name="cmb_edAtualHp" align="client" horzTextAlign="trailing" margins="{right=6}" field="hpAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#8B2332" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
@@ -14334,7 +14402,7 @@
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE AURA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="(20 + Sabedoria + Nível) × Rank, mais os dados acumulados por nível."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualAp" align="left" width="88" color="#080B0E" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                <rectangle name="cmb_caixaAtualAp" align="left" width="76" color="#080B0E" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
                                     <edit name="cmb_edAtualAp" align="client" horzTextAlign="trailing" margins="{right=6}" field="apAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
@@ -14357,7 +14425,7 @@
                             <rectangle align="top" height="3" color="#7FA8B8" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE MANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="15 + base por idade + (Nível × 2). Exige a qualidade Coração de mana."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualMp" align="left" width="88" color="#080B0E" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                <rectangle name="cmb_caixaAtualMp" align="left" width="76" color="#080B0E" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
                                     <edit name="cmb_edAtualMp" align="client" horzTextAlign="trailing" margins="{right=6}" field="mpAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
@@ -14380,7 +14448,7 @@
                             <rectangle align="top" height="3" color="#8A63C9" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE PRANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Mana + Aura somadas. Exclusivo de Bruxas (Linhagem de Unaris)."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualPrana" align="left" width="88" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                <rectangle name="cmb_caixaAtualPrana" align="left" width="76" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
                                     <edit name="cmb_edAtualPrana" align="client" horzTextAlign="trailing" margins="{right=6}" field="pranaAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#8A63C9" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
@@ -14403,7 +14471,7 @@
                             <rectangle align="top" height="3" color="#9E3B4A" hitTest="false"/>
                             <label align="top" height="26" text="PONTOS DE VITAE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="10 + (Constituição × 1,5) + (Rank × 30). Apenas vampiros."/>
                             <layout align="top" height="34" margins="{left=8,right=8}">
-                                <rectangle name="cmb_caixaAtualPv" align="left" width="88" color="#080B0E" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                <rectangle name="cmb_caixaAtualPv" align="left" width="76" color="#080B0E" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3" margins="{left=12,right=4}">
                                     <edit name="cmb_edAtualPv" align="client" horzTextAlign="trailing" margins="{right=6}" field="pvAtual" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#9E3B4A" fontSize="22" fontStyle="bold" hint="Quanto o personagem tem AGORA. Campo de jogo: continua livre com a ficha finalizada. Pode ficar negativo (decisão da mesa) e nunca passa do máximo.">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>

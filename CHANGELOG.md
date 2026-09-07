@@ -1,3 +1,75 @@
+## v0.49.5 — a caixa media 88px para um número de 55 (07/09/2026)
+
+### O campo de valor era 60% maior que o maior valor possível
+
+Relatado na tela, com print: *"agora sim está centralizado os valores dos cards,
+mas o campo editável continua se estendendo até o limite da esquerda. (…) Não
+precisa ter uma largura tão grande os campos"*. O mestre digitou **9999** no
+card de Prana de propósito, como o teto que nenhum recurso ultrapassa.
+
+Aqui não se estimou largura de fonte: as fontes estão no repositório e foram
+**medidas** com o `fontTools`, em Cinzel Bold 22px, que é o que os cinco cards
+usam:
+
+| texto | largura |
+|---|---|
+| `9999` | 55,4 px |
+| `0000` (os quatro dígitos mais largos) | 57,5 px |
+| `-0000` (o pior caso com sinal) | 65,8 px |
+
+A caixa tinha `width="88"` e o `edit` dentro dela `margins="{right=6}"`: 80px
+úteis para um número que ocupa 55. Sobravam ~25px de vão à esquerda do valor —
+que é exatamente o que aparecia no print.
+
+A caixa passa a **76px** (68 úteis). Isso ainda cabe o `-0000`, e o *hint* do
+campo diz que ele **pode ficar negativo** — sinal cortado num campo alinhado à
+direita apagaria o menos e faria um número negativo parecer positivo, que é o
+tipo de erro silencioso que esta ficha existe para não cometer.
+
+E os 12px que saíram da largura **voltaram como margem esquerda**, não como
+espaço livre: `margins="{left=12,right=4}"`. O valor fica no mesmo pixel de
+antes e o rótulo `/ máximo` também — a centralização conquistada na v0.49.4
+continua intacta, e só a moldura visível encolheu, que era o pedido.
+
+Vale para os cinco: Vida, Aura, Mana, Prana e Vitae.
+
+### A busca rodava duas vezes por tecla, e ninguém tinha olhado o XML
+
+Relatado na tela: *"o campo de busca dos pop-ups continua travando, estou
+pensando em desistir da ideia, já que parece fora dos limites da plataforma
+filtrar listas muito grandes."*
+
+A plataforma não é o limite. Duas coisas estavam abertas, e as duas no XML —
+não no Lua, que é onde as três correções anteriores procuraram.
+
+**Primeira: cada caixa de busca dispara o filtro duas vezes.** As quatro
+declaram `onChange` **e** `onKeyUp`, cada um chamando a mesma função com o mesmo
+argumento. São quatro `onKeyUp` no arquivo inteiro, um por caixa de busca, todos
+com a indentação fora do lugar — assinatura de acréscimo às pressas que nunca
+saiu.
+
+Apagar um deles seria a correção óbvia e **está errada**: qual dos dois o host
+dispara ao digitar não é mensurável fora do Firecast, e apagar o que funciona
+mata a busca inteira sem erro nenhum, com a lista parada parecendo certa. Então
+os dois ficam, e o filtro passa a guardar o último texto aplicado: a segunda
+chamada da mesma tecla sai numa comparação de string. Funciona se vier só um
+dos eventos, e funciona se vierem os dois.
+
+**Segunda: o layout nunca foi suspenso.** `gui.Control:beginUpdate()` existe em
+`sdk/rrpgGUI.lua:59` e invoca o `BeginUpdate` do host. A ficha usava
+`beginUpdate` **só no NDB** — nenhum widget jamais o usou. A busca vinha
+mudando a altura de até 250 filhos com o `scrollBox` ao vivo. As três funções de
+filtro passam a rodar dentro de `beginUpdate`/`endUpdate` do `scrollBox` do seu
+próprio popup, com `endUpdate` garantido mesmo se o corpo estourar — `scrollBox`
+que fica com update suspenso para de repintar e não acusa nada.
+
+**O segundo ponto é hipótese, não medição, e a diferença importa.** O farejador
+mediu `MUDAR altura 0 ms` para 250 cards — rápido demais para 250 chamadas reais
+ao host. Isso sugere que `setHeight` só marca o layout como sujo e o custo
+aparece no *reflow*, depois que o Lua devolveu; se for isso, o farejador nunca
+poderia tê-lo visto, porque ele mede a si mesmo — a armadilha nº 2 da casa. O
+print da busca nesta versão é o que decide.
+
 ## v0.49.4 — a margem custava 35 ms por chamada (06/09/2026)
 
 ### O que travava a busca não era o que eu disse duas vezes
