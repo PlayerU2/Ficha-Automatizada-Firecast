@@ -1,3 +1,15 @@
+## v0.49.7 — ícones identificam os sete atributos sem mover os números (07/09/2026)
+
+Os sete cards de Atributos & Perícias agora exibem um PNG de 28×28 antes do
+nome do atributo. Cada cabeçalho conserva os 190px que já ocupava: 34px para o
+ícone e 156px para o título. Por isso, Base, bônus racial/poder, automações e
+Total permanecem nos mesmos pixels e nenhum cálculo ou campo NDB foi tocado.
+
+As imagens usam `style="originalSize"`, transparência real e nomes literais no
+XML. Cada referência foi conferida contra o PNG efetivamente presente em
+`imagens/`, porque o Firecast não escala arte de pacote e falha silenciosamente
+quando o nome não coincide.
+
 ## v0.49.6 — o width do XML estava morto, e a medição foi na fonte errada (07/09/2026)
 
 ### A busca destravou, e o "segundo ponto" da v0.49.5 deixou de ser hipótese

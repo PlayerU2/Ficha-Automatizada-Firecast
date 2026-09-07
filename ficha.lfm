@@ -13660,7 +13660,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.6" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.7" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14101,7 +14101,10 @@
                     <rectangle name="abaAtr_blocoCarisma" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
                             <layout align="top" height="34" margins="{bottom=6}">
-                                <label align="left" width="190" text="CARISMA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
+                                <!-- Orcamento horizontal preservado: icone 34 + titulo 156 = 190.
+                                     Assim a arte entra sem deslocar base, bonus, automatico ou total. -->
+                                <image align="left" width="34" style="originalSize" src="imagens/atributo_carisma.png" hitTest="false"/>
+                                <label align="left" width="156" text="CARISMA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
                                     <edit name="edBasecarisma" align="client" transparent="true" field="carismaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
@@ -14143,7 +14146,8 @@
 
                     <rectangle align="top" height="60" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                            <label align="left" width="190" text="CONSTITUIÇÃO" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
+                            <image align="left" width="34" style="originalSize" src="imagens/atributo_constituicao.png" hitTest="false"/>
+                            <label align="left" width="156" text="CONSTITUIÇÃO" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                             <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
                                 <edit name="edBaseconstituicao" align="client" transparent="true" field="constituicaoBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                     <event name="onChange"><![CDATA[recalcularTudo();]]></event>
@@ -14170,7 +14174,8 @@
                     <rectangle name="abaAtr_blocoDestreza" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
                             <layout align="top" height="34" margins="{bottom=6}">
-                                <label align="left" width="190" text="DESTREZA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
+                                <image align="left" width="34" style="originalSize" src="imagens/atributo_destreza.png" hitTest="false"/>
+                                <label align="left" width="156" text="DESTREZA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
                                     <edit name="edBasedestreza" align="client" transparent="true" field="destrezaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
@@ -14213,7 +14218,8 @@
                     <rectangle name="abaAtr_blocoForca" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
                             <layout align="top" height="34" margins="{bottom=6}">
-                                <label align="left" width="190" text="FORÇA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
+                                <image align="left" width="34" style="originalSize" src="imagens/atributo_forca.png" hitTest="false"/>
+                                <label align="left" width="156" text="FORÇA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
                                     <edit name="edBaseforca" align="client" transparent="true" field="forcaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
@@ -14256,7 +14262,8 @@
                     <rectangle name="abaAtr_blocoInteligencia" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
                             <layout align="top" height="34" margins="{bottom=6}">
-                                <label align="left" width="190" text="INTELIGÊNCIA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
+                                <image align="left" width="34" style="originalSize" src="imagens/atributo_inteligencia.png" hitTest="false"/>
+                                <label align="left" width="156" text="INTELIGÊNCIA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
                                     <edit name="edBaseinteligencia" align="client" transparent="true" field="inteligenciaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
@@ -14299,7 +14306,8 @@
                     <rectangle name="abaAtr_blocoManipulacao" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
                             <layout align="top" height="34" margins="{bottom=6}">
-                                <label align="left" width="190" text="MANIPULAÇÃO" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
+                                <image align="left" width="34" style="originalSize" src="imagens/atributo_manipulacao.png" hitTest="false"/>
+                                <label align="left" width="156" text="MANIPULAÇÃO" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
                                     <edit name="edBasemanipulacao" align="client" transparent="true" field="manipulacaoBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
@@ -14342,7 +14350,8 @@
                     <rectangle name="abaAtr_blocoSabedoria" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
                             <layout align="top" height="34" margins="{bottom=6}">
-                                <label align="left" width="190" text="SABEDORIA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
+                                <image align="left" width="34" style="originalSize" src="imagens/atributo_sabedoria.png" hitTest="false"/>
+                                <label align="left" width="156" text="SABEDORIA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
                                     <edit name="edBasesabedoria" align="client" transparent="true" field="sabedoriaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
