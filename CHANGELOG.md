@@ -1,3 +1,23 @@
+## v0.49.8 — o LEIA-ME de dentro do .rpk ficou na versão anterior, de novo (08/09/2026)
+
+A v0.49.7 entrou com o `LEIA-ME.txt` parado: primeira linha em v0.49.6 e
+`imagens/ (111 arquivos)` quando o disco já tinha 118 — os sete ícones de
+atributo entraram na pasta e não na contagem. O `.rpk` instalado levava esse
+texto para a máquina de quem joga, e o LEIA-ME é a única instrução de instalação
+que a pessoa recebe.
+
+Nada de regra, cálculo ou layout mudou. O que mudou é texto: LEIA-ME, selo de
+versão na tela, `module.xml`, o badge do README e este changelog.
+
+A causa não é distração: a checagem 39 existe exatamente para isto e não foi
+rodada antes de empacotar. O commit `fd91e0a` conta a mesma história uma versão
+atrás — LEIA-ME em v0.49.4 dentro de um pacote v0.49.6. Duas ocorrências da
+mesma classe: a rede pega, mas só se alguém rodar.
+
+O badge de versão do README não é coberto pela checagem 39, que confere só as
+contagens de lá. Ele ficou em 0.49.6 desde a versão passada e ninguém viu — é o
+irmão deste bug, e fica anotado até virar checagem.
+
 ## v0.49.7 — ícones identificam os sete atributos sem mover os números (07/09/2026)
 
 Os sete cards de Atributos & Perícias agora exibem um PNG de 28×28 antes do
