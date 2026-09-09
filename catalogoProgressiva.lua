@@ -62,6 +62,22 @@ local PADROES = {
      pats = {"regenera%s*(%d+)%s*de%s+vida%s+por%s+turno"}},
 }
 
+-- O TAMANHO FICA DE FORA DO EXTRATOR, DE PROPOSITO (decisao da mesa,
+-- 09/09/2026). "Aumenta em 1 categoria de tamanho" aparece so no rank E da
+-- furia, e a mesa confirmou que o aumento PERSISTE nos ranks seguintes - o
+-- que a regra "os blocos SUBSTITUEM, nao acumulam" nao saberia expressar,
+-- porque os blocos de D em diante nao repetem a frase.
+--
+-- E a mesa decidiu nao automatizar: "deixa para os players mexerem
+-- manualmente no tamanho como ja estamos fazendo ate entao".
+--
+-- Entao o padrao SAIU do vocabulario, e nao ficou aqui sem consumidor. Um
+-- padrao que reconhece e nao alimenta nada e pior que padrao nenhum: o
+-- resumo diria "a ficha entendeu: +1 categoria de tamanho" para um efeito
+-- que ela nao aplica, e o jogador confiaria. A frase continua valendo como
+-- TEXTO, junto de [Garras Lupinas] e da resistencia a [Hemocinese], que
+-- tambem sao mecanicos e tambem nao viram numero.
+
 -- Devolve (numeros, reconhecidos) para UM bloco de rank.
 --   numeros      = {vida=40, absorcao=15, defesas=2, dadosDano=2, regen=0}
 --   reconhecidos = {"+40 vida", "+15% absorção", ...}  na ordem do vocabulario
@@ -93,6 +109,104 @@ function CatalogoProgressiva.resumoDoBloco(texto)
     end
     return "A ficha entendeu: " .. table.concat(reconhecidos, ", ") ..
            ". O resto do texto vale como está escrito."
+end
+
+-- ---------------------------------------------------------------------
+-- AS DUAS HABILIDADES DE TRIBO  (v0.51.0)
+--
+-- O livro diz, nas caracteristicas raciais dos Lobisomens:
+--   "[Forma bestial] receba a habilidade progressiva 'Forma Bestial', que
+--    permite a um lobisomem se transformar da sua forma mortal para sua
+--    forma bestial."
+--
+-- No singular. A MESA REFINOU (09/09/2026): a habilidade depende da TRIBO
+-- que o lobisomem escolhe na criacao, e sao duas. Isso nao contradiz o
+-- livro - ele proprio ja separa as duas faccoes nos tracos raciais, com
+-- "[Odio Enraizado - Filhos da Furia]" e "[Lua Cheia - Vigilantes da Lua]"
+-- cobrando coisas diferentes de cada uma.
+--
+-- POR QUE O TEXTO ESTA AQUI INTEIRO, E VERBATIM. O extrator continua sendo
+-- quem le os numeros: instalar a habilidade escreve ESTE texto nos seis
+-- blocos, e a ficha o le do mesmo jeito que leria o texto colado a mao. A
+-- fonte da verdade continua sendo a frase da mesa, e nao um numero digitado
+-- por mim num campo. Se eu cravasse os numeros aqui, existiriam duas
+-- versoes da mesma regra - a frase e a tabela - e elas divergiriam calado.
+--
+-- fasesLua = true diz que ESTA habilidade recebe os bonus lunares. Ate a
+-- v0.50.2 quem decidia isso era `personagemEhLobisomem()`, entao um Filho
+-- da Furia transformado recebia, sem erro nenhum, os bonus de lua que
+-- pertencem so aos Vigilantes.
+-- ---------------------------------------------------------------------
+CatalogoProgressiva.TRIBOS = {"Vigilantes da Lua", "Filhos da Fúria"}
+
+CatalogoProgressiva.HABILIDADES = {
+    ["Filhos da Fúria"] = {
+        nome = "Forma bestial lupina da fúria",
+        tags = "[Lobisomem], [Progressiva]",
+        energia = "8 de Aura | Ação padrão",
+        fasesLua = false,
+        curaPrimeiraTransf = 100,
+        descricao = [==[o lobisomem se transforma em um enorme lobisomem quadrúpede, como um lobo gigante
+[Passiva] seus ataques causam 50% mais de dano contra [Vampiros] e [Aberrações]
+[Primeira transformação] recupera 100% de vida máxima na primeira transformação a cada descanso longo
+Restrição¹: quando um lobisomem se transforma, seu corpo se expande e muda de forma quebrando todos os equipamentos que carrega e soltando armas.
+Restrição²: ao se transformar realize um teste de Vontade (Sabedoria) com meta 20, caso falhe no teste receba a condição de estado [Enfurecido]]==],
+        blocos = {
+            E  = [==[+40 pontos de vida; +10% de Absorção; Aumenta em 1 categoria de tamanho; Recebe a habilidade [Garras Lupinas]]==],
+            D  = [==[+60 pontos de vida; +20% de Absorção; +2 em todas as Defesas; +2 dados de dano; Recebe a habilidade [Mordida Lupina]]==],
+            C  = [==[+80 pontos de vida: +30% de Absorção; +3 em todas as Defesas; +3 dado de dano; Recebe a habilidade [Uivo Lupino]]==],
+            B  = [==[+100 pontos de vida; +40% de Absorção; +4 em todas as Defesas; +4 dados de dano; regenera 10 de vida por turno; Recebe a habilidade [Licantropia]]==],
+            A  = [==[+120 pontos de vida; +50% de Absorção; +5 em todas as Defesas; +5 dados de dano; regenera 20 de vida por turno; recebe resistência contra [Hemocinese]]==],
+            EX = [==[+150 pontos de vida; +70% de Absorção; +7 em todas as Defesas; +7 dados de dano; regenera 30 de vida por turno; recebe imunidade contra [Hemocinese]]==],
+        },
+        -- O que a ficha NAO calcula, e por que. Vira aviso ao transformar,
+        -- e nao numero: automatizar qualquer um destes seria a ficha
+        -- decidindo pela mesa.
+        avisos = {
+            "Aumenta 1 categoria de TAMANHO e ela continua valendo nos ranks seguintes — ajuste à mão no card de Tamanho, a ficha não mexe nele.",
+            "Quebra TODOS os equipamentos que carrega e solta as armas — desequipe você mesmo, a ficha não mexe no seu inventário.",
+            "Role Vontade (Sabedoria) com meta 20. Se falhar, aplique a condição [Enfurecido].",
+        },
+    },
+
+    ["Vigilantes da Lua"] = {
+        nome = "Forma bestial lupina da lua",
+        tags = "[Lobisomem], [Progressiva]",
+        energia = "8 de Aura | Ação padrão",
+        fasesLua = true,
+        curaPrimeiraTransf = 50,
+        descricao = [==[o usuário se transforma em um enorme lobisomem, que melhora suas capacidades de forma geral enquanto estiver transformado.
+[Passiva] seus ataques causam 50% mais de dano contra [Vampiros] e [Aberrações]
+[Primeira transformação] recupera 50% de vida máximo; recebe o bônus especial dependendo da fase da lua maior na primeira transformação a cada descanso longo.
+Restrição: apenas é possível realizar esta transformação a noite.]==],
+        blocos = {
+            E  = [==[+20 pontos de vida; +5% de Absorção; Recebe a habilidade [Garras Lupinas]]==],
+            D  = [==[+30 pontos de vida; +10% de Absorção; +1 em todas as Defesas; +1 dado de dano; Recebe a habilidade [Mordida Lupina]]==],
+            C  = [==[+40 pontos de vida: +15% de Absorção; +2 em todas as Defesas; +2 dado de dano; Recebe a habilidade [Uivo Lupino]]==],
+            B  = [==[+50 pontos de vida; +20% de Absorção; +3 em todas as Defesas; +3 dados de dano; regenera 5 de vida por turno; Recebe a habilidade [Licantropia]]==],
+            A  = [==[+70 pontos de vida; +30% de Absorção; +4 em todas as Defesas; +4 dados de dano; regenera 10 de vida por turno; recebe resistência contra [Hemocinese]]==],
+            EX = [==[+100 pontos de vida; +50% de Absorção; +5 em todas as Defesas; +5 dados de dano; regenera 15 de vida por turno; recebe imunidade contra [Hemocinese]]==],
+        },
+        avisos = {
+            "Só é possível se transformar à NOITE. A ficha não sabe a hora da mesa.",
+        },
+    },
+}
+
+function CatalogoProgressiva.habilidadeDaTribo(tribo)
+    return CatalogoProgressiva.HABILIDADES[tostring(tribo or "")]
+end
+
+-- Devolve a tribo dona de um nome de habilidade, ou nil. Serve para a ficha
+-- reconhecer uma habilidade que o jogador colou a mao antes de as tribos
+-- existirem, sem precisar de campo novo no registro (que teria de entrar em
+-- CAMPOS_HABILIDADE e na checagem 29).
+function CatalogoProgressiva.triboDaHabilidade(nome)
+    local alvo = tostring(nome or "")
+    for tribo, h in pairs(CatalogoProgressiva.HABILIDADES) do
+        if h.nome == alvo then return tribo end
+    end
+    return nil
 end
 
 -- ---------------------------------------------------------------------

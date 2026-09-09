@@ -1,3 +1,108 @@
+## v0.51.0 — a tribo do lobisomem, e a lua que era de todos (09/09/2026)
+
+### A mecânica só servia a uma tribo porque só uma tribo existia
+
+Relatado pelo mestre: *"como nós só tínhamos o contexto de uma habilidade
+progressiva criada (que era a de um lobisomen), meio que nossa programação da
+habilidade progressiva ficou funcional apenas para os lobisomens"*.
+
+Na criação, o lobisomem agora escolhe entre **Vigilantes da Lua** e **Filhos
+da Fúria** — regra da mesa de 09/09/2026. O livro escreve a habilidade no
+singular (*"[Forma bestial] receba a habilidade progressiva 'Forma Bestial'"*),
+mas ele próprio já separa as duas facções nos traços raciais, com
+`[Ódio Enraizado - Filhos da Fúria]` e `[Lua Cheia - Vigilantes da Lua]`
+cobrando coisas diferentes. A mesa refinou; não contradisse.
+
+As duas habilidades entraram no `catalogoProgressiva.lua` com o **texto
+verbatim** que o mestre mandou, e escolher a tribo instala a certa na aba de
+Poderes, com os seis blocos de rank preenchidos. O extrator continua sendo
+quem lê os números — se eu os cravasse numa tabela, existiriam duas versões da
+mesma regra, a frase e o número, e elas divergiriam caladas.
+
+### O Filho da Fúria vinha recebendo a lua que não é dele
+
+Este é o achado, e ele estava em produção:
+
+```lua
+if personagemEhLobisomem() then          -- ficha.lfm:8991, v0.50.2
+    local f = faseLuaAtual()
+    z.deslocamento = z.deslocamento + n(f.deslocamento)
+```
+
+As cinco fases da lua estavam no catálogo como se fossem **da raça**. São do
+texto de **uma** das duas habilidades: a da lua lista os cinco `[Bônus Lunar]`,
+e a da fúria não cita a lua em lugar nenhum. Qualquer lobisomem transformado
+somava +2 de deslocamento, +2 de iniciativa e teto de absorção de 80% —
+números plausíveis, sem erro na tela.
+
+A guarda passou a ser `triboRecebeFasesLua()`, que pergunta ao catálogo. E o
+card da lua acompanha: some para o Filho da Fúria, porque card que não
+alimenta nada treina o olho a ignorar a faixa onde as contas que importam
+aparecem.
+
+### O tamanho fica manual, e a ficha avisa
+
+`Aumenta em 1 categoria de tamanho` aparece uma vez só, no rank E da fúria. Ele
+levantou uma pergunta de regra, porque a mesa já decidiu que **os blocos de
+rank substituem, não acumulam** — ao pé da letra, o lobo encolheria ao chegar
+no rank D.
+
+Resposta da mesa (09/09/2026): o aumento **persiste** nos ranks seguintes, e
+**não é para automatizar** — *"deixa para os players mexerem manualmente no
+tamanho como já estamos fazendo até então"*.
+
+Cheguei a implementar o sexto padrão do extrator e desfiz. Um padrão que
+reconhece e não alimenta nada é pior que padrão nenhum: o resumo diria *"a
+ficha entendeu: +1 categoria de tamanho"* para um efeito que ela não aplica, e
+o jogador confiaria. A frase volta a valer como **texto**, junto de
+`[Garras Lupinas]` e da resistência a `[Hemocinese]`, que também são mecânicos
+e também não viram número — e a transformação passa a **avisar**, com a única
+coisa que o jogador precisa saber: ajuste o card à mão.
+
+### O lacre, e por que não bastava a trava da ficha
+
+A tribo é escolha de criação e não se desfaz. Ela usa **lacre próprio**, com
+data, e não a trava geral da ficha finalizada: a trava geral se abre e fecha
+quando o mestre destrava a ficha para uma correção qualquer, e a tribo ficaria
+editável de carona. Mesmo padrão já usado na mestiçagem e no aspecto divino.
+
+Ficha anterior à v0.51.0 não tem tribo. A migração **deduz do nome da
+habilidade instalada**, e não chuta: quem tem a "Forma bestial lupina da lua"
+colada à mão vira Vigilante; quem não tem habilidade nenhuma fica sem tribo, e
+sem bônus lunar, que é o certo para quem ainda vai escolher.
+
+### A primeira transformação
+
+As duas habilidades curam na primeira transformação a cada descanso longo, e
+por valores diferentes — 100% na fúria, 50% na lua. Um marcador liga na
+transformação e **só o descanso longo o desliga**; o curto não, porque o texto
+diz "longo". Sem o marcador, desligar e religar a forma curaria de novo, e
+curar a vida cheia com um clique duplo é o tipo de coisa que ninguém reporta
+como bug, porque parece que a ficha foi generosa.
+
+### O que a ficha NÃO calcula, e diz no clique
+
+Vira aviso na hora de transformar, e não número: quebrar todos os equipamentos
+e soltar as armas (fúria), o teste de Vontade meta 20 para não ficar
+`[Enfurecido]` (fúria), e a restrição de só se transformar à noite (lua).
+Aviso que aparece no clique é lido; a mesma frase no texto da habilidade, não.
+
+### As redes
+
+* **checagem 64** — o bloco de fase da lua do `bonusFormaBestial` é guardado
+  pela tribo, e não por `personagemEhLobisomem`; `triboRecebeFasesLua` consulta
+  o campo `fasesLua` do catálogo, e não uma lista de nomes escrita à parte; e o
+  `cardVisivelCombate` acompanha a mesma regra. Pega a **classe**: qualquer
+  volta ao acoplamento por raça, em qualquer das três metades. Duas mutações —
+  a v0.50.2 literal, e o card voltando sem tocar no cálculo, que é a metade que
+  uma checagem só de conta não pegaria;
+* **checagem 30** pegou os losangos `◆` e `◇` que eu tinha usado nos rótulos
+  da tribo: a Cinzel não tem esses glifos, e o Windows substituiria calado.
+  Trocados pelo `[X]` / `[  ]` que a ficha já usa no bloco PROGRESSIVA;
+* **checagem 63** pegou os dois `CLAUDE.md` prometendo 54 checagens e 216
+  mutações quando a rede passou a ter 55 e 218 — dois dias depois de ela ser
+  escrita para isso.
+
 ## v0.50.2 — alinhamento válido nos títulos das moedas (09/09/2026)
 
 A v0.50.1 usou `horzTextAlign="left"` nos quatro títulos novos. O SDK3 aceita
