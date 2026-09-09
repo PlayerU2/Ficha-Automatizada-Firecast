@@ -1,3 +1,10 @@
+## v0.50.2 — alinhamento válido nos títulos das moedas (09/09/2026)
+
+A v0.50.1 usou `horzTextAlign="left"` nos quatro títulos novos. O SDK3 aceita
+apenas `center`, `leading` ou `trailing`, então o `rdk i` recusava compilar a
+ficha. As quatro ocorrências foram corrigidas para `leading`; imagens,
+dimensões, campos NDB e regras permanecem iguais.
+
 ## v0.50.1 — cunhagens da bolsa de moedas (09/09/2026)
 
 Drams, Florins, Lunaris e Aureus agora exibem ícones de 18×18 derivados das
