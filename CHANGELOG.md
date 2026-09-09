@@ -93,6 +93,17 @@ passado por verde. É a mesma classe do `0.39.0` literal que apodreceu no outro
 ferramental: **sonda presa à forma exata da linha morre calada na próxima
 edição**. Passou a mirar por padrão.
 
+### A mutação fechou depois do push, e o commit ficou congelado
+
+O commit `7761895` registrou a mutação em **51 de 218**, e foi honesto: o
+mestre precisava do código no outro PC e a rodada ainda estava correndo. Ela
+terminou depois, **no mesmo commit** — 218/218, zero inválidas, zero sondas
+podres. `verifica.py` fechou 55/55, `testes.py` 295/295 e o `rdk l` verde.
+
+Fica escrito aqui porque a mensagem do commit não se reescreve, e uma dúvida
+congelada no histórico vira, meses depois, uma versão que ninguém sabe se foi
+medida.
+
 ## v0.51.2 — a tribo já tinha mecanismo, e era o dos elfos (09/09/2026)
 
 ### O livro já mandava escolher a facção, e eu não tinha lido
