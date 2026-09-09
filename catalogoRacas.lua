@@ -885,6 +885,18 @@ Deslocamento: 14m  Dado de Vida: 1d10
         jogavel = true,
         sangueAntigas = false,     -- nao esta na lista das 11 do livro
         mesticoPermitido = false,  -- "nao pode ser adquirida para (...) 'Lobisomem'"
+        -- O "OU" DO LIVRO, segundo caso em 29 racas (o primeiro foi o Elfo).
+        -- Nao e regra de mesa: esta escrito na qualidade "Linhagem da noite
+        -- [06 pontos]", citada logo abaixo — "Escolha uma faccao de origem:
+        -- Vigilantes da Lua (controle e disciplina) OU Filhos da Furia (poder
+        -- e instinto)".
+        --
+        -- As duas faccoes ja estavam no catalogo como caracteristicas, e as
+        -- DUAS apareciam na aba ao mesmo tempo. Achado na tela em 09/09/2026.
+        -- Declarar a escolha exclusiva aqui e o que faz a nao escolhida sumir,
+        -- pela mesma maquinaria do elfo: temCaracRacial() so responde true
+        -- para a escolhida, e a lista da aba filtra a outra.
+        escolhaExclusiva = { "Ódio Enraizado - Filhos da Fúria", "Lua Cheia - Vigilantes da Lua" },
         -- Qualidades, "Linhagem da noite [06 pontos]":
         --   "Receba a raca 'Lobisomem (Nascido)'. Escolha uma faccao de
         --    origem: Vigilantes da Lua (controle e disciplina) ou Filhos da

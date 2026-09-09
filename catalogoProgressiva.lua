@@ -146,6 +146,12 @@ CatalogoProgressiva.HABILIDADES = {
         energia = "8 de Aura | Ação padrão",
         fasesLua = false,
         curaPrimeiraTransf = 100,
+        -- A escolha do jogador acontece no traco racial, e nao num campo
+        -- proprio: UMA propriedade, UM dono. sheet.racaTracoEscolhido ja
+        -- guarda "a alternativa exclusiva que a raca escolheu", e a tribo E
+        -- essa alternativa. Um sheet.tribo paralelo divergiria dela no dia em
+        -- que alguem trocasse o traco sem passar pelo botao da tribo.
+        traco = "Ódio Enraizado - Filhos da Fúria",
         descricao = [==[o lobisomem se transforma em um enorme lobisomem quadrúpede, como um lobo gigante
 [Passiva] seus ataques causam 50% mais de dano contra [Vampiros] e [Aberrações]
 [Primeira transformação] recupera 100% de vida máxima na primeira transformação a cada descanso longo
@@ -175,6 +181,7 @@ Restrição²: ao se transformar realize um teste de Vontade (Sabedoria) com met
         energia = "8 de Aura | Ação padrão",
         fasesLua = true,
         curaPrimeiraTransf = 50,
+        traco = "Lua Cheia - Vigilantes da Lua",
         descricao = [==[o usuário se transforma em um enorme lobisomem, que melhora suas capacidades de forma geral enquanto estiver transformado.
 [Passiva] seus ataques causam 50% mais de dano contra [Vampiros] e [Aberrações]
 [Primeira transformação] recupera 50% de vida máximo; recebe o bônus especial dependendo da fase da lua maior na primeira transformação a cada descanso longo.
@@ -195,6 +202,16 @@ Restrição: apenas é possível realizar esta transformação a noite.]==],
 
 function CatalogoProgressiva.habilidadeDaTribo(tribo)
     return CatalogoProgressiva.HABILIDADES[tostring(tribo or "")]
+end
+
+-- Do NOME DO TRACO escolhido na aba de Racas para a habilidade. E o unico
+-- caminho: quem decide a tribo e o traco, e nao um campo separado.
+function CatalogoProgressiva.habilidadeDoTraco(nomeTraco)
+    local alvo = tostring(nomeTraco or "")
+    for tribo, h in pairs(CatalogoProgressiva.HABILIDADES) do
+        if h.traco == alvo then return h, tribo end
+    end
+    return nil, nil
 end
 
 -- Devolve a tribo dona de um nome de habilidade, ou nil. Serve para a ficha

@@ -1,3 +1,92 @@
+## v0.51.2 — a tribo já tinha mecanismo, e era o dos elfos (09/09/2026)
+
+### O livro já mandava escolher a facção, e eu não tinha lido
+
+A v0.51.0 tratou a escolha de tribo como regra de mesa e construiu maquinaria
+própria para ela: campo `sheet.tribo`, lacre com data, painel de botões,
+migração. Tudo isso foi apagado nesta versão.
+
+A escolha já está no livro, e já estava **citada dentro do
+`catalogoRacas.lua`**, na qualidade *Linhagem da noite [06 pontos]*:
+
+> "Receba a raça 'Lobisomem (Nascido)'. **Escolha uma facção de origem:
+> Vigilantes da Lua (controle e disciplina) ou Filhos da Fúria (poder e
+> instinto)** e a habilidade progressiva [Forma Bestial Lupina]"
+
+É o mesmo `X OU Y` que a v0.42.0 resolveu para os Elfos — *"Magia inata OU
+Conexão com a Natureza"* —, com `escolhaExclusiva` no catálogo,
+`sheet.racaTracoEscolhido` guardando a escolha e `temCaracRacial` respondendo
+`true` só para a escolhida. Era o segundo caso em 29 raças, não o primeiro.
+
+Relatado na tela: *"por que você não tenta seguir o exemplo do que fizemos com
+os elfos? Já temos algo muito parecido programado"*.
+
+### Os três defeitos que a camada própria tinha, e que somem de graça
+
+**O botão só marcava ao trocar de aba.** `escolherTribo` gravava o campo e não
+repintava o painel; quem repintava era `atualizarBlocoRaca`, que só roda ao
+entrar na aba. O `escolherTracoRacial` dos elfos já termina chamando
+`atualizarBlocoRaca()`.
+
+**A facção não escolhida continuava na aba de Características.** O filtro do
+"OU" já existe em dois lugares — `temCaracRacial()` e a montagem da lista —, e
+a v0.51.0 não passava por nenhum dos dois. Declarar `escolhaExclusiva` fez a
+outra sumir sem uma linha de código novo.
+
+**A habilidade não aparecia na lista.** `instalarHabilidadeDaTribo` dava
+`append` no `recordList` e nunca chamava `ajustarAlturaListaHabilidades`, então
+a lista não crescia — a habilidade existia no NDB e não na tela, que é o erro
+silencioso desta ficha em forma pura.
+
+### A habilidade é um registro editável, e é para continuar sendo
+
+Pedido do mestre, e é o motivo de ela existir como habilidade e não como
+tabela: *"se no futuro os mestres quiserem mexer nessas habilidades (buff ou
+nerf ou reformulação), eu não vou precisar mexer no código da ficha"*.
+
+O catálogo entrega o texto **uma vez**, na instalação. Dali em diante quem manda
+é o que está na aba. Por isso `sincronizarHabilidadeDaTribo()` **não reescreve**
+uma habilidade que já é da tribo certa: reescrever apagaria o ajuste que o
+mestre acabou de digitar, e apagaria calado. Ela só age quando a tribo muda, ou
+quando a habilidade não existe.
+
+Trocar de tribo **substitui**, nunca acumula: as duas na lista somariam os dois
+blocos de rank no `bonusFormaBestial`, e o lobisomem teria +150 e +100 de vida
+ao mesmo tempo, sem erro nenhum.
+
+### A versão intermediária que não existe, e a lição dela
+
+Entre a v0.51.0 e esta houve uma v0.51.1 instalada e nunca versionada. Ela
+tentava salvar o painel próprio movendo-o de lugar, e o motivo do movimento
+vale ficar registrado mesmo com o painel apagado.
+
+O painel nasceu **dentro de** `<layout align="top" height="112">`, um contêiner
+de altura fixa já gasto pelos 54px da SITUAÇÃO e pelos 50px dos ATRIBUTOS BASE.
+Um painel de 128px ali dentro não cabe, e o Firecast **não reclama: ele para de
+desenhar**. Relatado na tela: *"não consegui achar os botões de escolha da
+tribo, busquei em todas as partes e não aparece"* — e a ficha criada do zero
+também não mostrava, porque não era estado corrompido.
+
+**A checagem 43 mede exatamente isso** — filhos empilhados cabem na altura fixa
+do pai — e não disparou: no XML o painel tinha `height="0"`, e 54 + 50 + 0 cabe
+em 112. Quem estoura o pai é o número que o **Lua escreve depois**. A checagem
+lê o XML; o estouro só existe em tempo de execução.
+
+Esse vão continua aberto. Uma checagem que pegasse `definirAltura(self.X, N)`
+com `N` literal e conferisse `N` contra a altura fixa do ancestral de `X`
+fecharia a classe inteira, e não só este caso.
+
+### O que saiu junto
+
+O lacre próprio, com data e autor, foi removido. A trava passou a ser a mesma
+do elfo — livre na criação, travada ao finalizar, só o mestre destrava. O lacre
+extra era invenção da v0.51.0 e não se justificava depois que a escolha voltou
+para o traço racial.
+
+Também saiu o `sheet.tribo`. A tribo **é** o traço escolhido: um campo paralelo
+divergiria dele no dia em que alguém trocasse o traço por fora — uma
+propriedade, um dono.
+
 ## v0.51.0 — a tribo do lobisomem, e a lua que era de todos (09/09/2026)
 
 ### A mecânica só servia a uma tribo porque só uma tribo existia
