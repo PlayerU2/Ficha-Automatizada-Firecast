@@ -13683,7 +13683,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.50.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.50.1" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -17842,25 +17842,37 @@
                                 <label align="top" height="16" text="BOLSA DE MOEDAS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hint="1 Aureu = 50 Lunaris · 1 Lunar = 20 Florins · 1 Florin = 10 Drams"/>
                                 <layout align="client" margins="{top=2}">
                         <layout align="left" width="150" margins="{right=10}">
-                            <label align="top" height="15" text="DRAMS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="A menor moeda. 10 Drams = 1 Florin."/>
+                            <layout align="top" height="18">
+                                <image align="none" left="40" top="0" width="18" height="18" style="originalSize" src="imagens/moeda_dram.png" hitTest="false"/>
+                                <label align="client" text="DRAMS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" horzTextAlign="left" margins="{left=61}" hint="A menor moeda. 10 Drams = 1 Florin."/>
+                            </layout>
                             <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4">
                                 <edit align="client" field="moedaDrams" type="number" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="16" horzTextAlign="center" transparent="true" hint="A menor moeda. 10 Drams = 1 Florin."/>
                             </rectangle>
                         </layout>
                         <layout align="left" width="150" margins="{right=10}">
-                            <label align="top" height="15" text="FLORINS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="A moeda do dia a dia. 20 Florins = 1 Lunar."/>
+                            <layout align="top" height="18">
+                                <image align="none" left="40" top="0" width="18" height="18" style="originalSize" src="imagens/moeda_florin.png" hitTest="false"/>
+                                <label align="client" text="FLORINS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" horzTextAlign="left" margins="{left=61}" hint="A moeda do dia a dia. 20 Florins = 1 Lunar."/>
+                            </layout>
                             <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4">
                                 <edit align="client" field="moedaFlorins" type="number" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="16" horzTextAlign="center" transparent="true" hint="A moeda do dia a dia. 20 Florins = 1 Lunar."/>
                             </rectangle>
                         </layout>
                         <layout align="left" width="150" margins="{right=10}">
-                            <label align="top" height="15" text="LUNARIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="Prata, para valores significativos. 50 Lunaris = 1 Aureu."/>
+                            <layout align="top" height="18">
+                                <image align="none" left="40" top="0" width="18" height="18" style="originalSize" src="imagens/moeda_lunaris.png" hitTest="false"/>
+                                <label align="client" text="LUNARIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" horzTextAlign="left" margins="{left=61}" hint="Prata, para valores significativos. 50 Lunaris = 1 Aureu."/>
+                            </layout>
                             <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4">
                                 <edit align="client" field="moedaLunaris" type="number" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="16" horzTextAlign="center" transparent="true" hint="Prata, para valores significativos. 50 Lunaris = 1 Aureu."/>
                             </rectangle>
                         </layout>
                         <layout align="left" width="150" margins="{right=10}">
-                            <label align="top" height="15" text="AUREUS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="Ouro, a mais valiosa do continente."/>
+                            <layout align="top" height="18">
+                                <image align="none" left="40" top="0" width="18" height="18" style="originalSize" src="imagens/moeda_aureus.png" hitTest="false"/>
+                                <label align="client" text="AUREUS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" horzTextAlign="left" margins="{left=61}" hint="Ouro, a mais valiosa do continente."/>
+                            </layout>
                             <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4">
                                 <edit align="client" field="moedaAureus" type="number" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="16" horzTextAlign="center" transparent="true" hint="Ouro, a mais valiosa do continente."/>
                             </rectangle>

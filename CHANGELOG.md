@@ -1,3 +1,14 @@
+## v0.50.1 — cunhagens da bolsa de moedas (09/09/2026)
+
+Drams, Florins, Lunaris e Aureus agora exibem ícones de 18×18 derivados das
+cunhagens descritas no livro: `D`, árvore, lua e as faces do Pai e da Mãe.
+Todos usam o dourado `#C9A24B`, transparência real e
+`style="originalSize"`.
+
+Os símbolos dividem a linha de título com o nome da moeda. O card mantém os
+mesmos 76px de altura e os quatro campos NDB, valores e conversões permanecem
+inalterados.
+
 ## v0.50.0 — iconografia dos slots equipados (09/09/2026)
 
 Os oito cards de EQUIPADOS agora exibem cinco ícones de 22×22: armadura,
