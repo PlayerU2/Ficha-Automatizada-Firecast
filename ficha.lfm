@@ -13683,7 +13683,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.9" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.50.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -17883,29 +17883,33 @@
                         <rectangle name="abaInv_rectSlot1" align="left" width="228" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=8,bottom=8}" cursor="handPoint" hint="Clique para desequipar o que está aqui">
                             <event name="onClick"><![CDATA[editarOuDesequipar("armadura");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=5,bottom=5}">
-                                <label name="abaInv_lblSlot1" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                <label name="abaInv_subSlot1" align="client" text="ARMADURA" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" hitTest="false"/>
+                                <image align="none" left="0" top="11" width="22" height="22" style="originalSize" src="imagens/slot_armadura.png" hitTest="false"/>
+                                <label name="abaInv_lblSlot1" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" margins="{left=30}" hitTest="false"/>
+                                <label name="abaInv_subSlot1" align="client" text="ARMADURA" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{left=30}" hitTest="false"/>
                             </layout>
                         </rectangle>
                         <rectangle name="abaInv_rectSlot2" align="left" width="228" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=8,bottom=8}" cursor="handPoint" hint="Clique para desequipar o que está aqui">
                             <event name="onClick"><![CDATA[editarOuDesequipar("acessorio1");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=5,bottom=5}">
-                                <label name="abaInv_lblSlot2" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                <label name="abaInv_subSlot2" align="client" text="ACESSÓRIO 1" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" hitTest="false"/>
+                                <image align="none" left="0" top="11" width="22" height="22" style="originalSize" src="imagens/slot_acessorio.png" hitTest="false"/>
+                                <label name="abaInv_lblSlot2" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" margins="{left=30}" hitTest="false"/>
+                                <label name="abaInv_subSlot2" align="client" text="ACESSÓRIO 1" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{left=30}" hitTest="false"/>
                             </layout>
                         </rectangle>
                         <rectangle name="abaInv_rectSlot3" align="left" width="228" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=8,bottom=8}" cursor="handPoint" hint="Clique para desequipar o que está aqui">
                             <event name="onClick"><![CDATA[editarOuDesequipar("acessorio2");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=5,bottom=5}">
-                                <label name="abaInv_lblSlot3" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                <label name="abaInv_subSlot3" align="client" text="ACESSÓRIO 2" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" hitTest="false"/>
+                                <image align="none" left="0" top="11" width="22" height="22" style="originalSize" src="imagens/slot_acessorio.png" hitTest="false"/>
+                                <label name="abaInv_lblSlot3" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" margins="{left=30}" hitTest="false"/>
+                                <label name="abaInv_subSlot3" align="client" text="ACESSÓRIO 2" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{left=30}" hitTest="false"/>
                             </layout>
                         </rectangle>
                         <rectangle name="abaInv_rectSlot4" align="left" width="228" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=8,bottom=8}" cursor="handPoint" hint="Clique para desequipar o que está aqui">
                             <event name="onClick"><![CDATA[editarOuDesequipar("primario");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=5,bottom=5}">
-                                <label name="abaInv_lblSlot4" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                <label name="abaInv_subSlot4" align="client" text="PRIMÁRIO" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" hitTest="false"/>
+                                <image align="none" left="0" top="11" width="22" height="22" style="originalSize" src="imagens/slot_mao.png" hitTest="false"/>
+                                <label name="abaInv_lblSlot4" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" margins="{left=30}" hitTest="false"/>
+                                <label name="abaInv_subSlot4" align="client" text="PRIMÁRIO" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{left=30}" hitTest="false"/>
                             </layout>
                         </rectangle>
                     </layout>
@@ -17913,29 +17917,33 @@
                         <rectangle name="abaInv_rectSlot5" align="left" width="228" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=8,bottom=8}" cursor="handPoint" hint="Clique para desequipar o que está aqui">
                             <event name="onClick"><![CDATA[editarOuDesequipar("secundario");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=5,bottom=5}">
-                                <label name="abaInv_lblSlot5" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                <label name="abaInv_subSlot5" align="client" text="SECUNDÁRIO" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" hitTest="false"/>
+                                <image align="none" left="0" top="11" width="22" height="22" style="originalSize" src="imagens/slot_mao.png" hitTest="false"/>
+                                <label name="abaInv_lblSlot5" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" margins="{left=30}" hitTest="false"/>
+                                <label name="abaInv_subSlot5" align="client" text="SECUNDÁRIO" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{left=30}" hitTest="false"/>
                             </layout>
                         </rectangle>
                         <rectangle name="abaInv_rectSlot6" align="left" width="228" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=8,bottom=8}" cursor="handPoint" hint="Clique para desequipar o que está aqui">
                             <event name="onClick"><![CDATA[editarOuDesequipar("saque");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=5,bottom=5}">
-                                <label name="abaInv_lblSlot6" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                <label name="abaInv_subSlot6" align="client" text="SAQUE RÁPIDO" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" hitTest="false"/>
+                                <image align="none" left="0" top="11" width="22" height="22" style="originalSize" src="imagens/slot_saque_rapido.png" hitTest="false"/>
+                                <label name="abaInv_lblSlot6" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" margins="{left=30}" hitTest="false"/>
+                                <label name="abaInv_subSlot6" align="client" text="SAQUE RÁPIDO" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{left=30}" hitTest="false"/>
                             </layout>
                         </rectangle>
                         <rectangle name="abaInv_rectSlot7" align="left" width="228" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=8,bottom=8}" cursor="handPoint" hint="Clique para desequipar o que está aqui">
                             <event name="onClick"><![CDATA[editarOuDesequipar("bolso1");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=5,bottom=5}">
-                                <label name="abaInv_lblSlot7" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                <label name="abaInv_subSlot7" align="client" text="BOLSO 1" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" hitTest="false"/>
+                                <image align="none" left="0" top="11" width="22" height="22" style="originalSize" src="imagens/slot_bolso.png" hitTest="false"/>
+                                <label name="abaInv_lblSlot7" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" margins="{left=30}" hitTest="false"/>
+                                <label name="abaInv_subSlot7" align="client" text="BOLSO 1" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{left=30}" hitTest="false"/>
                             </layout>
                         </rectangle>
                         <rectangle name="abaInv_rectSlot8" align="left" width="228" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{right=8,bottom=8}" cursor="handPoint" hint="Clique para desequipar o que está aqui">
                             <event name="onClick"><![CDATA[editarOuDesequipar("bolso2");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=5,bottom=5}">
-                                <label name="abaInv_lblSlot8" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                <label name="abaInv_subSlot8" align="client" text="BOLSO 2" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" hitTest="false"/>
+                                <image align="none" left="0" top="11" width="22" height="22" style="originalSize" src="imagens/slot_bolso.png" hitTest="false"/>
+                                <label name="abaInv_lblSlot8" align="top" height="20" text="vazio" fontFamily="Cinzel" fontColor="#54636B" fontSize="12" fontStyle="bold" vertTextAlign="center" wordWrap="false" margins="{left=30}" hitTest="false"/>
+                                <label name="abaInv_subSlot8" align="client" text="BOLSO 2" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{left=30}" hitTest="false"/>
                             </layout>
                         </rectangle>
                     </layout>

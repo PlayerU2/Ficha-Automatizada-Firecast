@@ -1,3 +1,15 @@
+## v0.50.0 — iconografia dos slots equipados (09/09/2026)
+
+Os oito cards de EQUIPADOS agora exibem cinco ícones de 22×22: armadura,
+acessório, mão, saque rápido e bolso. Slots repetidos reutilizam o mesmo PNG;
+por isso, os dois acessórios, as mãos primária e secundária e os dois bolsos
+mantêm identidade visual comum sem duplicar arquivos. As imagens usam o
+dourado `#C9A24B`, transparência real e `style="originalSize"`.
+
+O ícone ocupa uma coluna interna de 30px e não altera altura nem largura dos
+cards. Nomes dos itens, subtítulos, cliques, slots e regras de equipamento
+permanecem inalterados.
+
 ## v0.49.9 — iconografia completa dos cards de combate (09/09/2026)
 
 Os cinco recursos — Vida, Aura, Mana, Prana e Vitae —, as defesas, os modos de
