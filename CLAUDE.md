@@ -15,10 +15,23 @@ divergirem.
 ```
 verificar   →  55 checagens de empacotamento
 testes      →  295 asserções em Lua puro
-mutacao     →  218 mutações (~22 min)
 rdk l       →  lint do SDK
 rdk i       →  instala; depois FECHE o Firecast por completo
 ```
+
+**A mutação (218, ~22 min) NÃO entra nessa lista. Só rode quando o mestre
+pedir** (decisão dele, 09/09/2026): *"fica difícil sempre que mudar alguma
+coisa, ou arrumar, eu ter que esperar tanto tempo até todos os testes
+rodarem"*. Vinte e dois minutos entre um conserto e a tela custam mais do que
+a mutação rende numa entrega que não toca em checagem nenhuma.
+
+O que ela mede continua valendo: **checagem que não pega a própria mutação é
+decorativa**. Então há um caso em que ela deixa de ser opcional — **mexeu em
+`verif/verifica.py`, avise que a mutação precisa rodar antes de a checagem
+valer alguma coisa.** Checagem nova sem mutação que falhe é só uma linha verde.
+
+Quando ela rodar, rode-a **sozinha**: ela segura o `.rpk` de `output/`, e um
+`rdk` em paralelo mata a rodada com `WinError 32`.
 
 E **confira o zip depois de gerado** — conferir o que você editou não prova
 nada sobre o que o usuário instala.

@@ -6623,19 +6623,77 @@
             atualizarBlocoProgressivo()
         end
 
+        -- Altura dos filhos de popHab_wrapProgressiva, em um lugar so.
+        -- Elas existem como constante porque a ALTURA DO PAI e a soma
+        -- delas, e o pai estava com o numero 72 escrito a mao. Ver a conta
+        -- logo abaixo.
+        local ALT_LINHA_CAIXA_HAB = 36   -- height 30 + margins bottom 6
+        local ALT_BLOCO_SUSTENTADO = 96  -- popHab_wrapSustentado aberto
+
         function atualizarBlocoProgressivo()
             if habRascunho == nil then return end
             -- v0.52.0: quem abre os blocos e o tipo UNIVERSAL, e nao mais
-            -- o "racial". A forma bestial do lobisomem nasce pronta pela
-            -- escolha da faccao e nao passa por aqui.
-            local ehUniversal = (habRascunho.tipo == "universal")
-            local prog = ehUniversal and (habRascunho.progressiva == true)
+            -- o "racial".
+            --
+            -- v0.53.0: O TIPO "forma" ENTROU JUNTO. Ele ficou de fora com a
+            -- justificativa de que "nasce pronta pela escolha da faccao" — e
+            -- isso e verdade sobre a INSTALACAO, nao sobre a EDICAO. A regra
+            -- da mesa (09/09/2026) e que a habilidade da faccao e um REGISTRO
+            -- EDITAVEL, e essa e a razao de ela existir como habilidade:
+            -- "se no futuro os mestres quiserem mexer nessas habilidades
+            -- (buff ou nerf ou reformulacao), eu nao vou precisar mexer no
+            -- codigo da ficha".
+            --
+            -- Com o bloco fechado, os seis textos de rank existiam no DADO e
+            -- nao existiam na TELA. Editaveis so pelo codigo — exatamente o
+            -- contrario do que foi pedido. Relatado na tela em 09/09/2026:
+            -- "ela nao vem com o formato de uma habilidade progressiva".
+            local abreBlocos = (habRascunho.tipo == "universal")
+                            or (habRascunho.tipo == "forma")
+            local prog = abreBlocos and (habRascunho.progressiva == true)
 
             -- altura, e nao visible: filho align="top" escondido e mostrado
             -- de novo vai para o topo da pilha.
-            local sust = ehUniversal and (habRascunho.sustentacao == true)
-            definirAlturaPod(self.popHab_wrapProgressiva, ehUniversal and 72 or 0)
-            definirAlturaPod(self.popHab_wrapSustentado, sust and 96 or 0)
+            local sust = abreBlocos and (habRascunho.sustentacao == true)
+
+            -- A ALTURA DO PAI E A SOMA DOS FILHOS, E ERA UM NUMERO CRAVADO.
+            --
+            -- Estava `ehUniversal and 72 or 0`, e 72 e a soma das DUAS linhas
+            -- de caixa. O popHab_wrapSustentado e o terceiro filho: ao marcar
+            -- SUSTENTACAO ele crescia para 96 dentro de um pai de 72, e o que
+            -- passa da altura do pai e CORTADO — o layout nao rola sozinho.
+            --
+            -- O resultado era mudo e parecia certo: a caixa [X] SUSTENTACAO
+            -- marcava, o CUSTO aparecia ao lado, e o campo EFEITO SUSTENTADO
+            -- simplesmente nao existia na tela. Quem preencheu escreveu o
+            -- "+10% de Absorcao" na DESCRICAO, que ninguem le por numero, e
+            -- a aba de Combate nao mudou. E a mesma classe do painel que
+            -- sumiu na v0.51.1, e a checagem 43 nao alcanca: ela le a altura
+            -- do XML, e aqui quem estoura o pai e o numero que o Lua escreve.
+            definirAlturaPod(self.popHab_wrapSustentado, sust and ALT_BLOCO_SUSTENTADO or 0)
+            definirAlturaPod(self.popHab_wrapProgressiva,
+                abreBlocos
+                    and (ALT_LINHA_CAIXA_HAB * 2 + (sust and ALT_BLOCO_SUSTENTADO or 0))
+                    or 0)
+
+            -- CUSTO NAO E EDITAVEL NO TIPO "forma", e continua na tela.
+            --
+            -- calcularCustoHabilidade devolve 0 cravado para "forma", porque
+            -- a forma bestial ja foi paga na qualidade "Linhagem da noite
+            -- [06 pontos]" — cobrar de novo seria cobrar duas vezes. Campo
+            -- que aceita numero e nao e lido por ninguem e pior do que campo
+            -- nenhum: quem digita nele acha que pagou.
+            --
+            -- A TRAVA E setEnabled(false), E NAO ESCONDER. Encolher o
+            -- wrapper pelo Lua tira a folga do irmao align="client" ao lado
+            -- (o lblSustAjuda), e a checagem 45 acusa exatamente isso —
+            -- espaco que so o Lua conhece nao da para medir no XML. E o zero
+            -- na tela e verdade: essa habilidade custa zero mesmo.
+            if self.popHab_edCustoManual ~= nil then
+                pcall(function()
+                    self.popHab_edCustoManual:setEnabled(habRascunho.tipo ~= "forma")
+                end)
+            end
 
             if self.popHab_lblSustentacao ~= nil then
                 self.popHab_lblSustentacao:setText(sust and "[X]  SUSTENTAÇÃO" or "[  ]  SUSTENTAÇÃO")
@@ -7342,11 +7400,28 @@
             end
         end
 
+        -- ===== Altura da lista de habilidades =====
+        -- TEM DE SER A MESMA ALTURA DE LINHA DO recordList, e nao era.
+        --
+        -- O XML declara itemHeight="64" e o frmItemHabilidade tem
+        -- height="64"; aqui estava 56. Faltavam 8 pixels POR HABILIDADE, e
+        -- o recordList resolve a falta do jeito dele: abre uma barra de
+        -- rolagem PROPRIA, dentro da aba que ja rola.
+        --
+        -- Com tres habilidades a conta dava 172 para 192 de conteudo — a
+        -- terceira aparecia cortada e o mini-scroll nascia ao lado. Nada
+        -- disso da erro: a lista existe, os cards existem, e so a moldura
+        -- esta curta. Relatado na tela em 09/09/2026.
+        --
+        -- A lista cresce e quem rola e a ABA, que e o mesmo acerto que as
+        -- pericias e as caracteristicas raciais ja tinham.
+        local ALTURA_ITEM_HABILIDADE = 64
+
         function ajustarAlturaListaHabilidades()
             if self.listaHabilidades == nil then return end
             local qtd = #todasHabilidades()
             if qtd < 1 then qtd = 0 end
-            definirAlturaPod(self.listaHabilidades, qtd * 56 + 4)
+            definirAlturaPod(self.listaHabilidades, qtd * ALTURA_ITEM_HABILIDADE + 4)
         end
 
         function atualizarBlocoHabilidades()
@@ -7494,13 +7569,31 @@
             -- aviso quando o tipo nao usa poder
             if self.popHab_lblSemPoder ~= nil then
                 if habRascunho.tipo == "universal" or habRascunho.tipo == "forma" then
-                    if habRascunho.progressiva == true then
+                    -- O texto do tipo "forma" diz de ONDE ele veio e que
+                    -- editar aqui MANDA. Sem isso o mestre nao tem como
+                    -- saber que a ficha nao vai reescrever o buff dele na
+                    -- proxima abertura — e a duvida sozinha ja faz ele
+                    -- preferir mexer no codigo, que e o que se queria evitar.
+                    if habRascunho.tipo == "forma" then
+                        self.popHab_lblSemPoder:setText("Habilidade de FORMA: veio da facção escolhida na aba de Raças e " ..
+                            "quem a liga é o botão de transformação, na aba de Combate. Não custa ponto. " ..
+                            "O texto abaixo é SEU: o catálogo o entregou uma vez, e a ficha nunca mais o reescreve.")
+                    elseif habRascunho.progressiva == true then
                         self.popHab_lblSemPoder:setText("Habilidade UNIVERSAL progressiva: não sai de poder nenhum, " ..
                             "e o RANK abaixo é só a etiqueta da linha — quem manda é o rank do personagem, " ..
                             "que escolhe sozinho qual dos seis blocos vale hoje. O custo é o que você digitar.")
                     else
-                        self.popHab_lblSemPoder:setText("Habilidade racial: vem da raça ou de uma qualidade já paga, " ..
-                            "então não custa ponto de poder e nenhum rank fica bloqueado.")
+                        -- Ate a v0.52.0 este texto dizia "Habilidade racial:
+                        -- vem da raca ou de uma qualidade ja paga, entao nao
+                        -- custa ponto de poder". As duas metades ficaram
+                        -- falsas naquela versao: o tipo nao se chama mais
+                        -- racial, e ele passou a cobrar o que for digitado
+                        -- em CUSTO. Texto de tela que descreve a versao
+                        -- passada e a mesma segunda fonte da verdade de
+                        -- sempre, so que em portugues.
+                        self.popHab_lblSemPoder:setText("Habilidade UNIVERSAL: não sai de poder, classe nem feitiço — " ..
+                            "teto de raça, concessão de item, dádiva de mesa. Custa o que você digitar em CUSTO " ..
+                            "(0 = de graça) e nenhum rank fica bloqueado.")
                     end
                     definirAlturaPod(self.popHab_lblSemPoder, 46)
                 elseif habRascunho.tipo == "classe" then
@@ -9133,16 +9226,51 @@
         -- Por isso a sincronizacao NAO reescreve uma habilidade que ja e da
         -- tribo certa: reescrever apagaria o buff que o mestre acabou de
         -- digitar, e apagaria calado.
+        -- ---------------------------------------------------------------
+        -- REPOR O QUE NUNCA CHEGOU, E SO ISSO  (v0.53.0)
+        --
+        -- A entrega do catalogo e de UMA vez, e essa regra continua inteira:
+        -- "o catalogo entrega o texto uma vez, na instalacao; dali em diante
+        -- quem manda e o que esta na aba". Reescrever um bloco que tem texto
+        -- apagaria o buff do mestre, e apagaria calado.
+        --
+        -- Mas ha uma diferenca entre TEXTO EDITADO e TEXTO QUE NUNCA CHEGOU.
+        -- Uma habilidade de tribo com os SEIS blocos em branco nao e uma
+        -- decisao de ninguem: e uma instalacao que falhou, ou uma ficha que
+        -- atravessou uma versao em que os blocos ainda nao existiam. Ela nao
+        -- soma nada em lugar nenhum, e como o construtor nao mostrava os
+        -- blocos, nao havia nem por onde perceber.
+        --
+        -- Entao a condicao e estreita de proposito: repoe SO quando os seis
+        -- estao vazios. Um unico bloco com texto ja e sinal de mao humana, e
+        -- a ficha nao encosta.
+        function reporBlocosVaziosDaTribo(no, desejada)
+            if no == nil or desejada == nil then return end
+            for _, r in ipairs(CatalogoProgressiva.RANKS) do
+                if tostring(no["efeitoRank" .. r] or ""):gsub("%s", "") ~= "" then
+                    return                      -- ha mao humana aqui: nao encosta
+                end
+            end
+            for _, r in ipairs(CatalogoProgressiva.RANKS) do
+                no["efeitoRank" .. r] = tostring(desejada.blocos[r] or "")
+            end
+            -- Sem esta linha os seis blocos voltariam e continuariam sem
+            -- efeito: bonusHabilidadesAtivas so le o bloco do rank quando a
+            -- habilidade e progressiva.
+            no.progressiva = true
+        end
+
         function sincronizarHabilidadeDaTribo()
             if sheet == nil or self.listaHabilidades == nil then return end
             local desejada = habilidadeDaTriboAtual()
 
-            local jaCerta, sobrando = false, {}
+            local jaCerta, noCerto, sobrando = false, nil, {}
             for _, no in ipairs(todasHabilidades()) do
                 local dona = CatalogoProgressiva.triboDaHabilidade(tostring(no.nome or ""))
                 if dona ~= nil then
                     if desejada ~= nil and tostring(no.nome or "") == desejada.nome and not jaCerta then
                         jaCerta = true          -- fica, e fica INTOCADA
+                        noCerto = no
                     else
                         table.insert(sobrando, no)
                     end
@@ -9154,6 +9282,7 @@
             for _, no in ipairs(sobrando) do NDB.deleteNode(no) end
 
             if desejada == nil or jaCerta then
+                if jaCerta then reporBlocosVaziosDaTribo(noCerto, desejada) end
                 if #sobrando > 0 then reconstruirListaHabilidades() end
                 ajustarAlturaListaHabilidades()
                 return
@@ -14027,7 +14156,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.52.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -17036,7 +17165,7 @@
                             <event name="onClick"><![CDATA[ abrirConstrutorHabilidade("classe"); ]]></event>
                         </rectangle>
                         <layout name="abaHab_wrapRacial" align="left" width="0" margins="{right=8}">
-                            <rectangle align="client" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{top=2,bottom=2}" cursor="handPoint" hint="Criar uma habilidade racial. Marque PROGRESSIVA para efeitos que evoluem com o rank.">
+                            <rectangle align="client" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{top=2,bottom=2}" cursor="handPoint" hint="Criar uma habilidade universal: teto de raça, concessão de item, dádiva de mesa. Marque PROGRESSIVA para o efeito evoluir com o rank, SUSTENTAÇÃO para um bloco que vale enquanto ela estiver ativa.">
                                 <label align="client" text="+  HABILIDADE UNIVERSAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <event name="onClick"><![CDATA[ abrirConstrutorHabilidade("universal"); ]]></event>
                             </rectangle>
@@ -24515,7 +24644,7 @@
                                     <label name="popHab_lblTipoFeitico" align="client" text="FEITIÇO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                     <event name="onClick"><![CDATA[definirTipoHab("feitico");]]></event>
                                 </rectangle>
-                                <rectangle name="popHab_btnTipoRacial" align="left" width="150" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Habilidade racial: vem da raça, não gasta pontos de poder. Pode ser progressiva.">
+                                <rectangle name="popHab_btnTipoRacial" align="left" width="150" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Habilidade UNIVERSAL: não sai de poder, classe nem feitiço. Custa o que você digitar em CUSTO (0 = de graça). Pode ser PROGRESSIVA, SUSTENTADA, ou as duas.">
                                     <label name="popHab_lblTipoRacial" align="client" text="UNIVERSAL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                     <event name="onClick"><![CDATA[definirTipoHab("universal");]]></event>
                                 </rectangle>

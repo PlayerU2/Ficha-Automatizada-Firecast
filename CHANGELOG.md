@@ -1,3 +1,99 @@
+## v0.53.0 — três achados da tela, e os três eram mudos (09/09/2026)
+
+Nenhum dos três dava erro. Os três apareceram usando a ficha, e nenhuma das
+três redes tinha como vê-los — é a quarta vez nesta história que a tela acha o
+que o verde não acha.
+
+### O campo do efeito sustentado nunca existiu na tela
+
+Relatado pelo mestre: *"eu escrevi o texto com '+10% absorção' por exemplo, e
+esse dado não foi computado automaticamente na aba de combate"*.
+
+O `bonusHabilidadesAtivas` estava certo, e lia `efeitoSustentado` pelo mesmo
+`lerBloco` da progressiva. O que faltava era o campo onde digitar.
+
+`popHab_wrapProgressiva` tem três filhos empilhados: a linha da caixa
+PROGRESSIVA (36), a linha da caixa SUSTENTAÇÃO com o CUSTO (36) e o
+`popHab_wrapSustentado`, que abre em 96. A altura do pai estava **cravada em
+`72`** — a soma só das duas primeiras. Ao marcar SUSTENTAÇÃO o terceiro filho
+crescia dentro de um pai que não crescia, e **o que passa da altura do pai é
+cortado**: o layout não rola sozinho.
+
+O sintoma parecia sucesso. A caixa marcava `[X]`, o CUSTO aparecia ao lado, e
+o campo simplesmente não estava lá. Quem preencheu escreveu o `+10% de
+Absorção` na DESCRIÇÃO, que ninguém lê por número, e a aba de Combate não se
+mexeu — porque não tinha o que ler.
+
+É a mesma classe do painel que sumiu na v0.51.1, e é o vão que a checagem 43
+não alcança: ela mede a altura declarada no **XML**, e aqui quem estoura o pai
+é o número que o **Lua** escreve. As três alturas viraram constante, e a do pai
+virou a soma delas.
+
+### A habilidade da tribo abria sem o corpo que ela tem
+
+Relatado: *"ao abrir essa habilidade, ela não vem com o formato de uma
+habilidade progressiva"*.
+
+`atualizarBlocoProgressivo` abria os seis blocos só para o tipo `universal`. O
+tipo `forma` ficou de fora na v0.52.0 com uma justificativa que parecia boa —
+*"a forma bestial nasce pronta pela escolha da facção e não passa por aqui"*.
+
+Ela é verdadeira sobre a **instalação** e falsa sobre a **edição**, e essa é a
+distinção que eu não fiz. A regra da mesa que criou essa habilidade é que ela
+seja um **registro editável**: *"se no futuro os mestres quiserem mexer nessas
+habilidades (buff ou nerf ou reformulação), eu não vou precisar mexer no código
+da ficha"*. Com o bloco fechado, os seis textos existiam no **dado** e não
+existiam na **tela** — editáveis só pelo código, que é exatamente o contrário
+do que foi pedido.
+
+O tipo `forma` passou a abrir os mesmos blocos. O CUSTO fica na tela e
+**desabilitado** ali, porque `calcularCustoHabilidade` devolve 0 cravado para
+`forma` e campo que aceita número e ninguém lê é pior que campo nenhum — quem
+digita nele acha que pagou. O zero é verdade: essa habilidade já foi paga na
+qualidade *Linhagem da noite [06 pontos]*.
+
+**A primeira tentativa foi escondê-lo, e a checagem 45 recusou.** Encolher o
+wrapper pelo Lua tira a folga do irmão `align="client"` ao lado, e espaço que
+só o Lua conhece não dá para medir no XML. A trava virou `setEnabled(false)`,
+que é a única que este SDK oferece.
+
+### Repor o que nunca chegou, e só isso
+
+Uma habilidade de tribo com os **seis** blocos em branco não é decisão de
+ninguém: é instalação que falhou, ou ficha que atravessou uma versão em que os
+blocos não existiam. Ela não soma nada em lugar nenhum, e com o construtor
+fechado não havia nem por onde perceber.
+
+`reporBlocosVaziosDaTribo` repõe do catálogo **só nesse caso**. Um único bloco
+com texto já é sinal de mão humana, e a ficha não encosta. A entrega de uma vez
+só continua inteira: o que se repõe é a entrega que não aconteceu, e não o
+texto de quem editou.
+
+### O mini-scroll era oito pixels por linha
+
+Relatado: *"tirar aquele mini scroll da barra lateral"*, como já se fez nas
+perícias.
+
+O XML declara `itemHeight="64"` e o `frmItemHabilidade` tem `height="64"`. O
+Lua reservava `qtd * 56`. Faltavam **8 pixels por habilidade**, e o
+`recordList` resolve a falta do jeito dele: abre uma barra de rolagem própria,
+dentro da aba que já rola. Com três habilidades a conta dava 172 para 192 de
+conteúdo — a terceira aparecia cortada.
+
+A altura virou constante com o nome do que ela é. É o mesmo acerto que
+`listaCaracsRaciais` já tinha, e a mesma classe de erro das outras três vezes
+nesta história: **um número copiado de um arquivo para outro, que envelhece
+calado**.
+
+### Três textos de tela que descreviam a versão passada
+
+O tipo se chama UNIVERSAL desde a v0.52.0 e passou a cobrar o que for digitado
+em CUSTO, mas a ajuda do construtor e as duas dicas ainda diziam *"Habilidade
+racial: vem da raça ou de uma qualidade já paga, então não custa ponto de
+poder"*. As duas metades ficaram falsas na mesma versão. Texto de tela que
+descreve a versão anterior é a mesma segunda fonte da verdade de sempre, só que
+em português — e é a que o jogador lê.
+
 ## v0.52.0 — a habilidade progressiva deixa de ser do lobisomem (09/09/2026)
 
 ### Ela era do lobisomem por acidente de origem
