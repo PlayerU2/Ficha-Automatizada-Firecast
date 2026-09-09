@@ -417,6 +417,44 @@
             return " + " .. rotulo .. " " .. fmtNumero(v)
         end
 
+        -- ---------------------------------------------------------------
+        -- NOME DIGITADO PELO JOGADOR VIRANDO ROTULO DE CONTA  (v0.53.3)
+        --
+        -- Pedido do mestre (09/09/2026): a conta dizia "forma bestial" para
+        -- ganho que veio de outra habilidade. "seria bom a ficha captar o
+        -- nome dessas habilidades para demonstrar na conta de modo mais
+        -- verdadeiro."
+        --
+        -- SO QUE A GRAMATICA DA CONTA E FIXA, e a bateria confere a
+        -- aritmetica dela: numeros, sinais, parenteses de conta e palavras
+        -- soltas. Um nome digitado e texto livre - "Escudo +2" injetaria um
+        -- "+2" DENTRO da conta, e a soma passaria a nao fechar com o valor.
+        -- Colchete e pior: [assim] e anotacao que a bateria ignora, e um
+        -- pedaco da conta sumiria da leitura.
+        --
+        -- Entao aqui so passam LETRAS E ESPACOS. Os bytes 128-255 entram
+        -- junto porque %a nao alcanca acento em UTF-8, e "Absorção" tem de
+        -- sobreviver inteira.
+        --
+        -- O corte e por PALAVRA, e nunca por byte: #texto conta bytes, e
+        -- cortar no meio de um caractere de dois bytes produz lixo na tela.
+        local function rotuloDeConta(nome, reserva)
+            -- A classe e montada com string.char, e nao com escape
+            -- decimal dentro do pattern: escape em pattern e facil de
+            -- errar em silencio, e um "\128" que vira newline no
+            -- caminho quebra a string sem quebrar nada visivel.
+            local soLetras = "[^%a%s" .. string.char(128) .. "-" ..
+                             string.char(255) .. "]"
+            local limpo = tostring(nome or ""):gsub(soLetras, " ")
+            local palavras = {}
+            for palavra in limpo:gmatch("%S+") do
+                table.insert(palavras, palavra)
+                if #palavras >= 5 then break end
+            end
+            if #palavras == 0 then return reserva end
+            return table.concat(palavras, " ")
+        end
+
         -- ===============================================================
         -- FERIDO (v0.48.0)
         -- ===============================================================
@@ -959,10 +997,35 @@
             sheet.bonusBestaDados = bonusBesta.dadosDano
             sheet.bonusBestaRegen = bonusBesta.regen
             sheet.bonusBestaTetoAbs = bonusBesta.tetoAbsorcao
-            sheet.bonusBestaFonte = bonusBesta.fonte
             sheet.bonusBestaRank = bonusBesta.rank
+
+            -- O ROTULO DIZ DE ONDE O NUMERO VEIO  (v0.53.3)
+            --
+            -- Estava "forma bestial" cravado nas cinco contas. Virou verdade
+            -- pela metade na v0.52.0, quando qualquer habilidade universal
+            -- passou a poder somar: o mestre via "forma bestial 10" num ganho
+            -- que vinha de uma habilidade sustentada sem relacao nenhuma com
+            -- lobisomem.
+            --
+            -- Com DUAS ou mais somando, nomear uma seria trocar uma
+            -- meia-verdade por outra — a conta apontaria a primeira da lista
+            -- e esconderia o resto. Aí o rotulo assume o plural.
+            local rotuloHab = "forma bestial"
+            if #bonusBesta.fontes == 1 then
+                rotuloHab = rotuloDeConta(bonusBesta.fontes[1], "habilidade")
+            elseif #bonusBesta.fontes > 1 then
+                rotuloHab = "habilidades ativas"
+            end
+            -- Deslocamento e iniciativa NUNCA vem de habilidade: sao da fase
+            -- da lua, e so ela os move. Rotulo proprio, entao.
+            local rotuloLua = "fase da lua"
+            if bonusBesta.faseNome ~= "" then
+                rotuloLua = rotuloDeConta("lua " .. bonusBesta.faseNome, "fase da lua")
+            end
+            sheet.bonusBestaFonte = rotuloHab
+
             sheet.hp = n(sheet.hp) + bonusBesta.vida
-            CONTAS.Hp = contaHp .. parcela(bonusBesta.vida, "forma bestial")
+            CONTAS.Hp = contaHp .. parcela(bonusBesta.vida, rotuloHab)
 
             if sheet.temCoracaoDeMana then
                 sheet.mp = Calculos.mp({
@@ -1080,7 +1143,7 @@
                         contaPv = contaPv .. parcela(sheet.ajustePrana, "ajuste do prana")
                     end
                     CONTAS.Pv = contaPv .. parcela(sheet.ajustePv, "ajuste") ..
-                        parcela(bonusBesta.vida, "forma bestial")
+                        parcela(bonusBesta.vida, rotuloHab)
                 else
                     CONTAS.Pv = "apenas vampiros"
                 end
@@ -1120,10 +1183,10 @@
             local contaDesloc = rotuloBaseDesloc .. " " .. baseTerrestre ..
                 " + Des " .. valores.destreza .. " + rank " .. rankNumDesloc ..
                 parcela(sheet.ajusteDeslocamento, "ajuste") ..
-                parcela(bonusBesta.deslocamento, "forma bestial")
+                parcela(bonusBesta.deslocamento, rotuloLua)
             CONTAS.Iniciativa = "Des " .. valores.destreza .. " + rank " .. rankNumDesloc ..
                 parcela(sheet.ajusteIniciativa, "ajuste") ..
-                parcela(bonusBesta.iniciativa, "forma bestial")
+                parcela(bonusBesta.iniciativa, rotuloLua)
 
             local ctxDef = {
                 forca = valores.forca, destreza = valores.destreza,
@@ -1155,7 +1218,7 @@
                     parcela(bonusTotalDefesa(d.chave), "bônus") ..
                     parcela(bonusItemDefesa(d.chave), "item") ..
                     parcela(d.ajuste, "ajuste") ..
-                    parcela(bonusBesta.defesas, "forma bestial")
+                    parcela(bonusBesta.defesas, rotuloHab)
             end
 
             -- "+N em todas as Defesas" da forma bestial: as QUATRO, sem
@@ -9486,9 +9549,16 @@
         -- da progressiva, e nao entre mecanicas distintas.
         -- ---------------------------------------------------------------
         function bonusHabilidadesAtivas()
+            -- `fontes` guarda o nome de CADA habilidade que somou, e nao so
+            -- da primeira. A conta embaixo do card diz de onde o numero veio,
+            -- e nomear uma quando duas contribuiram e a mesma meia-verdade
+            -- que o "forma bestial" cravado era. `faseNome` separa o que veio
+            -- da lua do que veio de habilidade: sao fontes diferentes e a
+            -- conta mostrava as duas com o mesmo rotulo.
             local z = {vida = 0, absorcao = 0, defesas = 0, dadosDano = 0,
                        regen = 0, deslocamento = 0, iniciativa = 0,
-                       tetoAbsorcao = 0, rank = "", fonte = ""}
+                       tetoAbsorcao = 0, rank = "", fonte = "",
+                       fontes = {}, faseNome = ""}
             if sheet == nil then return z end
 
             local rank = tostring(DadosSistema.dadosDoNivel(n(sheet.nivel)).rank or "E")
@@ -9513,7 +9583,10 @@
                         somar(CatalogoProgressiva.lerBloco(tostring(h.efeitoSustentado or "")))
                         usou = true
                     end
-                    if usou and z.fonte == "" then z.fonte = tostring(h.nome or "") end
+                    if usou then
+                        table.insert(z.fontes, tostring(h.nome or ""))
+                        if z.fonte == "" then z.fonte = tostring(h.nome or "") end
+                    end
                 end
             end
 
@@ -9531,6 +9604,7 @@
             -- transformado nao da nada.
             if triboRecebeFasesLua() and formaAlternativaAtiva() then
                 local f = faseLuaAtual()
+                z.faseNome = tostring(f.nome or "")
                 z.deslocamento = z.deslocamento + n(f.deslocamento)
                 z.iniciativa = z.iniciativa + n(f.iniciativa)
                 if n(f.tetoAbsorcao) > z.tetoAbsorcao then
@@ -14232,7 +14306,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.2" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.3" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 

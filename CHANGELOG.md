@@ -1,3 +1,49 @@
+## v0.53.3 — a conta passa a dizer de onde o número veio (09/09/2026)
+
+Relatado na tela: *"a ficha ainda considera nas contas que os ganhos estão
+vindo da 'forma bestial', mas não é bem assim... seria bom a ficha captar o
+nome dessas habilidades para demonstrar na conta de modo mais verdadeiro"*.
+
+### O rótulo estava cravado, e virou meia-verdade na v0.52.0
+
+As cinco contas escreviam `forma bestial` literalmente. Isso era verdade
+enquanto a única habilidade que somava era a do lobisomem. Deixou de ser na
+v0.52.0, quando qualquer habilidade universal passou a poder somar — e o
+mestre via `forma bestial 10` num ganho vindo de uma sustentada sem relação
+nenhuma com lobisomem.
+
+Agora o rótulo é o **nome da habilidade**. Com duas ou mais somando ele vira
+`habilidades ativas`, porque nomear a primeira da lista e esconder o resto
+seria trocar uma meia-verdade por outra.
+
+**Deslocamento e iniciativa ganharam rótulo próprio.** Eles nunca vieram de
+habilidade: são da fase da lua, e só ela os move. A conta diz `lua Cheia`.
+
+### Nome digitado não entra em conta sem passar por um filtro
+
+A gramática das contas é fixa, e a bateria confere a aritmética delas: números,
+sinais, parênteses de conta e palavras soltas. Um nome de habilidade é texto
+livre. `Escudo +2` injetaria um `+2` **dentro** da conta e a soma passaria a
+não fechar com o valor exibido. Colchete é pior: `[assim]` é anotação que a
+bateria ignora, e um pedaço da conta sumiria da leitura.
+
+`rotuloDeConta` deixa passar só letras e espaços, com os bytes 128–255 junto
+porque `%a` não alcança acento em UTF-8 e `Absorção` tem de sobreviver inteira.
+O corte é por **palavra**, nunca por byte: `#texto` conta bytes, e cortar no
+meio de um caractere de dois bytes põe lixo na tela.
+
+### Um `
+8` virou quebra de linha no caminho
+
+A primeira versão escrevia a classe do padrão com escape decimal. O escape foi
+comido entre a edição e o arquivo, a string terminou no meio, e o `<script>`
+inteiro deixou de carregar: **243 das 295 asserções falharam de uma vez**, todas
+com `veio None`. A bateria disse a causa na primeira linha — `unfinished string
+near '[^%a%s'`.
+
+A classe passou a ser montada com `string.char(128)` e `string.char(255)`. Sem
+escape não há o que se perder no caminho.
+
 ## v0.53.2 — a escolha do "OU" é da raça que a ofereceu (09/09/2026)
 
 Relatado na tela: *"quando eu mudei de raça, saindo de lobisomem, a habilidade
