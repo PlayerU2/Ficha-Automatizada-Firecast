@@ -1,3 +1,46 @@
+## v0.53.1 — o campo apareceu, e aí os dois defeitos dele apareceram junto (09/09/2026)
+
+Os dois estavam escritos desde a v0.52.0 e ninguém podia vê-los: o campo do
+efeito sustentado nunca chegava à tela. Abrir a porta mostrou o que havia
+atrás dela.
+
+### `lerCamposHab()` nunca existiu
+
+`attempt to call a nil value (global 'lerCamposHab')`, na cara de quem digitou.
+
+Os dois widgets do bloco de sustentação — o CUSTO e a caixa do efeito — chamam
+uma função no `onChange`, e o nome escrito ali é `lerCamposHab`. A função se
+chama **`lerCamposDoConstrutor`**. Em Lua ler um global inexistente devolve
+`nil` sem uma palavra, e só a chamada estoura.
+
+**A checagem 59 existe exatamente para isso e não pegou**, porque ela lê o
+`<script>` e a chamada mora num `<event>` do XML. Varri os **1.844** `<event>`
+do `ficha.lfm` à mão: `lerCamposHab` era o único órfão. A checagem que fecha
+essa metade está proposta ao mestre, e não foi feita — ela mexe em
+`verifica.py`, e mexer ali obriga a mutação a rodar.
+
+### O extrator não conhecia a forma curta da própria frase
+
+O mestre escreveu `+10% Absorção, +10 Vida` e a ficha respondeu *"não
+reconheceu nenhum número aqui"*. Ela estava certa pelo que sabia:
+
+* o padrão da vida pedia `pontos de vida`;
+* o da absorção pedia `% de Absorção`, com o **de**;
+* e os dois só aceitavam minúscula.
+
+Os padrões nasceram colados do texto do lobisomem, e isso bastou **enquanto o
+texto vinha do catálogo**. Deixou de bastar na v0.52.0, quando a habilidade
+universal abriu a caixa para o mestre escrever a dele.
+
+Cada chave ganhou as formas curtas da **mesma** frase — `de` opcional,
+`pontos` opcional, maiúscula aceita. Nenhum significado novo entrou, e os seis
+blocos do catálogo continuam lidos com os mesmos números de antes.
+
+**O `+2 dano` seco continua fora, de propósito.** Ele pode ser dado de dano ou
+modificador fixo, e este arquivo não chuta. `+2 dados de dano` e `+2 dados
+dano` são reconhecidos; `+2 dano` fica como texto, e o resumo embaixo da caixa
+diz isso em voz alta.
+
 ## v0.53.0 — três achados da tela, e os três eram mudos (09/09/2026)
 
 Nenhum dos três dava erro. Os três apareceram usando a ficha, e nenhuma das

@@ -49,17 +49,42 @@ CatalogoProgressiva.NIVEL_DO_RANK = {
 -- porque a habilidade de exemplo mistura os dois na mesma habilidade:
 -- "+1 dado de dano" no rank D e "+3 dados de dano" no rank B.
 -- ---------------------------------------------------------------------
+-- A FORMA CURTA TAMBEM E A MESMA FRASE  (v0.53.1)
+--
+-- Achado na tela em 09/09/2026: o mestre escreveu "+10% Absorcao, +10 Vida"
+-- num bloco de sustentacao e a ficha respondeu "nao reconheci nenhum numero
+-- aqui". Ela estava certa pelo que sabia e errada pelo que importa: os
+-- padroes nasceram COLADOS da habilidade do lobisomem, que escreve
+-- "+10% de Absorcao" e "+40 pontos de vida", e o vocabulario ficou preso a
+-- preposicao e ao substantivo daquele texto.
+--
+-- Isso vale enquanto o texto vem do catalogo. Deixou de valer quando a
+-- habilidade UNIVERSAL abriu a caixa para o mestre escrever a dele.
+--
+-- O QUE MUDOU, E O QUE NAO: cada chave ganhou as formas curtas da MESMA
+-- frase — "de" opcional, "pontos" opcional, maiuscula aceita. Nenhum
+-- significado novo entrou. Continua fora, de proposito, o "+2 dano" seco:
+-- ele pode ser dado ou modificador fixo, e este arquivo nao chuta. Se a mesa
+-- escrever de um jeito que nao esta aqui, o numero nao e reconhecido e a
+-- frase vale como texto — que continua sendo o comportamento seguro, e o
+-- resumo embaixo da caixa continua dizendo em voz alta o que entrou.
 local PADROES = {
     {chave = "vida",      rotulo = "vida",      sufixo = "",
-     pats = {"%+%s*(%d+)%s*pontos?%s+de%s+vida"}},
+     pats = {"%+%s*(%d+)%s*pontos?%s+de%s+[Vv]ida",
+             "%+%s*(%d+)%s*de%s+[Vv]ida",
+             "%+%s*(%d+)%s*[Vv]ida"}},
     {chave = "absorcao",  rotulo = "absorção",  sufixo = "%",
-     pats = {"%+%s*(%d+)%s*%%%s*de%s+[Aa]bsor"}},
+     pats = {"%+%s*(%d+)%s*%%%s*de%s+[Aa]bsor",
+             "%+%s*(%d+)%s*%%%s*[Aa]bsor"}},
     {chave = "defesas",   rotulo = "defesas",   sufixo = "",
-     pats = {"%+%s*(%d+)%s*em%s+todas%s+as%s+[Dd]efesas"}},
+     pats = {"%+%s*(%d+)%s*em%s+todas%s+as%s+[Dd]efesas",
+             "%+%s*(%d+)%s*[Dd]efesas?"}},
     {chave = "dadosDano", rotulo = "dados de dano", sufixo = "",
-     pats = {"%+%s*(%d+)%s*dados?%s+de%s+dano"}},
+     pats = {"%+%s*(%d+)%s*dados?%s+de%s+[Dd]ano",
+             "%+%s*(%d+)%s*dados?%s+[Dd]ano"}},
     {chave = "regen",     rotulo = "regeneração", sufixo = "/turno",
-     pats = {"regenera%s*(%d+)%s*de%s+vida%s+por%s+turno"}},
+     pats = {"[Rr]egenera%s*(%d+)%s*de%s+[Vv]ida%s+por%s+turno",
+             "[Rr]egenera%s*(%d+)%s*de%s+[Vv]ida"}},
 }
 
 -- O TAMANHO FICA DE FORA DO EXTRATOR, DE PROPOSITO (decisao da mesa,
