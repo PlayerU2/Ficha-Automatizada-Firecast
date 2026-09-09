@@ -1,3 +1,45 @@
+## v0.53.2 — a escolha do "OU" é da raça que a ofereceu (09/09/2026)
+
+Relatado na tela: *"quando eu mudei de raça, saindo de lobisomem, a habilidade
+especial de lobisomem ainda se manteve na aba de habilidades"*.
+
+### Ninguém perguntava de que raça o traço era
+
+`sheet.racaTracoEscolhido` guarda o **nome** do traço escolhido, e só isso.
+`habilidadeDaTriboAtual()` procurava esse nome no catálogo de progressivas e
+devolvia a habilidade — sem nunca perguntar se a raça de **hoje** oferece
+aquele traço.
+
+Um elfo com `Lua Cheia - Vigilantes da Lua` gravado continuava dono da
+habilidade do lobisomem. E pior, porque mais calado: `triboRecebeFasesLua()`
+lê da mesma função, então esse elfo também estava recebendo os bônus de fase
+da lua.
+
+A guarda que faltava já existia. É a mesma que `temCaracRacial` usa para o
+"OU" do livro: das alternativas exclusivas, só vale a que a raça atual oferece.
+Nenhum campo novo — o que faltava era a pergunta.
+
+### E ninguém sincronizava na troca de raça
+
+`sincronizarHabilidadeDaTribo` só era chamada em dois lugares: o botão da
+facção e a abertura da ficha. **Trocar de raça não passa por nenhum dos dois**,
+e apagar a raça também não. Agora as duas chamam.
+
+A escolha também é apagada nos dois caminhos, porque ela é da raça que a
+ofereceu. Deixada gravada, ela pré-decidia sozinha o "OU" de uma raça futura —
+o jogador voltaria a lobisomem com a facção já escolhida sem ter escolhido.
+
+### "Não sei" não autoriza apagar
+
+`sincronizarHabilidadeDaTribo` **deleta** a habilidade quando não há tribo, e
+essa habilidade é um registro editável que pode carregar o buff que o mestre
+digitou. Se o catálogo de raças não responder, tratar isso como "não tem"
+apagaria o texto dele por causa de uma falha transitória.
+
+Por isso `habilidadeDaTriboAtual()` devolve um segundo valor, `medido`, e a
+sincronização não encosta em nada quando ele é falso. Ficha **sem raça** é
+resposta positiva, e não ignorância: raça nenhuma não oferece traço nenhum.
+
 ## v0.53.1 — o campo apareceu, e aí os dois defeitos dele apareceram junto (09/09/2026)
 
 Os dois estavam escritos desde a v0.52.0 e ninguém podia vê-los: o campo do

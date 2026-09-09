@@ -2600,11 +2600,34 @@
                 aplicarAtributosBaseRaciais()
             end
 
+            -- A ESCOLHA DO "OU" NAO ATRAVESSA A TROCA DE RACA  (v0.53.2)
+            --
+            -- `racaTracoEscolhido` guarda a alternativa exclusiva escolhida
+            -- na criacao — a faccao do lobisomem, ou a do elfo. Ela e da raca
+            -- que a ofereceu, e a raca acabou de mudar. Deixando gravada, ela
+            -- pre-decidia sozinha a escolha de uma raca futura, e mantinha a
+            -- habilidade de faccao viva na aba de Habilidades.
+            --
+            -- Apagar aqui e seguro porque a medicao e positiva: `dados` e a
+            -- raca NOVA, ja carregada duas linhas acima, e a pergunta e se
+            -- ELA oferece esse traco. Se oferecer, a escolha continua valendo
+            -- e nada e apagado.
+            local escolhido = tostring(sheet.racaTracoEscolhido or "")
+            if escolhido ~= "" and not tracoEhAlternativaExclusiva(dados, escolhido) then
+                sheet.racaTracoEscolhido = ""
+            end
+
             if self.popCatalogoRacas ~= nil then self.popCatalogoRacas:close() end
             -- Com sheet.raca ja gravado, as concessoes da nova raca entram e
             -- as da antiga saem na hora, antes de qualquer calculo.
             aplicarConcessoes()
+            -- A habilidade da faccao entra ou sai junto com a raca. Sem esta
+            -- linha ela ficava na aba de Habilidades depois da troca: quem
+            -- sincronizava era so o botao da faccao e a abertura da ficha, e
+            -- trocar de raca nao passa por nenhum dos dois.
+            pcall(function() sincronizarHabilidadeDaTribo() end)
             atualizarBlocoRaca()
+            atualizarBlocoHabilidades()
             recalcularTudo()
         end
 
@@ -3426,7 +3449,14 @@
             sheet.formaAlternativaNome = ""
             sheet.formaAlternativaRotuloBase = ""
             sheet.formaAlternativaLigada = false
+            -- A escolha do "OU" e da raca, e a raca acabou de sair (v0.53.2).
+            sheet.racaTracoEscolhido = ""
             NDB.endUpdate(sheet)
+            -- E a habilidade de faccao sai com ela: sem esta chamada a
+            -- "Forma bestial lupina" ficava na aba de Habilidades de uma
+            -- ficha sem raca nenhuma.
+            pcall(function() sincronizarHabilidadeDaTribo() end)
+            atualizarBlocoHabilidades()
             if mesticagemLacrada() then
                 atualizarBlocoRaca()
                 recalcularTudo()
@@ -9198,11 +9228,53 @@
         --   * a trava e a da criacao, a mesma do elfo — nao precisa de lacre
         --     proprio.
         -- ---------------------------------------------------------------
+        -- A ESCOLHA DO "OU" E DA RACA QUE A OFERECE  (v0.53.2)
+        --
+        -- Achado na tela em 09/09/2026: trocar de raca saindo de lobisomem
+        -- deixava a habilidade de faccao parada na aba de Habilidades.
+        --
+        -- `sheet.racaTracoEscolhido` guarda so o NOME do traco, e ninguem
+        -- perguntava de que raca ele era. Um elfo com "Lua Cheia - Vigilantes
+        -- da Lua" gravado continuava dono da habilidade do lobisomem, e —
+        -- pior e mais calado — continuava recebendo os bonus de fase da lua
+        -- por `triboRecebeFasesLua()`, que le daqui.
+        --
+        -- A guarda e a MESMA que `temCaracRacial` ja usava para o "OU" do
+        -- livro: das alternativas exclusivas, so vale a que a raca de HOJE
+        -- oferece. Nao ha campo novo — o que faltava era a pergunta.
+        --
+        -- O SEGUNDO RETORNO EXISTE PARA NAO APAGAR NO ESCURO. Quem chama
+        -- `sincronizarHabilidadeDaTribo` DELETA a habilidade quando isto
+        -- devolve nil, e ela e um registro EDITAVEL: pode ter o buff que o
+        -- mestre digitou. Se o catalogo de racas nao responder, "nao sei"
+        -- nao pode virar "nao tem" — devolve `medido = false` e a
+        -- sincronizacao nao encosta em nada.
         function habilidadeDaTriboAtual()
-            if sheet == nil then return nil end
-            local h = CatalogoProgressiva.habilidadeDoTraco(
-                tostring(sheet.racaTracoEscolhido or ""))
-            return h
+            if sheet == nil then return nil, false end
+            local escolhido = tostring(sheet.racaTracoEscolhido or "")
+            if escolhido == "" then return nil, true end
+
+            -- Ficha sem raca e resposta POSITIVA, e nao ignorancia: raca
+            -- nenhuma nao oferece traco nenhum. Sem esta linha o
+            -- buscarPorNome("") cairia no ramo do "nao sei" abaixo, e apagar
+            -- a raca deixaria a habilidade de faccao viva na aba.
+            if tostring(sheet.raca or "") == "" then return nil, true end
+
+            local dados = nil
+            if CatalogoRacas ~= nil then
+                local ok, res = pcall(function()
+                    return CatalogoRacas.buscarPorNome(tostring(sheet.raca or ""))
+                end)
+                if ok then dados = res end
+            end
+            if dados == nil then
+                -- Nao da para dizer se a raca de hoje oferece esse traco.
+                return CatalogoProgressiva.habilidadeDoTraco(escolhido), false
+            end
+            if not tracoEhAlternativaExclusiva(dados, escolhido) then
+                return nil, true            -- e de outra raca: nao e dele
+            end
+            return CatalogoProgressiva.habilidadeDoTraco(escolhido), true
         end
 
         -- A habilidade da tribo recebe bonus lunar? Falso quando nao ha tribo.
@@ -9262,7 +9334,11 @@
 
         function sincronizarHabilidadeDaTribo()
             if sheet == nil or self.listaHabilidades == nil then return end
-            local desejada = habilidadeDaTriboAtual()
+            local desejada, medido = habilidadeDaTriboAtual()
+            -- "Nao sei" nao autoriza apagar: o laco abaixo deleta toda
+            -- habilidade de tribo que nao for a desejada, e ela pode carregar
+            -- o texto que o mestre editou.
+            if not medido then return end
 
             local jaCerta, noCerto, sobrando = false, nil, {}
             for _, no in ipairs(todasHabilidades()) do
@@ -14156,7 +14232,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.1" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.2" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
