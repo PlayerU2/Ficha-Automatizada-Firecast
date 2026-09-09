@@ -952,7 +952,7 @@
             -- Somado DEPOIS do percentual das qualidades de proposito: o
             -- "+40 pontos de vida" da habilidade e um numero fixo do texto,
             -- e nao uma base para Vigor expandido multiplicar.
-            local bonusBesta = bonusFormaBestial()
+            local bonusBesta = bonusHabilidadesAtivas()
             sheet.bonusBestaVida = bonusBesta.vida
             sheet.bonusBestaAbsorcao = bonusBesta.absorcao
             sheet.bonusBestaDefesas = bonusBesta.defesas
@@ -4282,6 +4282,12 @@
             "progressiva",
             "efeitoRankE", "efeitoRankD", "efeitoRankC",
             "efeitoRankB", "efeitoRankA", "efeitoRankEX",
+            -- v0.52.0, a habilidade UNIVERSAL:
+            --   ativa            o interruptor generico (nil = desligada)
+            --   sustentacao      tem bloco unico, que vale enquanto ativa
+            --   efeitoSustentado esse bloco
+            --   custoManual      quanto ela custa de ponto de poder; 0 = graca
+            "ativa", "sustentacao", "efeitoSustentado", "custoManual",
         }
 
         local function repararListaGenerica(nomeLista, camposParaCopiar)
@@ -4307,6 +4313,22 @@
                 -- "pontosPagos" de "pontosEscolhidos" (tudo era pago).
                 if no.tipo ~= nil and no.pontosPagos == nil then
                     no.pontosPagos = no.pontosEscolhidos
+                end
+
+                -- v0.52.0: "racial" virou "universal", e as duas formas
+                -- bestiais do lobisomem viraram o tipo proprio "forma".
+                --
+                -- A troca e de CHAVE GRAVADA, e nao de rotulo. Trocar so o
+                -- rotulo deixaria o dado dizendo "racial" e a tela dizendo
+                -- "UNIVERSAL" - segunda fonte da verdade, que este projeto
+                -- ja pagou tres vezes. O mestre autorizou reescrever
+                -- (09/09/2026): "as fichas estao em teste ainda".
+                if tostring(no.tipo or "") == "racial" then
+                    if CatalogoProgressiva.triboDaHabilidade(tostring(no.nome or "")) ~= nil then
+                        no.tipo = "forma"
+                    else
+                        no.tipo = "universal"
+                    end
                 end
             end
         end
@@ -6549,7 +6571,7 @@
             -- (repare o espaco duplo: o nome do poder estava vazio, porque
             -- nao existe poder nenhum). E se ela for PROGRESSIVA, o rank nem e
             -- escolha: quem manda e o rank do personagem, bloco a bloco.
-            if tipo == "racial" then
+            if tipo == "universal" or tipo == "forma" then
                 return CatalogoHabilidades.ranks
             end
             if tipo == "feitico" then
@@ -6595,14 +6617,47 @@
             atualizarBlocoProgressivo()
         end
 
+        function alternarSustentacao()
+            if habRascunho == nil then return end
+            habRascunho.sustentacao = not (habRascunho.sustentacao == true)
+            atualizarBlocoProgressivo()
+        end
+
         function atualizarBlocoProgressivo()
             if habRascunho == nil then return end
-            local ehRacial = (habRascunho.tipo == "racial")
-            local prog = ehRacial and (habRascunho.progressiva == true)
+            -- v0.52.0: quem abre os blocos e o tipo UNIVERSAL, e nao mais
+            -- o "racial". A forma bestial do lobisomem nasce pronta pela
+            -- escolha da faccao e nao passa por aqui.
+            local ehUniversal = (habRascunho.tipo == "universal")
+            local prog = ehUniversal and (habRascunho.progressiva == true)
 
             -- altura, e nao visible: filho align="top" escondido e mostrado
             -- de novo vai para o topo da pilha.
-            definirAlturaPod(self.popHab_wrapProgressiva, ehRacial and 36 or 0)
+            local sust = ehUniversal and (habRascunho.sustentacao == true)
+            definirAlturaPod(self.popHab_wrapProgressiva, ehUniversal and 72 or 0)
+            definirAlturaPod(self.popHab_wrapSustentado, sust and 96 or 0)
+
+            if self.popHab_lblSustentacao ~= nil then
+                self.popHab_lblSustentacao:setText(sust and "[X]  SUSTENTAÇÃO" or "[  ]  SUSTENTAÇÃO")
+                self.popHab_lblSustentacao:setFontColor(sust and COR.gold or COR.muted)
+            end
+            if self.popHab_btnSustentacao ~= nil then
+                self.popHab_btnSustentacao:setStrokeColor(sust and COR.gold or COR.line)
+            end
+            if self.popHab_lblSustResumo ~= nil then
+                self.popHab_lblSustResumo:setText(
+                    CatalogoProgressiva.resumoDoBloco(tostring(habRascunho.efeitoSustentado or "")))
+            end
+            if self.popHab_lblSustAjuda ~= nil then
+                self.popHab_lblSustAjuda:setText(
+                    "custo 0 = de graça; o efeito sustentado vale enquanto a habilidade estiver ATIVA")
+            end
+            if self.popHab_edCustoManual ~= nil then
+                pcall(function() self.popHab_edCustoManual:setText(tostring(n(habRascunho.custoManual))) end)
+            end
+            if self.popHab_edSustentado ~= nil then
+                pcall(function() self.popHab_edSustentado:setText(tostring(habRascunho.efeitoSustentado or "")) end)
+            end
             -- ALTURA CALCULADA, e nao chutada. Cada bloco ocupa
             -- 15 (rotulo) + 46 (caixa) + 15 (leitura) + 6 (margem) = 82, mais
             -- 26 do cabecalho. Eu tinha posto 508 no olho; a conta da 518, e
@@ -6717,14 +6772,30 @@
             if self.popHab_edDado ~= nil then habRascunho.dadoBase = tostring(self.popHab_edDado:getText() or "") end
             if self.popHab_edModificador ~= nil then habRascunho.modificador = n(self.popHab_edModificador:getText()) end
             if self.popHab_edDuracao ~= nil then habRascunho.duracao = tostring(self.popHab_edDuracao:getText() or "") end
+            if self.popHab_edCustoManual ~= nil then habRascunho.custoManual = n(self.popHab_edCustoManual:getText()) end
+            if self.popHab_edSustentado ~= nil then
+                habRascunho.efeitoSustentado = tostring(self.popHab_edSustentado:getText() or "")
+            end
         end
 
-        function calcularCustoHabilidade(rank, tipo, creditoEmbutido)
-            -- HABILIDADE RACIAL NAO CUSTA PONTO DE PODER. Ela vem da raca ou
-            -- de uma qualidade ja paga ("Linhagem da noite [06 pontos]"
-            -- concede a Forma Bestial Lupina); cobrar de novo seria cobrar
-            -- duas vezes pela mesma coisa.
-            if tipo == "racial" then return 0 end
+        function calcularCustoHabilidade(rank, tipo, creditoEmbutido, custoManual)
+            -- A FORMA BESTIAL NAO CUSTA PONTO. Ela vem da qualidade
+            -- "Linhagem da noite [06 pontos]", que ja foi paga; cobrar de
+            -- novo seria cobrar duas vezes pela mesma coisa. Como ela nasce
+            -- sozinha da escolha da faccao, nao ha onde digitar custo.
+            if tipo == "forma" then return 0 end
+
+            -- A UNIVERSAL COBRA O QUE O JOGADOR DIGITAR (v0.52.0). Ate aqui
+            -- o tipo racial devolvia 0 cravado, o que so servia porque a
+            -- unica habilidade desse tipo vinha de graca. Universal e o tipo
+            -- de tudo que nao e poder, classe nem feitico: teto de raca,
+            -- concessao de item, dadiva de mesa - e cada uma cobra o seu.
+            -- Zero continua sendo de graca, e continua sendo o padrao.
+            if tipo == "universal" then
+                local v = n(custoManual)
+                if v < 0 then v = 0 end
+                return v
+            end
             local cheio = CatalogoHabilidades.custoDoRank(rank, tipo == "feitico")
             local liquido = cheio - n(creditoEmbutido)
             if liquido < 0 then liquido = 0 end
@@ -6741,6 +6812,10 @@
             return {
                 tipo = tipo or "poder",
                 progressiva = false,
+                sustentacao = false,
+                efeitoSustentado = "",
+                custoManual = 0,
+                ativa = false,
                 efeitoRankE = "", efeitoRankD = "", efeitoRankC = "",
                 efeitoRankB = "", efeitoRankA = "", efeitoRankEX = "",
                 nome = "",
@@ -6829,6 +6904,10 @@
                 rotuloGratis = tostring(no.rotuloGratis or ""),
                 imagem = tostring(no.imagem or ""),
                 progressiva = (no.progressiva == true),
+                sustentacao = (no.sustentacao == true),
+                efeitoSustentado = tostring(no.efeitoSustentado or ""),
+                custoManual = n(no.custoManual),
+                ativa = ehVerdadeiro(no.ativa),
             }
             -- os seis blocos de rank entram fora da tabela literal para nao
             -- repetir seis linhas quase iguais
@@ -7049,13 +7128,13 @@
                 avisarConstrutor("Dê um nome à habilidade.", COR.wine); return
             end
 
-            if habRascunho.tipo ~= "classe" and habRascunho.tipo ~= "racial"
-               and habRascunho.poderVinculado == "" then
+            if habRascunho.tipo ~= "classe" and habRascunho.tipo ~= "universal"
+               and habRascunho.tipo ~= "forma" and habRascunho.poderVinculado == "" then
                 avisarConstrutor("Escolha o poder de origem.", COR.wine); return
             end
 
             -- Progressiva sem nenhum bloco preenchido nao progride nada.
-            if habRascunho.tipo == "racial" and habRascunho.progressiva then
+            if habRascunho.tipo == "universal" and habRascunho.progressiva then
                 local algum = false
                 for _, r in ipairs(CatalogoProgressiva.RANKS) do
                     if tostring(habRascunho["efeitoRank" .. r] or ""):gsub("%s", "") ~= "" then
@@ -7081,7 +7160,7 @@
             end
 
             local custo = calcularCustoHabilidade(habRascunho.rank, habRascunho.tipo,
-                habRascunho.creditoEmbutido)
+                habRascunho.creditoEmbutido, habRascunho.custoManual)
 
             -- saldo: o custo entra no mesmo pool dos poderes
             local jaPago = 0
@@ -7114,6 +7193,13 @@
             no.descricao = habRascunho.descricao
             no.efeito = habRascunho.efeito
             no.progressiva = (habRascunho.progressiva == true)
+            no.sustentacao = (habRascunho.sustentacao == true)
+            no.efeitoSustentado = tostring(habRascunho.efeitoSustentado or "")
+            no.custoManual = n(habRascunho.custoManual)
+            -- `ativa` NAO e reescrita ao salvar: ela e estado de JOGO, e o
+            -- construtor e criacao. Salvar uma edicao no meio do combate nao
+            -- pode desligar a habilidade que esta valendo.
+            if no.ativa == nil then no.ativa = false end
             for _, r in ipairs(CatalogoProgressiva.RANKS) do
                 no["efeitoRank" .. r] = tostring(habRascunho["efeitoRank" .. r] or "")
             end
@@ -7358,7 +7444,7 @@
                 {chave = "poder", btn = self.popHab_btnTipoPoder, lbl = self.popHab_lblTipoPoder, cor = COR.aura},
                 {chave = "classe", btn = self.popHab_btnTipoClasse, lbl = self.popHab_lblTipoClasse, cor = COR.moss},
                 {chave = "feitico", btn = self.popHab_btnTipoFeitico, lbl = self.popHab_lblTipoFeitico, cor = COR.rain},
-                {chave = "racial", btn = self.popHab_btnTipoRacial, lbl = self.popHab_lblTipoRacial, cor = COR.gold},
+                {chave = "universal", btn = self.popHab_btnTipoRacial, lbl = self.popHab_lblTipoRacial, cor = COR.gold},
             }
             for _, t in ipairs(tipos) do
                 local ativo = (habRascunho.tipo == t.chave)
@@ -7382,7 +7468,9 @@
             definirAlturaPod(self.popHab_wrapListaPoderes, qtd * 29)
             for i = 1, 8 do
                 local p = poderesNoConstrutor[i]
-                if habRascunho.tipo == "racial" then p = nil end   -- racial nao tem poder de origem
+                if habRascunho.tipo == "universal" or habRascunho.tipo == "forma" then
+                    p = nil                       -- nenhum dos dois sai de poder
+                end
                 definirAlturaPod(self["popHab_wrapPoder" .. i], (p ~= nil) and 29 or 0)
                 if p ~= nil then
                     local lbl = self["popHab_lblPoder" .. i]
@@ -7405,11 +7493,11 @@
 
             -- aviso quando o tipo nao usa poder
             if self.popHab_lblSemPoder ~= nil then
-                if habRascunho.tipo == "racial" then
+                if habRascunho.tipo == "universal" or habRascunho.tipo == "forma" then
                     if habRascunho.progressiva == true then
-                        self.popHab_lblSemPoder:setText("Habilidade racial PROGRESSIVA: não sai de poder nenhum, não custa ponto, " ..
+                        self.popHab_lblSemPoder:setText("Habilidade UNIVERSAL progressiva: não sai de poder nenhum, " ..
                             "e o RANK abaixo é só a etiqueta da linha — quem manda é o rank do personagem, " ..
-                            "que escolhe sozinho qual dos seis blocos vale hoje.")
+                            "que escolhe sozinho qual dos seis blocos vale hoje. O custo é o que você digitar.")
                     else
                         self.popHab_lblSemPoder:setText("Habilidade racial: vem da raça ou de uma qualidade já paga, " ..
                             "então não custa ponto de poder e nenhum rank fica bloqueado.")
@@ -7425,7 +7513,8 @@
                     definirAlturaPod(self.popHab_lblSemPoder, 0)
                 end
             end
-            local semPoderDeOrigem = (habRascunho.tipo == "classe" or habRascunho.tipo == "racial")
+            local semPoderDeOrigem = (habRascunho.tipo == "classe"
+                or habRascunho.tipo == "universal" or habRascunho.tipo == "forma")
             definirAlturaPod(self.popHab_lblPoderTitulo, semPoderDeOrigem and 0 or 16)
 
             -- ranks: liberados x bloqueados
@@ -7451,9 +7540,14 @@
                 local d = CatalogoHabilidades.dadosDoRank(habRascunho.rank, ehFeitico)
                 local energiaNome = ehFeitico and "Mana" or "Aura"
                 if d ~= nil then
-                    local custoTxt = (habRascunho.tipo == "racial")
-                        and "não custa ponto (vem da raça)"
-                        or ("custa " .. d.custo .. " ponto(s)")
+                    local custoTxt
+                    if habRascunho.tipo == "forma" then
+                        custoTxt = "não custa ponto (vem da qualidade que a concedeu)"
+                    elseif habRascunho.tipo == "universal" then
+                        custoTxt = "custa o que você digitar em CUSTO (0 = de graça)"
+                    else
+                        custoTxt = "custa " .. d.custo .. " ponto(s)"
+                    end
                     local txt = "Rank " .. habRascunho.rank .. ": " .. custoTxt ..
                         ", até " .. limiteTagsAtual() .. " tags, " .. energiaNome .. " " ..
                         d.energiaMin .. " a " .. d.energiaMax .. ", alcance máximo " ..
@@ -7561,7 +7655,8 @@
             if self.popHab_lblCusto ~= nil then
                 local credito = n(habRascunho.creditoEmbutido)
                 local cheio = CatalogoHabilidades.custoDoRank(habRascunho.rank, ehFeitico)
-                local custo = calcularCustoHabilidade(habRascunho.rank, habRascunho.tipo, credito)
+                local custo = calcularCustoHabilidade(habRascunho.rank, habRascunho.tipo, credito,
+                    habRascunho.custoManual)
                 if credito > 0 then
                     local txt = "Concedida por " .. tostring(habRascunho.rotuloGratis or "sistema") ..
                         ": " .. credito .. " ponto(s) de desconto"
@@ -8933,6 +9028,9 @@
             local ligando = not formaAlternativaAtiva()
             sheet.formaAlternativaLigada = ligando
             recalcularTudo()
+            -- o card da habilidade de FORMA mostra "TRANSFORMADO": ele le a
+            -- raiz, mas so redesenha quando a lista e reconstruida
+            pcall(function() reconstruirListaHabilidades() end)
 
             if not ligando then return end
 
@@ -9063,7 +9161,7 @@
 
             local novo = self.listaHabilidades:append()
             if novo == nil then return end
-            novo.tipo = "racial"
+            novo.tipo = "forma"
             novo.nome = desejada.nome
             novo.tags = desejada.tags
             novo.energia = desejada.energia
@@ -9107,41 +9205,110 @@
             return v == true or v == 1 or v == "true" or v == "1"
         end
 
-        -- Existe alguma habilidade racial progressiva cadastrada? Usada so
-        -- para o interruptor avisar que ha bonus esperando a transformacao.
+        -- Existe habilidade de FORMA esperando a transformacao? Usada so
+        -- para o interruptor da aba de Combate avisar que ha bonus parados.
+        -- So o tipo "forma" conta: a universal tem interruptor proprio no
+        -- card dela, e nao depende de virar bicho.
         function temHabilidadeProgressiva()
             if sheet == nil then return false end
             for _, h in ipairs(NDB.getChildNodes(sheet.listaHabilidades) or {}) do
-                if tostring(h.tipo or "") == "racial" and ehVerdadeiro(h.progressiva) then
+                if tostring(h.tipo or "") == "forma"
+                   and (ehVerdadeiro(h.progressiva) or ehVerdadeiro(h.sustentacao)) then
                     return true
                 end
             end
             return false
         end
 
-        function bonusFormaBestial()
+        -- ---------------------------------------------------------------
+        -- UMA HABILIDADE ESTA VALENDO AGORA?  (v0.52.0)
+        --
+        -- Dois interruptores, porque sao duas coisas diferentes:
+        --
+        --   tipo "forma"      liga com a TRANSFORMACAO, na aba de Combate.
+        --                     O lobisomem nao "ativa a habilidade": ele vira
+        --                     bicho, e o resto vem junto.
+        --   tipo "universal"  liga no proprio card, pelo botao ATIVAR.
+        --
+        -- Ate a v0.51.2 so existia o primeiro, e por isso toda progressiva
+        -- da ficha dependia de o personagem ser lobisomem. Uma raca com
+        -- habilidade progressiva propria nao tinha como liga-la.
+        --
+        -- Leitura DEFENSIVA do booleano (ehVerdadeiro): o NDB ja devolveu
+        -- campo booleano como texto e como 1 ao longo deste projeto, e um
+        -- "true" que volta como string desligaria a habilidade sem erro.
+        -- ---------------------------------------------------------------
+        function habilidadeEstaAtiva(h)
+            if h == nil then return false end
+            local tipo = tostring(h.tipo or "")
+            if tipo == "forma" then return formaAlternativaAtiva() end
+            return ehVerdadeiro(h.ativa)
+        end
+
+        -- Liga/desliga uma habilidade universal. Acao de JOGO: continua livre
+        -- com a ficha finalizada, pela mesma razao que transformar-se e -
+        -- travar isso obrigaria a chamar o mestre no meio do combate.
+        function alternarHabilidadeAtiva(no)
+            if no == nil then return end
+            if tostring(no.tipo or "") == "forma" then return end
+            no.ativa = not ehVerdadeiro(no.ativa)
+            recalcularTudo()
+            -- O onNodeReady do template so roda quando o item e CRIADO, entao
+            -- mudar um campo nao repinta o card sozinho. Reconstruir e o que
+            -- forca o redesenho — mesmo motivo pelo qual salvarHabilidade
+            -- reconstroi ao editar.
+            reconstruirListaHabilidades()
+            atualizarBlocoHabilidades()
+        end
+
+        -- ---------------------------------------------------------------
+        -- O QUE AS HABILIDADES ATIVAS SOMAM AGORA
+        --
+        -- Chamava-se bonusFormaBestial ate a v0.51.2 e so olhava para o
+        -- lobisomem. O nome mentia sobre o alcance: a mecanica sempre foi
+        -- generica, o que faltava era o interruptor.
+        --
+        -- DUAS FONTES por habilidade, e as duas usam o MESMO vocabulario do
+        -- CatalogoProgressiva.lerBloco:
+        --   PROGRESSIVA   o bloco do rank atual (seis blocos, um por rank);
+        --   SUSTENTACAO   um bloco unico, que vale sempre que estiver ativa.
+        --
+        -- As duas podem coexistir na mesma habilidade (decisao da mesa,
+        -- 09/09/2026: "tudo na mesma habilidade sera melhor, pois essa
+        -- habilidade universal deve englobar todas as mecanicas"). Quando
+        -- coexistem elas SOMAM, porque sao dois efeitos declarados em linhas
+        -- diferentes do texto - o "substitui, nao acumula" vale entre RANKS
+        -- da progressiva, e nao entre mecanicas distintas.
+        -- ---------------------------------------------------------------
+        function bonusHabilidadesAtivas()
             local z = {vida = 0, absorcao = 0, defesas = 0, dadosDano = 0,
                        regen = 0, deslocamento = 0, iniciativa = 0,
                        tetoAbsorcao = 0, rank = "", fonte = ""}
-            if sheet == nil or not formaAlternativaAtiva() then return z end
+            if sheet == nil then return z end
 
             local rank = tostring(DadosSistema.dadosDoNivel(n(sheet.nivel)).rank or "E")
             z.rank = rank
 
+            local function somar(num)
+                z.vida = z.vida + num.vida
+                z.absorcao = z.absorcao + num.absorcao
+                z.defesas = z.defesas + num.defesas
+                z.dadosDano = z.dadosDano + num.dadosDano
+                z.regen = z.regen + num.regen
+            end
+
             for _, h in ipairs(NDB.getChildNodes(sheet.listaHabilidades) or {}) do
-                -- Leitura DEFENSIVA do booleano. O NDB ja devolveu este
-                -- campo de mais de uma forma ao longo do desenvolvimento, e
-                -- um "true" que volta como texto ou como 1 faria a habilidade
-                -- inteira ser ignorada sem erro nenhum.
-                if tostring(h.tipo or "") == "racial" and ehVerdadeiro(h.progressiva) then
-                    local bloco = tostring(h["efeitoRank" .. rank] or "")
-                    local num = CatalogoProgressiva.lerBloco(bloco)
-                    z.vida = z.vida + num.vida
-                    z.absorcao = z.absorcao + num.absorcao
-                    z.defesas = z.defesas + num.defesas
-                    z.dadosDano = z.dadosDano + num.dadosDano
-                    z.regen = z.regen + num.regen
-                    if z.fonte == "" then z.fonte = tostring(h.nome or "") end
+                if habilidadeEstaAtiva(h) then
+                    local usou = false
+                    if ehVerdadeiro(h.progressiva) then
+                        somar(CatalogoProgressiva.lerBloco(tostring(h["efeitoRank" .. rank] or "")))
+                        usou = true
+                    end
+                    if ehVerdadeiro(h.sustentacao) then
+                        somar(CatalogoProgressiva.lerBloco(tostring(h.efeitoSustentado or "")))
+                        usou = true
+                    end
+                    if usou and z.fonte == "" then z.fonte = tostring(h.nome or "") end
                 end
             end
 
@@ -9149,13 +9316,15 @@
             --
             -- Ate a v0.50.2 a condicao aqui era personagemEhLobisomem(), e as
             -- cinco fases moravam no catalogo como se fossem da raca. Sao do
-            -- texto de UMA das duas habilidades: a "Forma bestial lupina da
-            -- lua" lista os cinco [Bonus Lunar], e a da furia nao cita a lua
-            -- em lugar nenhum. Um Filho da Furia transformado vinha somando
-            -- deslocamento, iniciativa e teto de absorcao que nao sao dele -
-            -- numero plausivel, sem erro, do jeito que esta ficha ja perdeu
-            -- versoes.
-            if triboRecebeFasesLua() then
+            -- texto de UMA das duas habilidades de faccao: a da lua lista os
+            -- cinco [Bonus Lunar], e a da furia nao cita a lua em lugar
+            -- nenhum. Um Filho da Furia transformado vinha somando o que nao
+            -- e dele - numero plausivel, sem erro na tela.
+            --
+            -- Continua presa a TRANSFORMACAO, e nao a habilidade estar ativa:
+            -- o texto diz "na primeira transformacao", e lua cheia sem estar
+            -- transformado nao da nada.
+            if triboRecebeFasesLua() and formaAlternativaAtiva() then
                 local f = faseLuaAtual()
                 z.deslocamento = z.deslocamento + n(f.deslocamento)
                 z.iniciativa = z.iniciativa + n(f.iniciativa)
@@ -9238,7 +9407,7 @@
             -- "eu esqueci de me transformar" - foi exatamente a duvida que a
             -- mesa levantou. Transformado, a linha lista o que entrou; em
             -- forma mortal, ela avisa que existe bonus esperando.
-            local bb = bonusFormaBestial()
+            local bb = bonusHabilidadesAtivas()
             local aplicados = {}
             if bb.vida ~= 0 then table.insert(aplicados, "+" .. bb.vida .. " vida") end
             if bb.absorcao ~= 0 then table.insert(aplicados, "+" .. bb.absorcao .. "% absorção") end
@@ -13858,7 +14027,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.51.2" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.52.0" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -16868,8 +17037,8 @@
                         </rectangle>
                         <layout name="abaHab_wrapRacial" align="left" width="0" margins="{right=8}">
                             <rectangle align="client" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{top=2,bottom=2}" cursor="handPoint" hint="Criar uma habilidade racial. Marque PROGRESSIVA para efeitos que evoluem com o rank.">
-                                <label align="client" text="+  HABILIDADE DE RAÇA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
-                                <event name="onClick"><![CDATA[ abrirConstrutorHabilidade("racial"); ]]></event>
+                                <label align="client" text="+  HABILIDADE UNIVERSAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <event name="onClick"><![CDATA[ abrirConstrutorHabilidade("universal"); ]]></event>
                             </rectangle>
                         </layout>
                         <layout name="abaHab_wrapFeitico" align="left" width="0">
@@ -24347,8 +24516,8 @@
                                     <event name="onClick"><![CDATA[definirTipoHab("feitico");]]></event>
                                 </rectangle>
                                 <rectangle name="popHab_btnTipoRacial" align="left" width="150" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Habilidade racial: vem da raça, não gasta pontos de poder. Pode ser progressiva.">
-                                    <label name="popHab_lblTipoRacial" align="client" text="DE RAÇA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
-                                    <event name="onClick"><![CDATA[definirTipoHab("racial");]]></event>
+                                    <label name="popHab_lblTipoRacial" align="client" text="UNIVERSAL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    <event name="onClick"><![CDATA[definirTipoHab("universal");]]></event>
                                 </rectangle>
                             </layout>
 
@@ -24364,6 +24533,42 @@
                                     </rectangle>
                                     <label name="popHab_lblProgAjuda" align="client" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" vertTextAlign="center" wordWrap="false" margins="{left=10}" hitTest="false"/>
                                 </layout>
+                                <!-- SUSTENTACAO e CUSTO (v0.52.0). As duas
+                                     mecanicas convivem com a PROGRESSIVA na
+                                     mesma habilidade, por decisao da mesa: a
+                                     universal "deve englobar todas as
+                                     mecanicas". Por isso sao caixas
+                                     independentes, e nao um seletor. -->
+                                <layout align="top" height="30" margins="{bottom=6}">
+                                    <rectangle name="popHab_btnSustentacao" align="left" width="230" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Habilidade SUSTENTADA: um bloco único de efeito, que vale enquanto ela estiver ATIVA. Não depende do rank.">
+                                        <label name="popHab_lblSustentacao" align="client" text="[  ]  SUSTENTAÇÃO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                        <event name="onClick"><![CDATA[alternarSustentacao();]]></event>
+                                    </rectangle>
+                                    <layout align="left" width="130" margins="{left=12}">
+                                        <label align="left" width="46" text="CUSTO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                        <rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
+                                            <edit name="popHab_edCustoManual" align="client" type="number" text="0" transparent="true" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="12" horzTextAlign="center" hint="Quantos pontos de poder esta habilidade custa. 0 = de graça.">
+                                                <event name="onChange"><![CDATA[lerCamposHab(); atualizarConstrutorHab();]]></event>
+                                            </edit>
+                                        </rectangle>
+                                    </layout>
+                                    <label name="popHab_lblSustAjuda" align="client" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" vertTextAlign="center" margins="{left=10}" hitTest="false"/>
+                                </layout>
+
+                                <layout name="popHab_wrapSustentado" align="top" height="0">
+                                    <rectangle align="client" color="#0B1014" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}">
+                                        <layout align="client" margins="{left=8,right=8,top=4,bottom=4}">
+                                            <label align="top" height="15" text="EFEITO SUSTENTADO — cole a linha; a ficha lê os números dela" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" hitTest="false"/>
+                                            <label name="popHab_lblSustResumo" align="bottom" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="true" vertTextAlign="center" hitTest="false"/>
+                                            <rectangle align="client" color="#0D1317" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}">
+                                                <textEditor name="popHab_edSustentado" align="client" transparent="true" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" margins="{left=4,right=4}">
+                                                    <event name="onChange"><![CDATA[lerCamposHab(); atualizarBlocoProgressivo();]]></event>
+                                                </textEditor>
+                                            </rectangle>
+                                        </layout>
+                                    </rectangle>
+                                </layout>
+                            
                             </layout>
 
                             <label name="popHab_lblPoderTitulo" align="top" height="16" text="PODER DE ORIGEM" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>

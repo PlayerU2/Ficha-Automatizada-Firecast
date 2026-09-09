@@ -35,15 +35,46 @@
 
             local cor = "#8A63C9";                       -- poder: violeta
             if tipo == "classe" then cor = "#4E8C74";    -- classe: musgo
-            elseif tipo == "feitico" then cor = "#7FA8B8"; end;  -- feitico: chuva
+            elseif tipo == "feitico" then cor = "#7FA8B8";       -- feitico: chuva
+            elseif tipo == "universal" then cor = "#C9A24B";     -- universal: ouro
+            elseif tipo == "forma" then cor = "#8B2332"; end;    -- forma bestial: vinho
             if self.barraItemHab ~= nil then self.barraItemHab:setColor(cor); end;
 
             if self.lblRankHab ~= nil then self.lblRankHab:setText(rank); end;
+
+            -- INTERRUPTOR. Largura zero quando nao ha o que ligar: `visible=`
+            -- em align="left" reordena a linha, largura nao.
+            local temGatilho = (sheet.progressiva == true) or (sheet.sustentacao == true);
+            local ligada = (sheet.ativa == true) or (sheet.ativa == 1) or (sheet.ativa == "true");
+            -- O tipo "forma" NAO guarda estado proprio: quem liga e o botao de
+            -- transformacao, e ele mora na raiz da ficha. Guardar uma copia
+            -- aqui daria dois donos para a mesma propriedade, e um lobisomem
+            -- podia ficar com o bonus sem estar transformado.
+            if tipo == "forma" then
+                local raiz = NDB.getRoot(sheet);
+                ligada = (raiz ~= nil and raiz.formaAlternativaLigada == true);
+            end;
+            if self.rectAtivarHab ~= nil then
+                self.rectAtivarHab:setWidth(temGatilho and 84 or 0);
+                self.rectAtivarHab:setStrokeColor(ligada and "#C9A24B" or "#1A262C");
+                self.rectAtivarHab:setColor(ligada and "#171408" or "#0A0C10");
+            end;
+            if self.lblAtivarHab ~= nil then
+                if tipo == "forma" then
+                    -- estado, e nao botao: quem liga e a transformacao
+                    self.lblAtivarHab:setText(ligada and "TRANSFORMADO" or "NA FORMA MORTAL");
+                else
+                    self.lblAtivarHab:setText(ligada and "ATIVA" or "DESATIVADA");
+                end;
+                self.lblAtivarHab:setFontColor(ligada and "#C9A24B" or "#5F7078");
+            end;
 
             if self.lblOrigemHab ~= nil then
                 local origem = tostring(sheet.poderVinculado or "");
                 if origem == "" then
                     if tipo == "classe" then origem = "CLASSE";
+                    elseif tipo == "universal" then origem = "UNIVERSAL";
+                    elseif tipo == "forma" then origem = "FORMA BESTIAL";
                     else origem = "—"; end;
                 else
                     origem = string.upper(origem);
@@ -128,12 +159,20 @@
 
         <!-- COLUNA DIREITA: mesma altura e mesmas margens nos tres blocos,
              para as caixas ficarem alinhadas. O "x" por ultimo, a direita. -->
-        <layout align="right" width="266" margins="{right=6,top=18,bottom=18}">
+        <layout align="right" width="358" margins="{right=6,top=18,bottom=18}">
             <rectangle name="rectOrigemHab" align="left" width="150" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="8" yradius="8" hitTest="false">
                 <label name="lblOrigemHab" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
             </rectangle>
             <rectangle name="rectCustoHab" align="left" width="72" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" hitTest="false">
                 <label name="lblCustoHab" align="client" text="" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+            </rectangle>
+            <rectangle name="rectAtivarHab" align="left" width="0" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" cursor="handPoint" hint="Ligar ou desligar esta habilidade. Enquanto ligada, os efeitos entram nos cards da aba de Combate.">
+                <event name="onClick"><![CDATA[
+                    if sheet ~= nil and tostring(sheet.tipo or "") ~= "forma" then
+                        if alternarHabilidadeAtiva ~= nil then alternarHabilidadeAtiva(sheet); end;
+                    end;
+                ]]></event>
+                <label name="lblAtivarHab" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
             </rectangle>
             <rectangle align="left" width="26" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" cursor="handPoint" hint="Remover esta habilidade da ficha">
                 <event name="onClick"><![CDATA[

@@ -1,3 +1,98 @@
+## v0.52.0 — a habilidade progressiva deixa de ser do lobisomem (09/09/2026)
+
+### Ela era do lobisomem por acidente de origem
+
+Relatado pelo mestre: *"as habilidades progressivas estão muito ligadas
+atualmente aos lobisomens, mas elas devem ser uma ferramenta que funcionaria
+para todas as raças"*.
+
+A mecânica nasceu na v0.38.0 com um exemplo só — a Forma Bestial Lupina da
+mesa — e a modelagem inteira ficou moldada nele. Três amarras, todas
+inconscientes:
+
+* `calcularCustoHabilidade` devolvia **0 cravado** para o tipo `racial`, o que
+  só funcionava porque a única habilidade desse tipo vinha de graça;
+* o `[  ] PROGRESSIVA` só aparecia quando o tipo era `racial`;
+* os bônus só entravam com `formaAlternativaAtiva()` — o botão de
+  transformação. Uma raça com progressiva própria **não tinha como ligá-la**.
+
+### Três tipos onde havia um
+
+`racial` virou `universal`, e a forma bestial ganhou tipo próprio, `forma`.
+
+A troca é de **chave gravada**, e não de rótulo. Trocar só o rótulo deixaria o
+dado dizendo `racial` e a tela dizendo UNIVERSAL — segunda fonte da verdade,
+que este projeto já pagou três vezes. A migração roda em `repararNosAntigos`,
+ao abrir a ficha, e o mestre autorizou reescrever: *"as fichas estão em teste
+ainda, então não tem problema fazer uma mudança brusca"*.
+
+O tipo `forma` **não é oferecido no construtor**: ele nasce só da escolha da
+facção. É o "lugar único dos lobisomens" que o pedido descrevia, e é ele que
+permite ao resto ficar genérico.
+
+### O interruptor, que é o que faltava
+
+Campo `ativa`, e um botão no card — `ATIVA` / `DESATIVADA`. Ele só aparece para
+habilidade que tem o que ligar: progressiva ou sustentação. Botão que não faz
+nada treina o olho a ignorar a faixa.
+
+O tipo `forma` mostra o estado (`TRANSFORMADO` / `NA FORMA MORTAL`) e **não é
+clicável**: quem liga é o botão de transformação. Clicável aqui daria dois
+donos para a mesma propriedade, e o lobisomem podia ficar com o bônus sem estar
+transformado. O card lê a raiz da ficha, e não guarda cópia.
+
+`bonusFormaBestial` virou `bonusHabilidadesAtivas`. O nome antigo mentia sobre
+o alcance: a mecânica sempre foi genérica, o que faltava era o interruptor.
+
+### Custo, e Sustentação
+
+**Custo:** campo que o jogador digita. Zero é de graça e continua sendo o
+padrão; um número desconta do mesmo saldo dos poderes, com a trava que já
+existia. Substitui o `return 0` cravado.
+
+**Sustentação:** um bloco único, que vale enquanto a habilidade estiver ativa,
+lido pelo **mesmo** `CatalogoProgressiva.lerBloco` da progressiva. O
+vocabulário e o *"a ficha entendeu"* vieram de graça — e é o que garante que as
+duas mecânicas nunca divirjam na leitura.
+
+As duas **convivem na mesma habilidade**, por decisão da mesa: *"tudo na mesma
+habilidade será melhor, pois essa habilidade universal deve englobar todas as
+mecânicas"*. Quando as duas estão marcadas, elas **somam** — o "substitui, não
+acumula" vale entre RANKS da progressiva, e não entre mecânicas distintas.
+
+Sem custo de manutenção automático, também por decisão da mesa: *"deixa para
+descontar manualmente, já que habilidades podem ter descontos variados
+dependendo da mecânica exclusiva"*.
+
+### Dois erros meus, e quem os pegou
+
+**Deixei um apelido `bonusFormaBestial()` só para a checagem 64 continuar
+passando.** Ela acusou, e estava certa: apelido que existe para agradar
+checagem é exatamente o vício que ela deveria impedir. O apelido saiu e os
+chamadores foram renomeados.
+
+E a checagem estava errada junto: cravava o **nome** da função em vez do
+comportamento. Agora ela procura quem chama `faseLuaAtual()` entre as
+candidatas e confere a guarda daquela — no dia da troca de nome, a versão
+antiga acusou um apelido em vez do bug.
+
+**O card não repintaria ao ligar.** O `onNodeReady` do template só roda quando
+o item é criado, então mudar `ativa` não redesenharia nada. Agora
+`alternarHabilidadeAtiva` reconstrói a lista, pelo mesmo motivo que
+`salvarHabilidade` já reconstruía ao editar.
+
+### A sonda podre, que o ferramental achou sozinho
+
+A mutação da checagem 64 cravava a linha inteira `if triboRecebeFasesLua()
+then`. Quando a guarda ganhou uma condição a mais nesta versão, ela deixou de
+casar e saiu como **INVÁLIDA** — parou de testar sem nada ficar vermelho.
+
+O `mutacao.py` distingue *"não pegou"* de *"não testou"*, e reportou
+`1 SONDA(s) PODRE(s)`. Sem essa distinção a rodada teria fechado com 217 ok e
+passado por verde. É a mesma classe do `0.39.0` literal que apodreceu no outro
+ferramental: **sonda presa à forma exata da linha morre calada na próxima
+edição**. Passou a mirar por padrão.
+
 ## v0.51.2 — a tribo já tinha mecanismo, e era o dos elfos (09/09/2026)
 
 ### O livro já mandava escolher a facção, e eu não tinha lido
