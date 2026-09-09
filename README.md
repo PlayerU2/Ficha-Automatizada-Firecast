@@ -9,7 +9,7 @@ número** — para o jogador conferir sem abrir o livro e o mestre auditar de
 relance.
 
 <p align="center">
-  <img alt="versão" src="https://img.shields.io/badge/versão-0.49.8-C9A24B">
+  <img alt="versão" src="https://img.shields.io/badge/versão-0.49.9-C9A24B">
   <img alt="Firecast SDK" src="https://img.shields.io/badge/Firecast%20SDK-3.7b-8A63C9">
   <img alt="Lua" src="https://img.shields.io/badge/Lua-5.3-000080">
 </p>
@@ -101,8 +101,8 @@ catalogoBestiario.lua         tipos, ranks e marcas das criaturas
 catalogoProgressiva.lua       progressões que dependem do nível
 itens/                        templates das linhas de lista (perícia, item, qualidade…)
 fonts/                        Cinzel, Cinzel Decorative, Marcellus SC, EB Garamond
-imagens/                      111 arquivos: 30 selos divinos em dois tamanhos,
-                              29 escudos de raça, ícones de aba, moldura, brasão
+imagens/                      152 arquivos: selos divinos em dois tamanhos,
+                              escudos de raça, ícones de aba, atributos e combate
 sdk/                          SDK do Firecast, versionado de propósito: as baterias
                               em Lua rodam contra o SDK de verdade, não contra
                               um dublê que eu escreveria do jeito que me convém

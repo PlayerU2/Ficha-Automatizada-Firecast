@@ -9016,6 +9016,18 @@
             if not personagemEhLobisomem() then return end
 
             local f = faseLuaAtual()
+            if self.cmb_imgLua ~= nil then
+                local imagensLua = {
+                    ["Nova"] = "imagens/estado_lua_nova.png",
+                    ["Crescente"] = "imagens/estado_lua_crescente.png",
+                    ["Cheia"] = "imagens/estado_lua_cheia.png",
+                    ["Minguante"] = "imagens/estado_lua_minguante.png",
+                    ["Eclipse Carmesim"] = "imagens/estado_lua_eclipse_carmesim.png",
+                }
+                pcall(function()
+                    self.cmb_imgLua.src = imagensLua[f.nome] or imagensLua["Nova"]
+                end)
+            end
             if self.cmb_lblLua ~= nil then self.cmb_lblLua:setText(f.nome) end
             if self.cmb_contaLua ~= nil then
                 -- A conta diz se o bonus esta VALENDO agora. Sem isso, lua
@@ -10053,6 +10065,17 @@
                 local nv = nivelFerido()
                 local pen = penalidadeFerido()
                 local ajuste = n(sheet.ajusteFerido)
+                if self.cmb_imgFerido ~= nil then
+                    local imagensFerido = {
+                        [0] = "imagens/estado_ferido_sem.png",
+                        [1] = "imagens/estado_ferido_i.png",
+                        [2] = "imagens/estado_ferido_ii.png",
+                        [3] = "imagens/estado_ferido_iii.png",
+                    }
+                    pcall(function()
+                        self.cmb_imgFerido.src = imagensFerido[nv] or imagensFerido[0]
+                    end)
+                end
                 porValor("Ferido", (nv > 0) and FERIDO[nv].romano or "—")
                 local linha
                 if nv > 0 and ajuste == 0 then
@@ -13660,7 +13683,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.8" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.49.9" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14419,7 +14442,10 @@
                     <layout name="cmb_wrapHp" align="left" width="196">
                         <rectangle name="cmb_secHp" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
-                            <label align="top" height="26" text="PONTOS DE VIDA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="15 + Dado de vida + (Constituição ÷ 2 × Nível), mais o acumulado por nível."/>
+                            <layout align="top" height="26" margins="{top=4}">
+                                <image align="none" left="4" top="2" width="22" height="22" style="originalSize" src="imagens/combate_vida.png" hitTest="false"/>
+                                <label align="client" text="PONTOS DE VIDA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="15 + Dado de vida + (Constituição ÷ 2 × Nível), mais o acumulado por nível."/>
+                            </layout>
                             <layout align="top" height="34" margins="{left=8,right=8}">
                                 <layout name="cmb_vaoAtualHp" align="left" width="0"/>
                                 <rectangle name="cmb_caixaAtualHp" align="left" width="93" color="#080B0E" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
@@ -14443,7 +14469,10 @@
                     <layout name="cmb_wrapAp" align="left" width="196">
                         <rectangle name="cmb_secAp" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
-                            <label align="top" height="26" text="PONTOS DE AURA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="(20 + Sabedoria + Nível) × Rank, mais os dados acumulados por nível."/>
+                            <layout align="top" height="26" margins="{top=4}">
+                                <image align="none" left="4" top="2" width="22" height="22" style="originalSize" src="imagens/combate_aura.png" hitTest="false"/>
+                                <label align="client" text="PONTOS DE AURA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="(20 + Sabedoria + Nível) × Rank, mais os dados acumulados por nível."/>
+                            </layout>
                             <layout align="top" height="34" margins="{left=8,right=8}">
                                 <layout name="cmb_vaoAtualAp" align="left" width="0"/>
                                 <rectangle name="cmb_caixaAtualAp" align="left" width="93" color="#080B0E" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
@@ -14467,7 +14496,10 @@
                     <layout name="cmb_wrapMp" align="left" width="196">
                         <rectangle name="cmb_secMp" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#7FA8B8" hitTest="false"/>
-                            <label align="top" height="26" text="PONTOS DE MANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="15 + base por idade + (Nível × 2). Exige a qualidade Coração de mana."/>
+                            <layout align="top" height="26" margins="{top=4}">
+                                <image align="none" left="4" top="2" width="22" height="22" style="originalSize" src="imagens/combate_mana.png" hitTest="false"/>
+                                <label align="client" text="PONTOS DE MANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="15 + base por idade + (Nível × 2). Exige a qualidade Coração de mana."/>
+                            </layout>
                             <layout align="top" height="34" margins="{left=8,right=8}">
                                 <layout name="cmb_vaoAtualMp" align="left" width="0"/>
                                 <rectangle name="cmb_caixaAtualMp" align="left" width="93" color="#080B0E" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
@@ -14491,7 +14523,10 @@
                     <layout name="cmb_wrapPrana" align="left" width="196">
                         <rectangle name="cmb_secPrana" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8A63C9" hitTest="false"/>
-                            <label align="top" height="26" text="PONTOS DE PRANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Mana + Aura somadas. Exclusivo de Bruxas (Linhagem de Unaris)."/>
+                            <layout align="top" height="26" margins="{top=4}">
+                                <image align="none" left="4" top="2" width="22" height="22" style="originalSize" src="imagens/combate_prana.png" hitTest="false"/>
+                                <label align="client" text="PONTOS DE PRANA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="Mana + Aura somadas. Exclusivo de Bruxas (Linhagem de Unaris)."/>
+                            </layout>
                             <layout align="top" height="34" margins="{left=8,right=8}">
                                 <layout name="cmb_vaoAtualPrana" align="left" width="0"/>
                                 <rectangle name="cmb_caixaAtualPrana" align="left" width="93" color="#080B0E" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
@@ -14515,7 +14550,10 @@
                     <layout name="cmb_wrapPv" align="left" width="196">
                         <rectangle name="cmb_secPv" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#9E3B4A" hitTest="false"/>
-                            <label align="top" height="26" text="PONTOS DE VITAE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="10 + (Constituição × 1,5) + (Rank × 30). Apenas vampiros."/>
+                            <layout align="top" height="26" margins="{top=4}">
+                                <image align="none" left="4" top="2" width="22" height="22" style="originalSize" src="imagens/combate_vitae.png" hitTest="false"/>
+                                <label align="client" text="PONTOS DE VITAE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="10 + (Constituição × 1,5) + (Rank × 30). Apenas vampiros."/>
+                            </layout>
                             <layout align="top" height="34" margins="{left=8,right=8}">
                                 <layout name="cmb_vaoAtualPv" align="left" width="0"/>
                                 <rectangle name="cmb_caixaAtualPv" align="left" width="93" color="#080B0E" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
@@ -14552,6 +14590,7 @@
                     <layout name="cmb_wrapSangue" align="left" width="0">
                         <rectangle name="cmb_secSangue" align="client" color="#0D1317" strokeColor="#8B2332" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_sangue_bebido.png" hitTest="false"/>
                             <label align="top" height="26" text="SANGUE BEBIDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Cada 50 ml de sangue bebido recupera 1 ponto de Vitae (Raças/Vampiros, [Sede de sangue])."/>
                             <label name="cmb_lblSangue" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#8B2332" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaSangue" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14581,6 +14620,7 @@
                     <layout name="cmb_wrapDescanso" align="left" width="196">
                         <rectangle name="cmb_secDescanso" align="client" color="#0D1317" strokeColor="#4E8C74" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#4E8C74" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_descanso.png" hitTest="false"/>
                             <label align="top" height="24" text="DESCANSO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="[2.3]: Longo (24h) devolve 30% da vida e 50% da aura/mana; Curto (12h), 25% e 25%. O longo TAMBÉM sara o Ferido, e enquanto ferido o ganho de vida sai pelo percentual do nível (30/20/10%)."/>
                             <label name="cmb_lblDescanso" align="top" height="30" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="24" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaDescanso" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14608,6 +14648,7 @@
                     <layout name="cmb_wrapLua" align="left" width="0">
                         <rectangle name="cmb_secLua" align="client" color="#0D1317" strokeColor="#3A2E52" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8A63C9" hitTest="false"/>
+                            <image name="cmb_imgLua" align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/estado_lua_nova.png" hitTest="false"/>
                             <label align="top" height="26" text="FASE DA LUA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="A fase da lua do mundo agora. O bônus lunar entra nos cálculos quando a forma bestial está ligada."/>
                             <label name="cmb_lblLua" align="top" height="34" text="Nova" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaLua" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14676,6 +14717,7 @@
                     <layout name="cmb_wrapDefAparar" align="left" width="196">
                         <rectangle name="cmb_secDefAparar" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_aparar.png" hitTest="false"/>
                             <label align="top" height="26" text="APARAR" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="9 + Força + Proficiência + itens equipados."/>
                             <label name="cmb_lblDefAparar" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaDefAparar" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14692,6 +14734,7 @@
                     <layout name="cmb_wrapDefEsquiva" align="left" width="196">
                         <rectangle name="cmb_secDefEsquiva" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_esquiva.png" hitTest="false"/>
                             <label align="top" height="26" text="ESQUIVA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="9 + Destreza + Proficiência + itens equipados."/>
                             <label name="cmb_lblDefEsquiva" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaDefEsquiva" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14708,6 +14751,7 @@
                     <layout name="cmb_wrapDefEmpatica" align="left" width="196">
                         <rectangle name="cmb_secDefEmpatica" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#4E8C74" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_empatica.png" hitTest="false"/>
                             <label align="top" height="26" text="EMPÁTICA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="10 + Manipulação + Proficiência + itens equipados."/>
                             <label name="cmb_lblDefEmpatica" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaDefEmpatica" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14724,6 +14768,7 @@
                     <layout name="cmb_wrapDefTelepatica" align="left" width="196">
                         <rectangle name="cmb_secDefTelepatica" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#4E8C74" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_telepatica.png" hitTest="false"/>
                             <label align="top" height="26" text="TELEPÁTICA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="10 + Sabedoria + Proficiência + itens equipados."/>
                             <label name="cmb_lblDefTelepatica" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaDefTelepatica" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14752,6 +14797,7 @@
                     <layout name="cmb_wrapFerido" align="left" width="196">
                         <rectangle name="cmb_secFerido" align="client" color="#0D1317" strokeColor="#8B2332" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
+                            <image name="cmb_imgFerido" align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/estado_ferido_sem.png" hitTest="false"/>
                             <label align="top" height="24" text="FERIDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="[2.3] Ferimentos: um GOLPE ÚNICO que aplique 30%, 60% ou 90% da vida máxima. Substitui, não acumula. A recuperação diária própria (30/20/10%) fica nos botões de descanso."/>
                             <label name="cmb_lblFerido" align="top" height="30" text="—" fontFamily="Cinzel" fontColor="#8B2332" fontSize="24" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaFerido" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14811,6 +14857,7 @@
                     <layout name="cmb_wrapDeslocamento" align="left" width="196">
                         <rectangle name="cmb_secDeslocamento" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#E6E9E4" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_deslocamento.png" hitTest="false"/>
                             <label align="top" height="26" text="DESLOCAMENTO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Base da raça + Destreza + Rank. É o quanto você anda por ação."/>
                             <label name="cmb_lblDeslocamento" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaDeslocamento" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14827,6 +14874,7 @@
                     <layout name="cmb_wrapCorrida" align="left" width="196">
                         <rectangle name="cmb_secCorrida" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#E6E9E4" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_corrida.png" hitTest="false"/>
                             <label align="top" height="26" text="CORRIDA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="O dobro do deslocamento — o triplo para Sátiros."/>
                             <label name="cmb_lblCorrida" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaCorrida" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14836,6 +14884,7 @@
                     <layout name="cmb_wrapVoo" align="left" width="196">
                         <rectangle name="cmb_secVoo" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#7FA8B8" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_voo.png" hitTest="false"/>
                             <label align="top" height="26" text="VOO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Deslocamento aéreo da raça + Destreza + Rank. Só aparece para raças que voam."/>
                             <label name="cmb_lblVoo" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaVoo" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14852,6 +14901,7 @@
                     <layout name="cmb_wrapNado" align="left" width="196">
                         <rectangle name="cmb_secNado" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#7FA8B8" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_nado.png" hitTest="false"/>
                             <label align="top" height="26" text="NADO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Deslocamento aquático da raça + Destreza + Rank. Só aparece para raças que nadam."/>
                             <label name="cmb_lblNado" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaNado" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14875,6 +14925,7 @@
                     <layout name="cmb_wrapEscalada" align="left" width="196">
                         <rectangle name="cmb_secEscalada" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#7FA8B8" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_escalada.png" hitTest="false"/>
                             <label align="top" height="26" text="ESCALADA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Metade do deslocamento, por padrão da mesa. Se a raça declarar uma base de escalada, ela substitui o padrão."/>
                             <label name="cmb_lblEscalada" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaEscalada" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14902,6 +14953,7 @@
                                  vira "MONTADO · VOO" quando o numero grande nao
                                  e o deslocamento de chao. Sem isso, 116 de voo e
                                  116 de chao ficam identicos na tela. -->
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_montado.png" hitTest="false"/>
                             <label name="cmb_tituloMontado" align="top" height="26" text="MONTADO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" margins="{top=4}" hint="Deslocamento enquanto montado. O número grande é o MAIOR modo da montaria; os outros modos aparecem na linha de baixo. Modo com 0 na ficha da criatura não aparece."/>
                             <label name="cmb_lblMontado" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaMontado" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14934,6 +14986,7 @@
 <layout name="cmb_wrapTamanho" align="left" width="196">
                         <rectangle name="cmb_secTamanho" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8A63C9" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_tamanho.png" hitTest="false"/>
                             <label align="top" height="26" text="TAMANHO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Categoria de tamanho do personagem. Livre durante a criação; depois de finalizada a ficha, só o mestre muda."/>
                             <label name="cmb_lblTamanho" align="top" height="34" text="Médio" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaTamanho" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14953,6 +15006,7 @@
 <layout name="cmb_wrapIniciativa" align="left" width="196">
                         <rectangle name="cmb_secIniciativa" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#E6E9E4" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_iniciativa.png" hitTest="false"/>
                             <label align="top" height="26" text="INICIATIVA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Destreza + Rank, somado ao dado no início do combate."/>
                             <label name="cmb_lblIniciativa" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaIniciativa" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14969,6 +15023,7 @@
 <layout name="cmb_wrapProf" align="left" width="196">
                         <rectangle name="cmb_secProf" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_proficiencia.png" hitTest="false"/>
                             <label align="top" height="26" text="PROFICIÊNCIA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Bônus do nível atual, somado nos testes das perícias que você tem."/>
                             <label name="cmb_lblProf" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaProf" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -14986,6 +15041,7 @@
                     <layout name="cmb_wrapAcoesPadrao" align="left" width="196">
                         <rectangle name="cmb_secAcoesPadrao" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_acao_padrao.png" hitTest="false"/>
                             <label align="top" height="26" text="AÇÕES PADRÃO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Atacar, defender, usar poderes e feitiços complexos. +1 no nível 19."/>
                             <label name="cmb_lblAcoesPadrao" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaAcoesPadrao" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -15002,6 +15058,7 @@
                     <layout name="cmb_wrapAcoesBonus" align="left" width="196">
                         <rectangle name="cmb_secAcoesBonus" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_acao_bonus.png" hitTest="false"/>
                             <label align="top" height="26" text="AÇÕES BÔNUS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Abrir portas, sacar objetos, habilidades simples. +1 no nível 10."/>
                             <label name="cmb_lblAcoesBonus" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaAcoesBonus" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -15018,6 +15075,7 @@
                     <layout name="cmb_wrapAcoesReacao" align="left" width="196">
                         <rectangle name="cmb_secAcoesReacao" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_reacoes.png" hitTest="false"/>
                             <label align="top" height="26" text="REAÇÕES" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Respostas no turno alheio, como ataque de oportunidade. +1 no nível 15."/>
                             <label name="cmb_lblAcoesReacao" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaAcoesReacao" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -15034,6 +15092,7 @@
                     <layout name="cmb_wrapInspiracao" align="left" width="196">
                         <rectangle name="cmb_secInspiracao" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8A63C9" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_inspiracao.png" hitTest="false"/>
                             <label align="top" height="26" text="INSPIRAÇÃO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Gaste para refazer um teste de qualquer natureza. Começa em 3 e o máximo é 3."/>
                             <label name="cmb_lblInspiracao" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#8A63C9" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaInspiracao" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
@@ -15050,6 +15109,7 @@
                     <layout name="cmb_wrapMochila" align="left" width="196">
                         <rectangle name="cmb_secMochila" align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8C9AA0" hitTest="false"/>
+                            <image align="none" left="4" top="7" width="22" height="22" style="originalSize" src="imagens/combate_carga.png" hitTest="false"/>
                             <label align="top" height="26" text="CARGA DA MOCHILA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="2 + Força + Rank. Quantos espaços a mochila comporta."/>
                             <label name="cmb_lblMochila" align="top" height="34" text="0" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="26" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="cmb_contaMochila" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>

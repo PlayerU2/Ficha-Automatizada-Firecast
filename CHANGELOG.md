@@ -1,3 +1,18 @@
+## v0.49.9 — iconografia completa dos cards de combate (09/09/2026)
+
+Os cinco recursos — Vida, Aura, Mana, Prana e Vitae —, as defesas, os modos de
+movimento, tamanho, iniciativa, proficiência, economia de ações, inspiração,
+carga e descanso agora exibem ícones próprios de 22×22 nos cabeçalhos. O mesmo
+acabamento foi aplicado aos cards condicionais: Montado, Sangue Bebido e Fase
+da Lua. São 34 novos PNGs, todos com transparência real, cor semântica exata e
+`style="originalSize"`.
+
+Ferido possui quatro PNGs — sem ferimento, I, II e III — e a imagem acompanha
+o nível marcado. Fase da Lua possui cinco PNGs — Nova, Crescente, Cheia,
+Minguante e Eclipse Carmesim — e acompanha o ciclo escolhido. As duas trocas
+reutilizam as rotinas de atualização já existentes; cálculos, regras, campos
+NDB e condições de visibilidade permanecem inalterados.
+
 ## v0.49.8 — o LEIA-ME de dentro do .rpk ficou na versão anterior, de novo (08/09/2026)
 
 A v0.49.7 entrou com o `LEIA-ME.txt` parado: primeira linha em v0.49.6 e
