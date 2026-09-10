@@ -749,13 +749,30 @@
             longo = {rotulo = "LONGO", horas = 24, vida = 30, energia = 50, saraFerido = true},
         }
 
-        -- Quanto um descanso rende, em PONTOS. O percentual da qualidade
-        -- multiplica o GANHO, e nao o maximo: o livro diz "recupere 25% MAIS
-        -- de vida por descanso", nao "tenha 25% mais de vida".
+        -- Quanto um descanso rende, em PONTOS.
+        --
+        -- OS DOIS PERCENTUAIS SOMAM, E NAO SE MULTIPLICAM (mesa, 09/09/2026).
+        --
+        -- O livro diz "recupere 25% mais desta energia por descanso curto ou
+        -- longo" [2.2], e a frase aceita as duas leituras. Ate a v0.53.3 a
+        -- ficha lia "25% a mais DO GANHO": 25% x 1,25 = 31,25% do maximo. O
+        -- mestre fechou a leitura na tela, com o exemplo dele:
+        --
+        --   "aura expandida nivel 1 (que recupera +25%): Descanso curto:
+        --    25% (Padrao) + 25% (Qualidade) = +50% do valor de descanso total"
+        --
+        -- O percentual da qualidade e somado ao do descanso, em PONTOS
+        -- PERCENTUAIS do maximo. E onde o livro e ambiguo, quem manda e a
+        -- mesa.
+        --
+        -- O PISO E ZERO, e ele importa: os percentuais negativos do "Vigor
+        -- reprimido" (-25 e -50) descem do mesmo total. No 02 pontos a soma
+        -- fica negativa nos dois descansos, e descanso que TIRA vida seria
+        -- uma regra que ninguem escreveu.
         function ganhoDescanso(maximo, percentBase, percentQualidade)
-            local bruto = n(maximo) * (n(percentBase) / 100)
-            bruto = bruto * (1 + n(percentQualidade) / 100)
-            return math.floor(bruto + 0.5)
+            local pct = n(percentBase) + n(percentQualidade)
+            if pct < 0 then pct = 0 end
+            return math.floor(n(maximo) * (pct / 100) + 0.5)
         end
 
         -- O percentual de VIDA de um descanso, ja com a substituicao do
@@ -10591,9 +10608,22 @@
                         return d.rotulo:lower() .. " " .. d.horas .. "h: Vitae só com sangue"
                     end
                     local partes = {"+" .. ganhoDescanso(sheet.hp, percentVidaDescanso(tipo), pctV) .. " vida"}
-                    table.insert(partes, "+" .. ganhoDescanso(sheet.ap, d.energia, pctA) .. " aura")
-                    if sheet.temCoracaoDeMana then
-                        table.insert(partes, "+" .. ganhoDescanso(sheet.mp, d.energia, 0) .. " mana")
+                    -- A BRUXA LE PRANA, E SO PRANA (mesa, 09/09/2026).
+                    --
+                    -- Os cards de Aura e de Mana ficam na tela dela como
+                    -- CONTA VISIVEL do Prana, que e a soma dos dois — e nao
+                    -- como barras que ela gasta: "esses dois cards sao inuteis
+                    -- da bruxa mexer, ja que ela utiliza apenas o Prana".
+                    -- Anunciar aqui o ganho das duas era anunciar numero que
+                    -- ela nao usa, e esconder o unico que ela usa.
+                    if personagemEhBruxa() then
+                        table.insert(partes, "+" ..
+                            ganhoDescanso(sheet.prana, d.energia, pctA) .. " prana")
+                    else
+                        table.insert(partes, "+" .. ganhoDescanso(sheet.ap, d.energia, pctA) .. " aura")
+                        if sheet.temCoracaoDeMana then
+                            table.insert(partes, "+" .. ganhoDescanso(sheet.mp, d.energia, 0) .. " mana")
+                        end
                     end
                     return d.rotulo:lower() .. " " .. d.horas .. "h: " .. table.concat(partes, " · ")
                 end
@@ -14306,7 +14336,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.3" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.4" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 

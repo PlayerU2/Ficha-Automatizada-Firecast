@@ -1,3 +1,49 @@
+## v0.53.4 — o descanso da bruxa, e os dois percentuais que somam (09/09/2026)
+
+### A bruxa lia o ganho de duas barras que ela não usa
+
+O card de Descanso anunciava `+N aura · +M mana` para quem tem *Linhagem de
+Unaris*. Os dois cards existem na tela dela como **conta visível do Prana**, e
+não como barras que ela gasta — decisão da mesa, dita de novo hoje: *"esses
+dois cards são inúteis da bruxa mexer, já que ela utiliza apenas o Prana"*.
+
+O card anunciava dois números que ela não usa e escondia o único que ela usa.
+Agora a linha da bruxa é `+N vida · +M prana`.
+
+### Os dois percentuais somam, e não se multiplicam
+
+O livro [2.2] diz *"recupere 25% mais desta energia por descanso curto ou
+longo"*, e a frase aceita as duas leituras. A ficha lia "25% a mais **do
+ganho**": 25% × 1,25 = 31,25% do máximo.
+
+O mestre fechou a leitura, com o exemplo dele:
+
+> *"aura expandida nível 1 (que recupera +25%): Descanso curto: 25% (Padrão) +
+> 25% (Qualidade) = +50% do valor de descanso total"*
+
+O percentual da qualidade é somado ao do descanso, em **pontos percentuais do
+máximo**. Onde o livro é ambíguo, quem manda é a mesa.
+
+**Uma asserção media a leitura antiga** e passou a acusar — *Vigor expandido*
+02 pontos esperava 23 e veio 41. Ela foi corrigida com a citação da decisão ao
+lado, e não silenciada. Era a rede fazendo o trabalho dela.
+
+**O piso é zero, e ele importa.** Os percentuais negativos do *Vigor reprimido*
+(−25 e −50) descem do mesmo total. Em 02 pontos a soma fica negativa nos dois
+descansos, e descanso que **tira** vida seria uma regra que ninguém escreveu.
+O efeito colateral dessa leitura está anotado para o mestre decidir: com −50,
+a personagem passa a não recuperar nada, nem no longo.
+
+### E o zip pegou uma pasta que não é do plugin
+
+`Claude outputs/PROMPT-MIGRAR-PROJETO-PARA-CHATGPT.md` apareceu dentro da pasta
+do plugin e **entrou no `.rpk`**. A checagem 36 acusou assim que o pacote foi
+regerado — ela abre o zip, e por isso só vê o que já foi empacotado.
+
+É a regra do `CLAUDE.md` funcionando: *conferir o que você editou não prova
+nada sobre o que o usuário instala*. O arquivo foi movido para
+`Documentos\Claude outputs`, com autorização, e nada foi apagado.
+
 ## v0.53.3 — a conta passa a dizer de onde o número veio (09/09/2026)
 
 Relatado na tela: *"a ficha ainda considera nas contas que os ganhos estão
