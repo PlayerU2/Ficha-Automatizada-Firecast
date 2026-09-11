@@ -14336,7 +14336,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.4" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.5" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -15828,7 +15828,10 @@
                         <layout name="colQualidades" align="left" width="895" margins="{right=6}">
                             <rectangle align="client" color="#0D1317" strokeColor="#8A63C9" strokeSize="1" xradius="5" yradius="5" hitTest="false">
                                 <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                                    <label align="top" height="24" text="QUALIDADES" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold"/>
+                                    <layout align="top" height="24">
+                                        <image align="none" left="0" top="1" width="22" height="22" style="originalSize" src="imagens/qd_qualidade.png" hitTest="false"/>
+                                        <label align="client" text="QUALIDADES" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold" vertTextAlign="center" margins="{left=28}"/>
+                                    </layout>
                                     <label align="top" height="16" text="Vantagens compradas com pontos." fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=4}"/>
                                     <rectangle align="top" height="30" color="#16202A" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}" cursor="handPoint" hint="Abrir o catálogo de Qualidades">
                                         <event name="onClick"><![CDATA[abrirCatalogoQualidades();]]></event>
@@ -15841,7 +15844,10 @@
                         <layout align="client" margins="{left=6}">
                             <rectangle align="client" color="#0D1317" strokeColor="#8B2332" strokeSize="1" xradius="5" yradius="5" hitTest="false">
                                 <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                                    <label align="top" height="24" text="DEFEITOS" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold"/>
+                                    <layout align="top" height="24">
+                                        <image align="none" left="0" top="1" width="22" height="22" style="originalSize" src="imagens/qd_defeito.png" hitTest="false"/>
+                                        <label align="client" text="DEFEITOS" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold" vertTextAlign="center" margins="{left=28}"/>
+                                    </layout>
                                     <label align="top" height="16" text="Limitações que devolvem pontos (máx. 7)." fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=4}"/>
                                     <rectangle align="top" height="30" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{bottom=6}" cursor="handPoint" hint="Abrir o catálogo de Defeitos">
                                         <event name="onClick"><![CDATA[abrirCatalogoDefeitos();]]></event>
@@ -18476,18 +18482,27 @@
                     <layout align="top" height="76" margins="{bottom=8}">
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
-                            <label align="top" height="22" text="MOCHILA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Espaços usados e capacidade. Cada 2 consumíveis iguais ocupam 1 espaço."/>
+                            <layout align="top" height="22" margins="{top=4}">
+                                <image align="none" left="4" top="0" width="22" height="22" style="originalSize" src="imagens/inventario_mochila.png" hitTest="false"/>
+                                <label align="client" text="MOCHILA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="Espaços usados e capacidade. Cada 2 consumíveis iguais ocupam 1 espaço."/>
+                            </layout>
                             <label name="abaInv_lblMochila" align="top" height="28" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="abaInv_lblMochilaConta" align="top" height="14" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" hitTest="false"/>
                         </rectangle>
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#4E8C74" hitTest="false"/>
-                            <label align="top" height="22" text="ABSORÇÃO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Percentual de dano absorvido pela armadura equipada."/>
+                            <layout align="top" height="22" margins="{top=4}">
+                                <image align="none" left="4" top="0" width="22" height="22" style="originalSize" src="imagens/inventario_absorcao.png" hitTest="false"/>
+                                <label align="client" text="ABSORÇÃO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="Percentual de dano absorvido pela armadura equipada."/>
+                            </layout>
                             <label name="abaInv_lblAbsorcao" align="top" height="28" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                         </rectangle>
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8B2332" hitTest="false"/>
-                            <label align="top" height="22" text="DESLOCAMENTO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Penalidade de movimento vinda de armadura pesada."/>
+                            <layout align="top" height="22" margins="{top=4}">
+                                <image align="none" left="4" top="0" width="22" height="22" style="originalSize" src="imagens/inventario_deslocamento.png" hitTest="false"/>
+                                <label align="client" text="DESLOCAMENTO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="Penalidade de movimento vinda de armadura pesada."/>
+                            </layout>
                             <label name="abaInv_lblPeso" align="top" height="28" text="0" fontFamily="Cinzel" fontColor="#8B2332" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                         </rectangle>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6">

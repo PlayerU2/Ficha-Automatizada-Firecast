@@ -1,3 +1,18 @@
+## v0.53.5 — iconografia de inventário, qualidades e defeitos (11/09/2026)
+
+Os três cards de resumo do Inventário agora exibem ícones próprios de 22×22:
+mochila, escudo absorvendo impacto e bota presa a um peso. As cores seguem a
+semântica que os cards já usavam — dourado, verde e vermelho — sem alterar
+valores, campos NDB, dimensões ou regras.
+
+Os títulos das colunas Qualidades e Defeitos receberam um par visual: gema
+íntegra violeta e gema rachada vermelha. Os cinco indicadores da economia de
+pontos permanecem sem ícones, conforme decisão visual desta leva.
+
+São cinco PNGs com transparência real e `style="originalSize"`. Cada título
+foi envolvido por um `layout` da mesma altura que o rótulo anterior, portanto
+nenhum card ou lista mudou de tamanho.
+
 ## v0.53.4 — o descanso da bruxa, e os dois percentuais que somam (09/09/2026)
 
 ### A bruxa lia o ganho de duas barras que ela não usa

@@ -1,4 +1,4 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.4
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.5
 
 
 =======================================================================
@@ -100,10 +100,11 @@ disser v0.49.4, o que esta rodando nao e este pacote.
     desenhado (a checagem 35 desconta isso ao medir rotulo).
     Petrichor Simbolos tem 17 KB: so os 67 glifos que a ficha usa.
 
-  imagens/  (161 arquivos)
+  imagens/  (166 arquivos)
     10 icones de aba em 2 estados (ativa / inativa), 7 icones de atributo,
     34 icones dos cards de combate, 5 icones de slots equipados, 4 icones
-    de moedas, a moldura do retrato, o brasao do
+    de moedas, 3 icones de resumo do inventario, 2 icones dos cabecalhos
+    de qualidades e defeitos, a moldura do retrato, o brasao do
     cabecalho e os 30 selos das divindades EM DOIS TAMANHOS:
     selo_<deus>.png com 64x64, para o painel de detalhe do catalogo, e
     selo38_<deus>.png com 38x38, para o cabecalho e para o seletor.
