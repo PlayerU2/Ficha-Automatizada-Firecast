@@ -14336,7 +14336,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.5" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.6" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -17390,12 +17390,18 @@
                     <layout align="top" height="86" margins="{bottom=8}">
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
-                            <label align="top" height="24" text="DIVINDADES" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Com quantas divindades você tem favores registrados."/>
+                            <layout align="top" height="24" margins="{top=4}">
+                                <image align="none" left="4" top="1" width="22" height="22" style="originalSize" src="imagens/favor_divindades.png" hitTest="false"/>
+                                <label align="client" text="DIVINDADES" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="Com quantas divindades você tem favores registrados."/>
+                            </layout>
                             <label name="abaFav_lblDivindades" align="client" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" margins="{bottom=6}" hitTest="false"/>
                         </rectangle>
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#8A63C9" hitTest="false"/>
-                            <label align="top" height="24" text="FAVORES" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Soma de todos os favores, de todas as divindades."/>
+                            <layout align="top" height="24" margins="{top=4}">
+                                <image align="none" left="4" top="1" width="22" height="22" style="originalSize" src="imagens/favor_favores.png" hitTest="false"/>
+                                <label align="client" text="FAVORES" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="Soma de todos os favores, de todas as divindades."/>
+                            </layout>
                             <label name="abaFav_lblTotal" align="client" text="0" fontFamily="Cinzel" fontColor="#8A63C9" fontSize="26" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" margins="{bottom=6}" hitTest="false"/>
                         </rectangle>
                         <!-- Card CLICAVEL (v0.35.4): abre a lista de quem
@@ -17405,13 +17411,19 @@
                              quando a pessoa acerta a borda. -->
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#4E8C74" strokeSize="1" xradius="6" yradius="6" margins="{right=10}" cursor="handPoint" hint="Clique para ver QUAIS divindades abençoaram este personagem — e, se você for o mestre, retirar uma bênção por ali.">
                             <rectangle align="top" height="3" color="#4E8C74" hitTest="false"/>
-                            <label align="top" height="24" text="BÊNÇÃOS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hitTest="false"/>
+                            <layout align="top" height="24" margins="{top=4}" hitTest="false">
+                                <image align="none" left="4" top="1" width="22" height="22" style="originalSize" src="imagens/favor_bencaos.png" hitTest="false"/>
+                                <label align="client" text="BÊNÇÃOS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                            </layout>
                             <label name="abaFav_lblBencaos" align="client" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="26" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" margins="{bottom=6}" hitTest="false"/>
                             <event name="onClick"><![CDATA[abrirPopupBencaos();]]></event>
                         </rectangle>
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#7FA8B8" hitTest="false"/>
-                            <label align="top" height="24" text="ASPECTO DIVINO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hint="Sua divindade de origem — pai, mãe ou legado."/>
+                            <layout align="top" height="24" margins="{top=4}">
+                                <image align="none" left="4" top="1" width="22" height="22" style="originalSize" src="imagens/favor_aspecto.png" hitTest="false"/>
+                                <label align="client" text="ASPECTO DIVINO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="Sua divindade de origem — pai, mãe ou legado."/>
+                            </layout>
                             <label name="abaFav_lblAspecto" align="client" text="0" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="26" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" margins="{bottom=6}" hitTest="false"/>
                         </rectangle>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6">

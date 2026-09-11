@@ -1,3 +1,17 @@
+## v0.53.6 — iconografia de Favores Divinos (11/09/2026)
+
+Os quatro cards-resumo da aba Favores Divinos agora exibem símbolos próprios
+de 22×22: templo para Divindades, mão com centelha para Favores, bênção
+descendente para Bênçãos e máscara para Aspecto Divino. Cada ícone segue a
+cor semântica que o card já usava: dourado, violeta, verde e azul.
+
+Os patamares de 1, 2 e 3 Favores e a Hierarquia Divina permanecem
+tipográficos; repetir símbolos nesses blocos reduziria a hierarquia visual.
+Nenhuma regra, valor, campo NDB, ação ou dimensão de card foi alterada.
+
+São quatro PNGs com transparência real e `style="originalSize"`. Os títulos
+foram envolvidos por `layout` da mesma altura dos rótulos anteriores.
+
 ## v0.53.5 — iconografia de inventário, qualidades e defeitos (11/09/2026)
 
 Os três cards de resumo do Inventário agora exibem ícones próprios de 22×22:
