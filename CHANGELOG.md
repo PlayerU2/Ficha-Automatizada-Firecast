@@ -1,3 +1,25 @@
+## v0.53.9 — hierarquia visual da aba Perfil (12/09/2026)
+
+A aba Perfil inicia a revisão das cinco primeiras seções após a aprovação do
+construtor de habilidades. Identificação conserva a ordem e o retrato já
+aprovados. Raça e Classe ganham fundo de resultado, texto secundário e selo
+`ABA 04`, tornando visível que são preenchidas pelo catálogo e não por
+digitação nesta tela. Os dois campos continuam permanentemente travados.
+
+Progressão foi dividida em dois cards na mesma linha. Nível e Experiência
+formam o registro editável com barra dourada; XP do próximo nível, Rank,
+Proficiência, Limite de Atributo e eventual aviso formam o resumo calculado
+com barra azul. Os campos, eventos e cálculos existentes foram preservados.
+
+Aparência e Personalidade agora dividem uma linha de 132 pixels, economizando
+cerca de 100 pixels verticais. No cenário mínimo de 1366×768, o primeiro
+editor reserva 600 pixels e o segundo recebe 720 pixels. Progressão deixa
+523 pixels livres para o aviso de nível depois dos indicadores fixos.
+
+Validação local: XML de todos os LFM; sintaxe dos 1.845 blocos Lua; campos,
+tipos e handlers da aba idênticos à v0.53.8; 14 verificações específicas de
+hierarquia, travas e dimensões. A conferência visual permanece no Firecast.
+
 ## v0.53.8 — construtor em página única e ativação fixa (12/09/2026)
 
 O teste visual da v0.53.7 aprovou os cards maiores, mas mostrou que dividir o

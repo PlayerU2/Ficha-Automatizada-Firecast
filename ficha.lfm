@@ -14337,7 +14337,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.8" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.9" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14547,11 +14547,17 @@
                             <layout align="top" height="58" margins="{bottom=24}">
                                 <layout align="right" width="400" margins="{left=14}">
                                     <label align="top" height="17" text="CLASSE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
-                                    <rectangle align="top" height="32" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><edit name="edClasse" align="client" transparent="true" margins="{left=8,right=8}" field="classe" type="text" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" hint="Preenchido pela escolha de classe e subclasse na aba 04 · RAÇA &amp; CLASSE. Não se digita aqui."/></rectangle>
+                                    <rectangle align="top" height="32" color="#11171B" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
+                                        <label align="right" width="64" text="ABA 04" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                        <edit name="edClasse" align="client" transparent="true" margins="{left=8,right=8}" field="classe" type="text" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" hint="Preenchido pela escolha de classe e subclasse na aba 04 · RAÇA &amp; CLASSE. Não se digita aqui."/>
+                                    </rectangle>
                                 </layout>
                                 <layout align="client">
                                     <label align="top" height="17" text="RAÇA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
-                                    <rectangle align="top" height="32" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><edit name="edRaca" align="client" transparent="true" margins="{left=8,right=8}" field="raca" type="text" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" hint="Preenchido pelo catálogo de raças na aba 04 · RAÇA &amp; CLASSE (mestiçagem inclusive). Não se digita aqui: é a chave que liga as concessões raciais."/></rectangle>
+                                    <rectangle align="top" height="32" color="#11171B" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
+                                        <label align="right" width="64" text="ABA 04" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                        <edit name="edRaca" align="client" transparent="true" margins="{left=8,right=8}" field="raca" type="text" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" hint="Preenchido pelo catálogo de raças na aba 04 · RAÇA &amp; CLASSE (mestiçagem inclusive). Não se digita aqui: é a chave que liga as concessões raciais."/>
+                                    </rectangle>
                                 </layout>
                             </layout>
 
@@ -14597,54 +14603,55 @@
                     </layout>
                     <rectangle align="top" height="1" color="#4E8C74" margins="{bottom=12}" hitTest="false"/>
 
-                    <rectangle align="top" height="92" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{bottom=10}" hitTest="false">
-                        <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
-                        <layout align="client" margins="{left=14,right=14,top=10,bottom=10}">
-                            <layout align="left" width="110" margins="{right=12}">
-                                <label align="top" height="17" text="NÍVEL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
-                                <rectangle align="top" height="36" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><edit name="edNivel" align="client" transparent="true" margins="{left=8,right=8}" field="nivel" type="number" fontColor="#C9A24B" fontFamily="Cinzel" fontSize="20" horzTextAlign="center" hint="De 1 a 20. Sobe sozinho pela experiência; o mestre pode ajustar na mão.">
-                                    <event name="onChange"><![CDATA[recalcularTudo();]]></event>
-                                </edit></rectangle>
+                    <layout align="top" height="92" margins="{bottom=10}">
+                        <!-- Registro editável à esquerda; resultados calculados
+                             formam um segundo card, para o papel de cada valor
+                             aparecer antes mesmo de o jogador tentar clicar. -->
+                        <rectangle align="left" width="306" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=14}">
+                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <layout align="client" margins="{left=12,right=12,top=10,bottom=10}">
+                                <layout align="left" width="100" margins="{right=12}">
+                                    <label align="top" height="17" text="NÍVEL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
+                                    <rectangle align="top" height="36" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><edit name="edNivel" align="client" transparent="true" margins="{left=8,right=8}" field="nivel" type="number" fontColor="#C9A24B" fontFamily="Cinzel" fontSize="20" horzTextAlign="center" hint="De 1 a 20. Sobe sozinho pela experiência; o mestre pode ajustar na mão.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit></rectangle>
+                                </layout>
+                                <layout align="client">
+                                    <label align="top" height="17" text="EXPERIÊNCIA (XP)" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
+                                    <rectangle align="top" height="36" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><edit name="edExperiencia" align="client" transparent="true" margins="{left=8,right=8}" field="experiencia" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="16" horzTextAlign="center" hint="Ao atingir o XP do próximo nível, o nível sobe sozinho.">
+                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                    </edit></rectangle>
+                                </layout>
                             </layout>
-                            <layout align="left" width="170" margins="{right=12}">
-                                <label align="top" height="17" text="EXPERIÊNCIA (XP)" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
-                                <rectangle align="top" height="36" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><edit name="edExperiencia" align="client" transparent="true" margins="{left=8,right=8}" field="experiencia" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="16" horzTextAlign="center" hint="Ao atingir o XP do próximo nível, o nível sobe sozinho.">
-                                    <event name="onChange"><![CDATA[recalcularTudo();]]></event>
-                                </edit></rectangle>
+                        </rectangle>
+
+                        <rectangle align="client" color="#10171B" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" hitTest="false">
+                            <rectangle align="left" width="3" color="#7FA8B8" hitTest="false"/>
+                            <layout align="client" margins="{left=12,right=12,top=10,bottom=10}">
+                                <layout align="left" width="180" margins="{right=12}">
+                                    <label align="top" height="17" text="XP P/ PRÓX. NÍVEL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center"/>
+                                    <label name="lblXpProximoValor" align="top" height="22" text="-" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="15" fontStyle="bold" horzTextAlign="center"/>
+                                    <label name="lblXpFaltaValor" align="top" height="14" text="" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center"/>
+                                </layout>
+                                <rectangle align="left" width="1" color="#22323A" margins="{right=12,top=4,bottom=4}" hitTest="false"/>
+                                <layout align="left" width="80" margins="{right=12}">
+                                    <label align="top" height="17" text="RANK" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center"/>
+                                    <label name="lblRankValor" align="top" height="36" text="E" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center"/>
+                                </layout>
+                                <layout align="left" width="80" margins="{right=12}">
+                                    <label align="top" height="17" text="PROF." fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center"/>
+                                    <label name="lblProfValor" align="top" height="36" text="+2" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" horzTextAlign="center"/>
+                                </layout>
+                                <layout align="left" width="90" margins="{right=12}">
+                                    <label align="top" height="17" text="LIM. ATRIB." fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center"/>
+                                    <label name="lblLimiteAtributoValor" align="top" height="36" text="4" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" horzTextAlign="center"/>
+                                </layout>
+                                <!-- Aviso de nível só ocupa o espaço restante
+                                     quando há algo que realmente precisa explicar. -->
+                                <label name="lblAvisoNivel" align="client" text="" fontFamily="EB Garamond" fontColor="#E2AEB6" fontSize="12" wordWrap="true" vertTextAlign="center" hitTest="false"/>
                             </layout>
-                            <layout align="left" width="180" margins="{right=12}">
-                                <label align="top" height="17" text="XP P/ PRÓX. NÍVEL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center"/>
-                                <label name="lblXpProximoValor" align="top" height="22" text="-" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="15" fontStyle="bold" horzTextAlign="center"/>
-                                <label name="lblXpFaltaValor" align="top" height="14" text="" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center"/>
-                            </layout>
-                            <layout align="left" width="80" margins="{right=12}">
-                                <label align="top" height="17" text="RANK" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center"/>
-                                <label name="lblRankValor" align="top" height="36" text="E" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="26" fontStyle="bold" horzTextAlign="center"/>
-                            </layout>
-                            <layout align="left" width="80" margins="{right=12}">
-                                <label align="top" height="17" text="PROF." fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center"/>
-                                <label name="lblProfValor" align="top" height="36" text="+2" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" horzTextAlign="center"/>
-                            </layout>
-                            <layout align="left" width="90" margins="{right=12}">
-                                <label align="top" height="17" text="LIM. ATRIB." fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center"/>
-                                <label name="lblLimiteAtributoValor" align="top" height="36" text="4" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" horzTextAlign="center"/>
-                            </layout>
-                            <!-- Aviso de nivel corrigido (v0.42.1): quando o valor
-                                 digitado sai de 1..20, recalcularTudo() grava o
-                                 valor limitado no campo e explica aqui. Sem isto
-                                 o "201" ficava no campo e nas contas. -->
-                            <label name="lblAvisoNivel" align="client" text="" fontFamily="EB Garamond" fontColor="#E2AEB6" fontSize="12" wordWrap="true" vertTextAlign="center" hitTest="false"/>
-                            <!-- "LIM. AÇÕES" e "LIM. AÇÕES BÔNUS" sairam na
-                                 v0.32.1. Eram campos MANUAIS de antes de
-                                 existirem os cards de Ações padrão / bônus /
-                                 reação na aba de Combate. Depois que os cards
-                                 passaram a calcular sozinhos, os dois viraram
-                                 uma segunda fonte de verdade para o mesmo
-                                 numero — e mostravam "1" e "0" enquanto os
-                                 cards mostravam 1, 2 e 2. Duas fontes divergem,
-                                 sempre. -->
-                        </layout>
-                    </rectangle>
+                        </rectangle>
+                    </layout>
 
                     <layout align="top" height="30" margins="{top=6,bottom=2}">
                         <label align="left" width="24" text="&#9670;" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" vertTextAlign="center" horzTextAlign="center"/>
@@ -14652,11 +14659,18 @@
                     </layout>
                     <rectangle align="top" height="1" color="#7FA8B8" margins="{bottom=12}" hitTest="false"/>
 
-                    <label align="top" height="17" text="APARÊNCIA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
-                    <rectangle align="top" height="92" margins="{bottom=12}" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><textEditor align="client" transparent="true" margins="{left=8,right=8,top=6,bottom=6}" field="aparencia" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14"/></rectangle>
-
-                    <label align="top" height="17" text="PERSONALIDADE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
-                    <rectangle align="top" height="92" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><textEditor align="client" transparent="true" margins="{left=8,right=8,top=6,bottom=6}" field="personalidade" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14"/></rectangle>
+                    <!-- Em 1366×768 as duas áreas ainda conservam mais de
+                         600px cada e deixam de consumir duas dobras da aba. -->
+                    <layout align="top" height="132">
+                        <layout align="left" width="600" margins="{right=14}">
+                            <label align="top" height="20" text="APARÊNCIA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
+                            <rectangle align="client" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><textEditor align="client" transparent="true" margins="{left=10,right=10,top=8,bottom=8}" field="aparencia" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14"/></rectangle>
+                        </layout>
+                        <layout align="client">
+                            <label align="top" height="20" text="PERSONALIDADE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
+                            <rectangle align="client" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><textEditor align="client" transparent="true" margins="{left=10,right=10,top=8,bottom=8}" field="personalidade" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14"/></rectangle>
+                        </layout>
+                    </layout>
                 </scrollBox>
             </layout>
 

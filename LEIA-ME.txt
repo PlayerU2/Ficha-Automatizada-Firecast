@@ -1,12 +1,11 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.8
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.9
 
-O construtor voltou a ser uma pagina unica, organizada em Configuracao,
-Descricao & Efeito e Arte dentro da mesma rolagem vertical. Nome e rodape
-ficam sempre visiveis. Nos cards, o botao ATIVA/DESATIVADA ocupa um slot
-fixo e nao deve mais mudar de posicao durante o clique.
-Conferir no Firecast em 1366x768: percorrer todo o popup, editar e salvar
-uma habilidade progressiva, abrir a arte e alternar ATIVA/DESATIVADA.
-Validacao local: XML, sintaxe Lua, campos/handlers e dimensoes minimas.
+Revisao visual da aba Perfil. Raca e Classe agora aparecem como dados
+derivados da aba 04. Progressao separa Nivel/XP dos resultados calculados.
+Aparencia e Personalidade dividem a mesma linha para reduzir a rolagem.
+Conferir no Firecast em 1366x768: identificacao inteira, card de progressao,
+largura dos dois editores e escrita longa em Aparencia e Personalidade.
+Validacao local: XML, sintaxe Lua, campos, handlers e dimensoes minimas.
 Pendente no Windows: verificar, testes, rdk l, rdk i e conferencia visual.
 
 
