@@ -1,3 +1,32 @@
+## v0.53.7 — construtor e cards de habilidades (12/09/2026)
+
+Primeira etapa da revisão visual aprovada para as abas 1 a 5. O construtor
+agora tem três páginas: Configuração, Descrição & Efeito e Arte. Nome,
+custo, avisos e ações permanecem fora da rolagem. As páginas compartilham
+os controles existentes, sem recriar o formulário nem recarregar o rascunho
+na troca. Uma nova abertura começa em Configuração.
+
+As tags escolhidas ficam acima do seletor e da configuração. Descrição e
+efeito ganham campos maiores e largura integral; efeitos por rank continuam
+na mesma página. A arte ocupa sua própria área e mantém exibição proporcional
+sem recorte. A ordem de docking do rodapé foi corrigida: salvar e cancelar
+reservam espaço antes do custo central.
+
+Os cards de habilidades passam de 64 para 116 pixels, com uma faixa inferior
+para origem, custo, ativação e remoção. Nome, resumo e tags usam a largura
+acima dessa faixa. O estado da forma bestial recebe mais espaço. Template,
+recordList e cálculo de altura da lista foram atualizados juntos.
+
+Nenhuma regra, campo NDB ou handler existente de salvar, editar, ativar e
+remover foi alterado. As outras abas aguardam aprovação visual desta etapa.
+
+Validação local contra 30a545b: 280 verificações estruturais; sintaxe de
+1.848 blocos Lua da ficha e 4 do template; 60 trocas de página com controles
+simulados e um índice inválido. Scripts de conferência ficam fora da pasta
+do plugin, em analise_visual/verificar_habilidades_v0537.py e .lua.
+O SDK e o ferramental privado não estão disponíveis neste ambiente:
+verificar, testes, rdk l, rdk i e inspeção visual no Firecast seguem pendentes.
+
 ## v0.53.6 — iconografia de Favores Divinos (11/09/2026)
 
 Os quatro cards-resumo da aba Favores Divinos agora exibem símbolos próprios

@@ -1,4 +1,12 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.6
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.7
+
+Esta etapa reorganiza o construtor de habilidades em Configuracao,
+Descricao & Efeito e Arte. Nome e rodape ficam visiveis entre paginas.
+Os cards da lista separam nome/resumo de origem, custo e ativacao.
+Conferir no Firecast: trocar de pagina com texto ainda nao salvo; salvar
+e reabrir; consultar habilidade progressiva; conferir arte sem recorte.
+Validacao local: XML, sintaxe Lua e navegacao com controles simulados.
+Pendente no Windows: verificar, testes, rdk l, rdk i e conferencia visual.
 
 
 =======================================================================

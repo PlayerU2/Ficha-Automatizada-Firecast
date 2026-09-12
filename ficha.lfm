@@ -6976,6 +6976,31 @@
         habEmEdicao = nil          -- no NDB da habilidade sendo editada
         habRascunho = nil          -- estado do formulario
 
+        -- Apenas navegação visual. Não recarrega o formulário nem escreve no
+        -- NDB: texto ainda não salvo e imagem do rascunho sobrevivem à troca.
+        -- As páginas são client, nunca filhos top ocultados/reordenados.
+        function selecionarPaginaHab(indice)
+            if indice ~= 1 and indice ~= 2 and indice ~= 3 then return end
+            for i = 1, 3 do
+                local ativa = (i == indice)
+                local pagina = self["popHab_pagina" .. i]
+                if pagina ~= nil then
+                    pagina:setVisible(ativa)
+                    pagina:setEnabled(ativa)
+                end
+                local botao = self["popHab_aba" .. i]
+                if botao ~= nil then
+                    botao:setColor(ativa and "#1A2026" or "#0D1317")
+                    botao:setStrokeColor(ativa and "#C9A24B" or "#22323A")
+                    botao:setStrokeSize(ativa and 2 or 1)
+                end
+                local rotulo = self["popHab_lblAba" .. i]
+                if rotulo ~= nil then
+                    rotulo:setFontColor(ativa and "#C9A24B" or "#A8B5BA")
+                end
+            end
+        end
+
         function novoRascunhoHab(tipo)
             return {
                 tipo = tipo or "poder",
@@ -7043,6 +7068,7 @@
 
             aplicarTabelaDoRank()
             atualizarConstrutorHab()
+            selecionarPaginaHab(1)
             abrirPopupAjustado(self.popHabilidade, 1020, 700)
         end
 
@@ -7089,6 +7115,7 @@
             sheet.imagemHabEdicao = habRascunho.imagem
             habRascunho.tags = expandirTags(no.tags)
             atualizarConstrutorHab()
+            selecionarPaginaHab(1)
             abrirPopupAjustado(self.popHabilidade, 1020, 700)
         end
 
@@ -7513,8 +7540,8 @@
         -- ===== Altura da lista de habilidades =====
         -- TEM DE SER A MESMA ALTURA DE LINHA DO recordList, e nao era.
         --
-        -- O XML declara itemHeight="64" e o frmItemHabilidade tem
-        -- height="64"; aqui estava 56. Faltavam 8 pixels POR HABILIDADE, e
+        -- Na correção original, XML e template tinham 64, mas aqui estava
+        -- 56. Faltavam 8 pixels POR HABILIDADE, e
         -- o recordList resolve a falta do jeito dele: abre uma barra de
         -- rolagem PROPRIA, dentro da aba que ja rola.
         --
@@ -7525,7 +7552,8 @@
         --
         -- A lista cresce e quem rola e a ABA, que e o mesmo acerto que as
         -- pericias e as caracteristicas raciais ja tinham.
-        local ALTURA_ITEM_HABILIDADE = 64
+        -- v0.53.7: card em duas faixas, 116 no template, XML e nesta conta.
+        local ALTURA_ITEM_HABILIDADE = 116
 
         function ajustarAlturaListaHabilidades()
             if self.listaHabilidades == nil then return end
@@ -14336,7 +14364,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.6" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.7" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -17372,7 +17400,7 @@
                         </rectangle>
                     </layout>
 
-                    <recordList name="listaHabilidades" align="top" height="4" field="listaHabilidades" templateForm="frmItemHabilidade" itemHeight="64" selectable="false"/>
+                    <recordList name="listaHabilidades" align="top" height="4" field="listaHabilidades" templateForm="frmItemHabilidade" itemHeight="116" selectable="false"/>
 
                 </scrollBox>
             </layout>
@@ -24536,307 +24564,356 @@
                         <label align="client" text="CANCELAR" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                         <event name="onClick"><![CDATA[fecharConstrutorHabilidade();]]></event>
                     </rectangle>
-                    <label name="popHab_lblCusto" align="client" text="" fontFamily="EB Garamond" fontColor="#C9A24B" fontSize="12" vertTextAlign="center" margins="{left=6,right=6}" hitTest="false"/>
                     <rectangle align="right" width="220" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Salvar esta habilidade na ficha">
                         <label align="client" text="SALVAR HABILIDADE" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                         <event name="onClick"><![CDATA[salvarHabilidade();]]></event>
                     </rectangle>
+                    <label name="popHab_lblCusto" align="client" text="" fontFamily="EB Garamond" fontColor="#C9A24B" fontSize="12" vertTextAlign="center" margins="{left=6,right=6}" hitTest="false"/>
                 </layout>
                 <label name="popHab_lblAviso" align="bottom" height="18" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
 
-                <layout align="client">
+                <layout align="top" height="36" margins="{bottom=10}">
+                    <label align="left" width="80" text="NOME" fontFamily="Marcellus SC" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" hitTest="false"/>
+                    <rectangle align="client" color="#0D1317" strokeColor="#34454E" strokeSize="1" xradius="4" yradius="4">
+                        <edit name="popHab_edNome" align="client" text="" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="14" transparent="true" margins="{left=10,right=10}" hint="Nome da habilidade"/>
+                    </rectangle>
+                </layout>
+                <!-- Navegação local: os controles permanecem vivos entre páginas. -->
+                <layout align="top" height="36" margins="{bottom=10}">
+                    <rectangle name="popHab_aba1" align="left" width="180" color="#1A2026" strokeColor="#C9A24B" strokeSize="1" xradius="4" yradius="4" margins="{right=8}" cursor="handPoint">
+                        <label name="popHab_lblAba1" align="client" text="01  CONFIGURAÇÃO" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                        <event name="onClick"><![CDATA[selecionarPaginaHab(1);]]></event>
+                    </rectangle>
+                    <rectangle name="popHab_aba2" align="left" width="240" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="4" yradius="4" margins="{right=8}" cursor="handPoint">
+                        <label name="popHab_lblAba2" align="client" text="02  DESCRIÇÃO &amp; EFEITO" fontFamily="Marcellus SC" fontColor="#A8B5BA" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                        <event name="onClick"><![CDATA[selecionarPaginaHab(2);]]></event>
+                    </rectangle>
+                    <rectangle name="popHab_aba3" align="left" width="180" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="4" yradius="4" margins="{right=8}" cursor="handPoint">
+                        <label name="popHab_lblAba3" align="client" text="03  ARTE" fontFamily="Marcellus SC" fontColor="#A8B5BA" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                        <event name="onClick"><![CDATA[selecionarPaginaHab(3);]]></event>
+                    </rectangle>
+                </layout>
+                <layout name="popHab_pagina1" align="client">
+                            <label align="top" height="14" text="TAGS ESCOLHIDAS  (clique para remover uma)" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
+                            <layout align="top" height="30" margins="{bottom=4}">
+                                <layout name="popHab_wrapChip1" align="left" width="0">
+                                    <rectangle name="popHab_chip1" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
+                                        <label name="popHab_lblChip1" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                                        <event name="onClick"><![CDATA[removerTagPorChip(1);]]></event>
+                                    </rectangle>
+                                </layout>
+                                <layout name="popHab_wrapChip2" align="left" width="0">
+                                    <rectangle name="popHab_chip2" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
+                                        <label name="popHab_lblChip2" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                                        <event name="onClick"><![CDATA[removerTagPorChip(2);]]></event>
+                                    </rectangle>
+                                </layout>
+                                <layout name="popHab_wrapChip3" align="left" width="0">
+                                    <rectangle name="popHab_chip3" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
+                                        <label name="popHab_lblChip3" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                                        <event name="onClick"><![CDATA[removerTagPorChip(3);]]></event>
+                                    </rectangle>
+                                </layout>
+                                <layout name="popHab_wrapChip4" align="left" width="0">
+                                    <rectangle name="popHab_chip4" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
+                                        <label name="popHab_lblChip4" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                                        <event name="onClick"><![CDATA[removerTagPorChip(4);]]></event>
+                                    </rectangle>
+                                </layout>
+                                <layout name="popHab_wrapChip5" align="left" width="0">
+                                    <rectangle name="popHab_chip5" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
+                                        <label name="popHab_lblChip5" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                                        <event name="onClick"><![CDATA[removerTagPorChip(5);]]></event>
+                                    </rectangle>
+                                </layout>
+                                <label name="popHab_lblTagsEscolhidas" align="client" text="" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                            </layout>
+
                     <!-- ESQUERDA: tags -->
-                    <rectangle align="left" width="230" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
+                    <rectangle align="left" width="190" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
                         <label name="popHab_lblTagsLimite" align="top" height="22" text="TAGS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hitTest="false"/>
                         <scrollBox align="client" margins="{left=8,right=8,top=2,bottom=8}">
                             <label align="top" height="18" text="COMUNS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=8,bottom=2}" hitTest="false"/>
-                            <rectangle name="popHab_tagOfensivo" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ofensivo]">
-                                <label name="popHab_lblTagOfensivo" align="client" text="Ofensivo" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagOfensivo" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ofensivo]">
+                                <label name="popHab_lblTagOfensivo" align="client" text="Ofensivo" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Ofensivo");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagDefensivo" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Defensivo]">
-                                <label name="popHab_lblTagDefensivo" align="client" text="Defensivo" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagDefensivo" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Defensivo]">
+                                <label name="popHab_lblTagDefensivo" align="client" text="Defensivo" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Defensivo");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagArea" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Área]">
-                                <label name="popHab_lblTagArea" align="client" text="Área" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagArea" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Área]">
+                                <label name="popHab_lblTagArea" align="client" text="Área" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Área");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagTerreno" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Terreno]">
-                                <label name="popHab_lblTagTerreno" align="client" text="Terreno" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagTerreno" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Terreno]">
+                                <label name="popHab_lblTagTerreno" align="client" text="Terreno" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Terreno");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagInvocacao" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Invocação]">
-                                <label name="popHab_lblTagInvocacao" align="client" text="Invocação" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagInvocacao" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Invocação]">
+                                <label name="popHab_lblTagInvocacao" align="client" text="Invocação" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Invocação");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagControle" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Controle]">
-                                <label name="popHab_lblTagControle" align="client" text="Controle" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagControle" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Controle]">
+                                <label name="popHab_lblTagControle" align="client" text="Controle" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Controle");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagCura" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Cura]">
-                                <label name="popHab_lblTagCura" align="client" text="Cura" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagCura" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Cura]">
+                                <label name="popHab_lblTagCura" align="client" text="Cura" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Cura");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagMovimentacao" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Movimentação]">
-                                <label name="popHab_lblTagMovimentacao" align="client" text="Movimentação" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagMovimentacao" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Movimentação]">
+                                <label name="popHab_lblTagMovimentacao" align="client" text="Movimentação" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Movimentação");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagFortalecimento" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Fortalecimento]">
-                                <label name="popHab_lblTagFortalecimento" align="client" text="Fortalecimento" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagFortalecimento" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Fortalecimento]">
+                                <label name="popHab_lblTagFortalecimento" align="client" text="Fortalecimento" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Fortalecimento");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagEnfraquecimento" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Enfraquecimento]">
-                                <label name="popHab_lblTagEnfraquecimento" align="client" text="Enfraquecimento" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagEnfraquecimento" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Enfraquecimento]">
+                                <label name="popHab_lblTagEnfraquecimento" align="client" text="Enfraquecimento" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Enfraquecimento");]]></event>
                             </rectangle>
                             <label align="top" height="18" text="ELEMENTAIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=8,bottom=2}" hitTest="false"/>
-                            <rectangle name="popHab_tagNeutro" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Neutro]">
-                                <label name="popHab_lblTagNeutro" align="client" text="Neutro" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagNeutro" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Neutro]">
+                                <label name="popHab_lblTagNeutro" align="client" text="Neutro" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Neutro");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagFogo" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Fogo]">
-                                <label name="popHab_lblTagFogo" align="client" text="Fogo" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagFogo" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Fogo]">
+                                <label name="popHab_lblTagFogo" align="client" text="Fogo" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Fogo");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagTerra" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Terra]">
-                                <label name="popHab_lblTagTerra" align="client" text="Terra" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagTerra" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Terra]">
+                                <label name="popHab_lblTagTerra" align="client" text="Terra" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Terra");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagEletricidade" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Eletricidade]">
-                                <label name="popHab_lblTagEletricidade" align="client" text="Eletricidade" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagEletricidade" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Eletricidade]">
+                                <label name="popHab_lblTagEletricidade" align="client" text="Eletricidade" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Eletricidade");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagPlanta" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Planta]">
-                                <label name="popHab_lblTagPlanta" align="client" text="Planta" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagPlanta" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Planta]">
+                                <label name="popHab_lblTagPlanta" align="client" text="Planta" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Planta");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagVento" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Vento]">
-                                <label name="popHab_lblTagVento" align="client" text="Vento" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagVento" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Vento]">
+                                <label name="popHab_lblTagVento" align="client" text="Vento" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Vento");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagGelo" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Gelo]">
-                                <label name="popHab_lblTagGelo" align="client" text="Gelo" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagGelo" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Gelo]">
+                                <label name="popHab_lblTagGelo" align="client" text="Gelo" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Gelo");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagAgua" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Água]">
-                                <label name="popHab_lblTagAgua" align="client" text="Água" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagAgua" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Água]">
+                                <label name="popHab_lblTagAgua" align="client" text="Água" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Água");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagMaldicao" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Maldição]">
-                                <label name="popHab_lblTagMaldicao" align="client" text="Maldição" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagMaldicao" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Maldição]">
+                                <label name="popHab_lblTagMaldicao" align="client" text="Maldição" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Maldição");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagNoite" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Noite]">
-                                <label name="popHab_lblTagNoite" align="client" text="Noite" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagNoite" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Noite]">
+                                <label name="popHab_lblTagNoite" align="client" text="Noite" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Noite");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagVeneno" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Veneno]">
-                                <label name="popHab_lblTagVeneno" align="client" text="Veneno" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagVeneno" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Veneno]">
+                                <label name="popHab_lblTagVeneno" align="client" text="Veneno" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Veneno");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagMental" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Mental]">
-                                <label name="popHab_lblTagMental" align="client" text="Mental" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagMental" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Mental]">
+                                <label name="popHab_lblTagMental" align="client" text="Mental" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Mental");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagSentimento" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sentimento]">
-                                <label name="popHab_lblTagSentimento" align="client" text="Sentimento" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagSentimento" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sentimento]">
+                                <label name="popHab_lblTagSentimento" align="client" text="Sentimento" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Sentimento");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagMetal" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Metal]">
-                                <label name="popHab_lblTagMetal" align="client" text="Metal" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagMetal" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Metal]">
+                                <label name="popHab_lblTagMetal" align="client" text="Metal" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Metal");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagDia" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Dia]">
-                                <label name="popHab_lblTagDia" align="client" text="Dia" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagDia" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Dia]">
+                                <label name="popHab_lblTagDia" align="client" text="Dia" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Dia");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagSagrado" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sagrado]">
-                                <label name="popHab_lblTagSagrado" align="client" text="Sagrado" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagSagrado" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sagrado]">
+                                <label name="popHab_lblTagSagrado" align="client" text="Sagrado" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Sagrado");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagSangue" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sangue]">
-                                <label name="popHab_lblTagSangue" align="client" text="Sangue" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagSangue" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sangue]">
+                                <label name="popHab_lblTagSangue" align="client" text="Sangue" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Sangue");]]></event>
                             </rectangle>
                             <label align="top" height="18" text="CLASSES" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=8,bottom=2}" hitTest="false"/>
-                            <rectangle name="popHab_tagArcanista" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Arcanista]">
-                                <label name="popHab_lblTagArcanista" align="client" text="Arcanista" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagArcanista" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Arcanista]">
+                                <label name="popHab_lblTagArcanista" align="client" text="Arcanista" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Arcanista");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagArtifice" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Artíficie]">
-                                <label name="popHab_lblTagArtifice" align="client" text="Artíficie" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagArtifice" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Artíficie]">
+                                <label name="popHab_lblTagArtifice" align="client" text="Artíficie" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Artíficie");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagArtista" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Artista]">
-                                <label name="popHab_lblTagArtista" align="client" text="Artista" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagArtista" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Artista]">
+                                <label name="popHab_lblTagArtista" align="client" text="Artista" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Artista");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagAtirador" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Atirador]">
-                                <label name="popHab_lblTagAtirador" align="client" text="Atirador" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagAtirador" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Atirador]">
+                                <label name="popHab_lblTagAtirador" align="client" text="Atirador" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Atirador");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagBoticario" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Boticário]">
-                                <label name="popHab_lblTagBoticario" align="client" text="Boticário" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagBoticario" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Boticário]">
+                                <label name="popHab_lblTagBoticario" align="client" text="Boticário" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Boticário");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagDevoto" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Devoto]">
-                                <label name="popHab_lblTagDevoto" align="client" text="Devoto" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagDevoto" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Devoto]">
+                                <label name="popHab_lblTagDevoto" align="client" text="Devoto" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Devoto");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagDomador" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Domador]">
-                                <label name="popHab_lblTagDomador" align="client" text="Domador" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagDomador" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Domador]">
+                                <label name="popHab_lblTagDomador" align="client" text="Domador" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Domador");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagDuelista" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Duelista]">
-                                <label name="popHab_lblTagDuelista" align="client" text="Duelista" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagDuelista" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Duelista]">
+                                <label name="popHab_lblTagDuelista" align="client" text="Duelista" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Duelista");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagEspadachim" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Espadachim]">
-                                <label name="popHab_lblTagEspadachim" align="client" text="Espadachim" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagEspadachim" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Espadachim]">
+                                <label name="popHab_lblTagEspadachim" align="client" text="Espadachim" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Espadachim");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagGuerreiro" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Guerreiro]">
-                                <label name="popHab_lblTagGuerreiro" align="client" text="Guerreiro" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagGuerreiro" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Guerreiro]">
+                                <label name="popHab_lblTagGuerreiro" align="client" text="Guerreiro" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Guerreiro");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagLadino" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ladino]">
-                                <label name="popHab_lblTagLadino" align="client" text="Ladino" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagLadino" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ladino]">
+                                <label name="popHab_lblTagLadino" align="client" text="Ladino" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Ladino");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagSenescal" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Senescal]">
-                                <label name="popHab_lblTagSenescal" align="client" text="Senescal" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagSenescal" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Senescal]">
+                                <label name="popHab_lblTagSenescal" align="client" text="Senescal" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Senescal");]]></event>
                             </rectangle>
                             <label align="top" height="18" text="RACIAIS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=8,bottom=2}" hitTest="false"/>
-                            <rectangle name="popHab_tagAarakocra" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Aarakocra]">
-                                <label name="popHab_lblTagAarakocra" align="client" text="Aarakocra" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagAarakocra" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Aarakocra]">
+                                <label name="popHab_lblTagAarakocra" align="client" text="Aarakocra" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Aarakocra");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagAnao" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Anão]">
-                                <label name="popHab_lblTagAnao" align="client" text="Anão" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagAnao" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Anão]">
+                                <label name="popHab_lblTagAnao" align="client" text="Anão" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Anão");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagBanshee" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Banshee]">
-                                <label name="popHab_lblTagBanshee" align="client" text="Banshee" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagBanshee" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Banshee]">
+                                <label name="popHab_lblTagBanshee" align="client" text="Banshee" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Banshee");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagDragao" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Dragão]">
-                                <label name="popHab_lblTagDragao" align="client" text="Dragão" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagDragao" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Dragão]">
+                                <label name="popHab_lblTagDragao" align="client" text="Dragão" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Dragão");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagCentauro" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Centauro]">
-                                <label name="popHab_lblTagCentauro" align="client" text="Centauro" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagCentauro" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Centauro]">
+                                <label name="popHab_lblTagCentauro" align="client" text="Centauro" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Centauro");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagCriofenix" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Criofênix]">
-                                <label name="popHab_lblTagCriofenix" align="client" text="Criofênix" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagCriofenix" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Criofênix]">
+                                <label name="popHab_lblTagCriofenix" align="client" text="Criofênix" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Criofênix");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagDrow" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Drow]">
-                                <label name="popHab_lblTagDrow" align="client" text="Drow" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagDrow" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Drow]">
+                                <label name="popHab_lblTagDrow" align="client" text="Drow" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Drow");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagElfo" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Elfo]">
-                                <label name="popHab_lblTagElfo" align="client" text="Elfo" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagElfo" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Elfo]">
+                                <label name="popHab_lblTagElfo" align="client" text="Elfo" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Elfo");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagFada" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Fada]">
-                                <label name="popHab_lblTagFada" align="client" text="Fada" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagFada" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Fada]">
+                                <label name="popHab_lblTagFada" align="client" text="Fada" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Fada");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagFenix" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Fênix]">
-                                <label name="popHab_lblTagFenix" align="client" text="Fênix" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagFenix" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Fênix]">
+                                <label name="popHab_lblTagFenix" align="client" text="Fênix" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Fênix");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagGiff" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Giff]">
-                                <label name="popHab_lblTagGiff" align="client" text="Giff" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagGiff" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Giff]">
+                                <label name="popHab_lblTagGiff" align="client" text="Giff" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Giff");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagGigante" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Gigante]">
-                                <label name="popHab_lblTagGigante" align="client" text="Gigante" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagGigante" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Gigante]">
+                                <label name="popHab_lblTagGigante" align="client" text="Gigante" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Gigante");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagGoblin" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Goblin]">
-                                <label name="popHab_lblTagGoblin" align="client" text="Goblin" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagGoblin" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Goblin]">
+                                <label name="popHab_lblTagGoblin" align="client" text="Goblin" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Goblin");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagGnomo" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Gnomo]">
-                                <label name="popHab_lblTagGnomo" align="client" text="Gnomo" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagGnomo" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Gnomo]">
+                                <label name="popHab_lblTagGnomo" align="client" text="Gnomo" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Gnomo");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagHarpia" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Harpia]">
-                                <label name="popHab_lblTagHarpia" align="client" text="Harpia" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagHarpia" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Harpia]">
+                                <label name="popHab_lblTagHarpia" align="client" text="Harpia" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Harpia");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagHumano" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Humano]">
-                                <label name="popHab_lblTagHumano" align="client" text="Humano" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagHumano" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Humano]">
+                                <label name="popHab_lblTagHumano" align="client" text="Humano" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Humano");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagKraken" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Kraken]">
-                                <label name="popHab_lblTagKraken" align="client" text="Kraken" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagKraken" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Kraken]">
+                                <label name="popHab_lblTagKraken" align="client" text="Kraken" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Kraken");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagLicantropo" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Licantropo]">
-                                <label name="popHab_lblTagLicantropo" align="client" text="Licantropo" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagLicantropo" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Licantropo]">
+                                <label name="popHab_lblTagLicantropo" align="client" text="Licantropo" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Licantropo");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagLizariano" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Lizariano]">
-                                <label name="popHab_lblTagLizariano" align="client" text="Lizariano" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagLizariano" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Lizariano]">
+                                <label name="popHab_lblTagLizariano" align="client" text="Lizariano" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Lizariano");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagMinotauro" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Minotauro]">
-                                <label name="popHab_lblTagMinotauro" align="client" text="Minotauro" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagMinotauro" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Minotauro]">
+                                <label name="popHab_lblTagMinotauro" align="client" text="Minotauro" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Minotauro");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagNinfa" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ninfa]">
-                                <label name="popHab_lblTagNinfa" align="client" text="Ninfa" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagNinfa" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ninfa]">
+                                <label name="popHab_lblTagNinfa" align="client" text="Ninfa" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Ninfa");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagOrc" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Orc]">
-                                <label name="popHab_lblTagOrc" align="client" text="Orc" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagOrc" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Orc]">
+                                <label name="popHab_lblTagOrc" align="client" text="Orc" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Orc");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagSatiro" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sátiro]">
-                                <label name="popHab_lblTagSatiro" align="client" text="Sátiro" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagSatiro" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sátiro]">
+                                <label name="popHab_lblTagSatiro" align="client" text="Sátiro" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Sátiro");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagSereias" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sereias]">
-                                <label name="popHab_lblTagSereias" align="client" text="Sereias" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagSereias" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Sereias]">
+                                <label name="popHab_lblTagSereias" align="client" text="Sereias" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Sereias");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagSelkies" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Selkies]">
-                                <label name="popHab_lblTagSelkies" align="client" text="Selkies" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagSelkies" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Selkies]">
+                                <label name="popHab_lblTagSelkies" align="client" text="Selkies" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Selkies");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagTritoes" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Tritões]">
-                                <label name="popHab_lblTagTritoes" align="client" text="Tritões" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagTritoes" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Tritões]">
+                                <label name="popHab_lblTagTritoes" align="client" text="Tritões" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Tritões");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagUnicornio" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Unicórnio]">
-                                <label name="popHab_lblTagUnicornio" align="client" text="Unicórnio" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagUnicornio" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Unicórnio]">
+                                <label name="popHab_lblTagUnicornio" align="client" text="Unicórnio" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Unicórnio");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagUrsari" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ursari]">
-                                <label name="popHab_lblTagUrsari" align="client" text="Ursari" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagUrsari" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ursari]">
+                                <label name="popHab_lblTagUrsari" align="client" text="Ursari" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Ursari");]]></event>
                             </rectangle>
-                            <rectangle name="popHab_tagVampiro" align="top" height="22" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Vampiro]">
-                                <label name="popHab_lblTagVampiro" align="client" text="Vampiro" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                            <rectangle name="popHab_tagVampiro" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Vampiro]">
+                                <label name="popHab_lblTagVampiro" align="client" text="Vampiro" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Vampiro");]]></event>
                             </rectangle>
                         </scrollBox>
                     </rectangle>
 
-                    <!-- DIREITA -->
                     <rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" hitTest="false">
                         <scrollBox align="client" margins="{left=14,right=14,top=10,bottom=8}">
-
-                            <label align="top" height="16" text="NOME" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
-                            <rectangle align="top" height="28" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=8}">
-                                <edit name="popHab_edNome" align="client" text="" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="13" transparent="true" margins="{left=8,right=8}" hint="Nome da habilidade"/>
-                            </rectangle>
-
                             <label align="top" height="16" text="TIPO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
                             <layout align="top" height="30" margins="{bottom=8}">
                                 <rectangle name="popHab_btnTipoPoder" align="left" width="150" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=6}" cursor="handPoint" hint="Habilidade vinculada a um poder ativo">
@@ -25052,49 +25129,20 @@
                                 </layout>
                             </layout>
 
-                            <label align="top" height="14" text="TAGS ESCOLHIDAS  (clique para remover uma)" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
-                            <layout align="top" height="30" margins="{bottom=4}">
-                                <layout name="popHab_wrapChip1" align="left" width="0">
-                                    <rectangle name="popHab_chip1" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
-                                        <label name="popHab_lblChip1" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                        <event name="onClick"><![CDATA[removerTagPorChip(1);]]></event>
-                                    </rectangle>
-                                </layout>
-                                <layout name="popHab_wrapChip2" align="left" width="0">
-                                    <rectangle name="popHab_chip2" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
-                                        <label name="popHab_lblChip2" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                        <event name="onClick"><![CDATA[removerTagPorChip(2);]]></event>
-                                    </rectangle>
-                                </layout>
-                                <layout name="popHab_wrapChip3" align="left" width="0">
-                                    <rectangle name="popHab_chip3" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
-                                        <label name="popHab_lblChip3" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                        <event name="onClick"><![CDATA[removerTagPorChip(3);]]></event>
-                                    </rectangle>
-                                </layout>
-                                <layout name="popHab_wrapChip4" align="left" width="0">
-                                    <rectangle name="popHab_chip4" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
-                                        <label name="popHab_lblChip4" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                        <event name="onClick"><![CDATA[removerTagPorChip(4);]]></event>
-                                    </rectangle>
-                                </layout>
-                                <layout name="popHab_wrapChip5" align="left" width="0">
-                                    <rectangle name="popHab_chip5" align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="10" yradius="10" margins="{right=6,top=2,bottom=2}" cursor="handPoint" hint="Clique para remover uma instância desta tag">
-                                        <label name="popHab_lblChip5" align="client" text="" fontFamily="EB Garamond" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                                        <event name="onClick"><![CDATA[removerTagPorChip(5);]]></event>
-                                    </rectangle>
-                                </layout>
-                                <label name="popHab_lblTagsEscolhidas" align="client" text="" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-                            </layout>
-
-                            <label align="top" height="16" text="DESCRIÇÃO (o que se vê)" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
-                            <rectangle align="top" height="54" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=8}">
-                                <textEditor name="popHab_edDescricao" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" transparent="true" margins="{left=6,right=6,top=4,bottom=4}"/>
+                        </scrollBox>
+                    </rectangle>
+                </layout>
+                <layout name="popHab_pagina2" align="client" visible="false" enabled="false">
+                    <rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" hitTest="false">
+                        <scrollBox align="client" margins="{left=14,right=14,top=10,bottom=8}">
+                            <label align="top" height="16" text="DESCRIÇÃO · O QUE SE VÊ" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
+                            <rectangle align="top" height="104" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=8}">
+                                <textEditor name="popHab_edDescricao" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" transparent="true" margins="{left=6,right=6,top=4,bottom=4}"/>
                             </rectangle>
 
-                            <label align="top" height="16" text="EFEITO (o que faz em regras)" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
-                            <rectangle align="top" height="54" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=8}">
-                                <textEditor name="popHab_edEfeito" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" transparent="true" margins="{left=6,right=6,top=4,bottom=4}"/>
+                            <label align="top" height="16" text="EFEITO · O QUE FAZ EM REGRAS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
+                            <rectangle align="top" height="104" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=8}">
+                                <textEditor name="popHab_edEfeito" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" transparent="true" margins="{left=6,right=6,top=4,bottom=4}"/>
                             </rectangle>
 
                             <!-- OS SEIS BLOCOS DE RANK. Altura 0 fora do modo
@@ -25109,42 +25157,49 @@
                                 <rectangle align="top" height="46" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
                                     <textEditor name="popHab_edRankE" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" transparent="true" margins="{left=6,right=6,top=3,bottom=3}"/>
                                 </rectangle>
-                                <label name="popHab_lblLeituraRankE" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
+                                <label name="popHab_lblLeituraRankE" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
                                 <label align="top" height="15" text="EFEITO — RANK D" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" hitTest="false"/>
                                 <rectangle align="top" height="46" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
                                     <textEditor name="popHab_edRankD" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" transparent="true" margins="{left=6,right=6,top=3,bottom=3}"/>
                                 </rectangle>
-                                <label name="popHab_lblLeituraRankD" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
+                                <label name="popHab_lblLeituraRankD" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
                                 <label align="top" height="15" text="EFEITO — RANK C" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" hitTest="false"/>
                                 <rectangle align="top" height="46" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
                                     <textEditor name="popHab_edRankC" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" transparent="true" margins="{left=6,right=6,top=3,bottom=3}"/>
                                 </rectangle>
-                                <label name="popHab_lblLeituraRankC" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
+                                <label name="popHab_lblLeituraRankC" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
                                 <label align="top" height="15" text="EFEITO — RANK B" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" hitTest="false"/>
                                 <rectangle align="top" height="46" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
                                     <textEditor name="popHab_edRankB" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" transparent="true" margins="{left=6,right=6,top=3,bottom=3}"/>
                                 </rectangle>
-                                <label name="popHab_lblLeituraRankB" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
+                                <label name="popHab_lblLeituraRankB" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
                                 <label align="top" height="15" text="EFEITO — RANK A" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" hitTest="false"/>
                                 <rectangle align="top" height="46" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
                                     <textEditor name="popHab_edRankA" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" transparent="true" margins="{left=6,right=6,top=3,bottom=3}"/>
                                 </rectangle>
-                                <label name="popHab_lblLeituraRankA" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
+                                <label name="popHab_lblLeituraRankA" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
                                 <label align="top" height="15" text="EFEITO — RANK EX" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" hitTest="false"/>
                                 <rectangle align="top" height="46" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
                                     <textEditor name="popHab_edRankEX" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" transparent="true" margins="{left=6,right=6,top=3,bottom=3}"/>
                                 </rectangle>
-                                <label name="popHab_lblLeituraRankEX" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
+                                <label name="popHab_lblLeituraRankEX" align="top" height="15" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" margins="{bottom=6}" hitTest="false"/>
                             </layout>
 
-                            <!-- ARTE DA HABILIDADE, por último e grande.
+                        </scrollBox>
+                    </rectangle>
+                </layout>
+                <layout name="popHab_pagina3" align="client" visible="false" enabled="false">
+                    <rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" hitTest="false">
+                        <layout align="client" margins="{left=14,right=14,top=10,bottom=8}">
+                            <label align="top" height="24" text="Clique na moldura para escolher uma imagem. A arte é exibida inteira, sem recorte." fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="13" hitTest="false"/>
+                            <!-- ARTE DA HABILIDADE, em página própria.
                                  Clicar abre o seletor padrão do Firecast, que
                                  já oferece endereço de site OU arquivo do
                                  FireDrive — por isso não há campo de link.
                                  O "field" aponta para um rascunho na raiz
                                  (imagemHabEdicao); ver editarHabilidade. -->
                             <label align="top" height="16" text="ARTE DA HABILIDADE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
-                            <rectangle align="top" height="320" color="#0A0C10" strokeColor="#3A2E52" strokeSize="1" xradius="4" yradius="4" margins="{left=150,right=150,bottom=8}">
+                            <rectangle align="client" color="#0A0C10" strokeColor="#3A2E52" strokeSize="1" xradius="4" yradius="4" margins="{top=8,bottom=8}">
                                 <!-- style="proportional" e DECISAO DE MESA, nao sobra: aqui a peca
                                      inteira importa mais que preencher a moldura. Uma arte
                                      de equipamento ou de criatura cortada perde justamente o
@@ -25154,7 +25209,7 @@
                                 <image align="client" field="imagemHabEdicao" editable="true" style="proportional" showProgress="true" margins="{left=3,right=3,top=3,bottom=3}" hint="Clique para escolher a arte desta habilidade — de um endereço da internet ou do seu FireDrive. Ela aparece sempre que alguém abrir a habilidade, inclusive no meio do turno."/>
                             </rectangle>
 
-                        </scrollBox>
+                        </layout>
                     </rectangle>
                 </layout>
             </layout>
