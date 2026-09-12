@@ -184,14 +184,18 @@
                 ]]></event>
                 <label align="client" text="x" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="13" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
             </rectangle>
-            <rectangle name="rectAtivarHab" align="right" width="0" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" cursor="handPoint" hint="Ligar ou desligar esta habilidade. Enquanto ligada, os efeitos entram nos cards da aba de Combate.">
-                <event name="onClick"><![CDATA[
-                    if sheet ~= nil and tostring(sheet.tipo or "") ~= "forma" then
-                        if alternarHabilidadeAtiva ~= nil then alternarHabilidadeAtiva(sheet); end;
-                    end;
-                ]]></event>
-                <label name="lblAtivarHab" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
-            </rectangle>
+            <!-- Slot sempre ocupa a mesma largura. O botão interno pode sumir,
+                 mas os controles vizinhos não caminham quando o estado muda. -->
+            <layout name="slotAtivarHab" align="right" width="156">
+                <rectangle name="rectAtivarHab" align="right" width="0" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" cursor="handPoint" hint="Ligar ou desligar esta habilidade. Enquanto ligada, os efeitos entram nos cards da aba de Combate.">
+                    <event name="onClick"><![CDATA[
+                        if sheet ~= nil and tostring(sheet.tipo or "") ~= "forma" then
+                            if alternarHabilidadeAtiva ~= nil then alternarHabilidadeAtiva(sheet); end;
+                        end;
+                    ]]></event>
+                    <label name="lblAtivarHab" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                </rectangle>
+            </layout>
             <rectangle name="rectCustoHab" align="right" width="116" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" hitTest="false">
                 <label name="lblCustoHab" align="client" text="" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
             </rectangle>

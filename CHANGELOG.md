@@ -1,3 +1,27 @@
+## v0.53.8 — construtor em página única e ativação fixa (12/09/2026)
+
+O teste visual da v0.53.7 aprovou os cards maiores, mas mostrou que dividir o
+construtor em três páginas fragmentava demais a leitura. Configuração,
+Descrição & Efeito e Arte voltaram a formar uma única página vertical, agora
+com títulos e separadores claros. Nome, custo, avisos, cancelar e salvar ficam
+fora da rolagem. A configuração mantém catálogo de tags e parâmetros lado a
+lado; descrições, efeitos por rank e arte usam a largura total abaixo.
+
+O popup passou de 700 para 660 pixels de altura solicitada. A função comum
+continua limitando-o a 94% da ficha e a rolagem principal dá acesso a todo o
+conteúdo. Em 1366×768, cenário mínimo decidido pela mesa, ele mede 1020×660;
+o painel de parâmetros conserva 762 pixels úteis, contra 498 exigidos pela
+linha de tipos e 446 pela linha de alcance.
+
+Nos cards, ATIVA/DESATIVADA ganhou um slot fixo de 156 pixels. O botão interno
+ainda some quando a habilidade não possui gatilho, mas origem, remoção e custo
+mantêm suas posições. Alternar o estado muda apenas texto, cores e efeitos.
+
+Validação local: 276 verificações estruturais contra v0.53.6; campos NDB e
+handlers do construtor preservados; comandos de editar, ativar e remover
+preservados; sintaxe de 1.845 blocos Lua da ficha e 4 do template. A inspeção
+visual e a bateria do SDK continuam sendo feitas no Windows com o Firecast.
+
 ## v0.53.7 — construtor e cards de habilidades (12/09/2026)
 
 Primeira etapa da revisão visual aprovada para as abas 1 a 5. O construtor
