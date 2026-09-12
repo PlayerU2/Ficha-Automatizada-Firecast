@@ -1,11 +1,12 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.9
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.10
 
-Revisao visual da aba Perfil. Raca e Classe agora aparecem como dados
-derivados da aba 04. Progressao separa Nivel/XP dos resultados calculados.
-Aparencia e Personalidade dividem a mesma linha para reduzir a rolagem.
-Conferir no Firecast em 1366x768: identificacao inteira, card de progressao,
-largura dos dois editores e escrita longa em Aparencia e Personalidade.
-Validacao local: XML, sintaxe Lua, campos, handlers e dimensoes minimas.
+Correcao visual da aba Perfil. Aparencia e Personalidade agora dividem
+exatamente a largura disponivel, inclusive ao redimensionar a janela e ao
+voltar para a aba. Raca e Classe continuam travadas e vinculadas a aba 04,
+mas receberam contraste maior para permanecerem legiveis.
+Conferir no Firecast em 1366x768 e em tela larga: igualdade dos editores,
+leitura de Raca/Classe e ausencia de mudanca funcional nos campos.
+Validacao local: XML, sintaxe Lua, campos, handlers e calculo responsivo.
 Pendente no Windows: verificar, testes, rdk l, rdk i e conferencia visual.
 
 

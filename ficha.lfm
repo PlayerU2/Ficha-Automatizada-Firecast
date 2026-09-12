@@ -369,6 +369,12 @@
             if self.lblSecaoContador ~= nil then
                 self.lblSecaoContador:setText(tostring(abaAtual) .. " / " .. tostring(#abasDef))
             end
+            -- A linha de descrição só ganha a largura definitiva quando a
+            -- aba Perfil fica visível. Recalcular aqui impede que a divisão
+            -- 50/50 herde uma medida antiga de outra resolução.
+            if abaAtual == 1 and ajustarDescricaoPerfil ~= nil then
+                pcall(function() ajustarDescricaoPerfil() end)
+            end
         end
 
         function ativarAba(indice)
@@ -4233,6 +4239,17 @@
         local function definirVisivel(ctrl, valor)
             if ctrl == nil then return end
             pcall(function() ctrl:setVisible(valor) end)
+        end
+
+        -- ===== Perfil: Aparência e Personalidade sempre 50/50 =====
+        -- O primeiro desenho usava 600px fixos. Em telas largas, apenas a
+        -- Personalidade crescia e a linha perdia o eixo visual. A margem de
+        -- 14px pertence à primeira coluna, portanto é descontada antes da
+        -- divisão para que as áreas úteis terminem com a mesma largura.
+        function ajustarDescricaoPerfil()
+            local total = larguraDe(self.abaPerfil_linhaDescricao)
+            if total <= 14 then return end
+            definirLargura(self.abaPerfil_colAparencia, math.floor((total - 14) / 2))
         end
 
         -- ===== Qualidades & Defeitos: colunas sempre 50/50 =====
@@ -14337,7 +14354,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="46" text="v0.53.9" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.10" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14385,7 +14402,7 @@
         <rectangle align="top" height="52" color="#070A0C" hitTest="false">
             <rectangle align="bottom" height="1" color="#1A262C" hitTest="false"/>
             <layout name="layBarraAbas" align="client" margins="{left=12,right=12,top=6,bottom=6}">
-                    <event name="onResize"><![CDATA[ajustarBarraDeAbas(); ajustarGradeCombate();]]></event>
+                    <event name="onResize"><![CDATA[ajustarBarraDeAbas(); ajustarGradeCombate(); ajustarDescricaoPerfil();]]></event>
                     <rectangle name="btnAba1" align="left" width="131" color="#111A1E" strokeColor="#C9A24B" strokeSize="2" xradius="4" yradius="4" margins="{right=4}" cursor="handPoint" hint="Abrir capítulo I — Perfil">
                         <event name="onClick"><![CDATA[ativarAba(1);]]></event>
                         <rectangle name="marcAba1" align="bottom" height="3" color="#C9A24B" visible="true" hitTest="false"/>
@@ -14547,16 +14564,16 @@
                             <layout align="top" height="58" margins="{bottom=24}">
                                 <layout align="right" width="400" margins="{left=14}">
                                     <label align="top" height="17" text="CLASSE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
-                                    <rectangle align="top" height="32" color="#11171B" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
-                                        <label align="right" width="64" text="ABA 04" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
-                                        <edit name="edClasse" align="client" transparent="true" margins="{left=8,right=8}" field="classe" type="text" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" hint="Preenchido pela escolha de classe e subclasse na aba 04 · RAÇA &amp; CLASSE. Não se digita aqui."/>
+                                    <rectangle align="top" height="32" color="#11171B" strokeColor="#34454E" strokeSize="1" xradius="3" yradius="3">
+                                        <label align="right" width="64" text="ABA 04" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                        <edit name="edClasse" align="client" transparent="true" margins="{left=8,right=8}" field="classe" type="text" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" hint="Preenchido pela escolha de classe e subclasse na aba 04 · RAÇA &amp; CLASSE. Não se digita aqui."/>
                                     </rectangle>
                                 </layout>
                                 <layout align="client">
                                     <label align="top" height="17" text="RAÇA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
-                                    <rectangle align="top" height="32" color="#11171B" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
-                                        <label align="right" width="64" text="ABA 04" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
-                                        <edit name="edRaca" align="client" transparent="true" margins="{left=8,right=8}" field="raca" type="text" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" hint="Preenchido pelo catálogo de raças na aba 04 · RAÇA &amp; CLASSE (mestiçagem inclusive). Não se digita aqui: é a chave que liga as concessões raciais."/>
+                                    <rectangle align="top" height="32" color="#11171B" strokeColor="#34454E" strokeSize="1" xradius="3" yradius="3">
+                                        <label align="right" width="64" text="ABA 04" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                        <edit name="edRaca" align="client" transparent="true" margins="{left=8,right=8}" field="raca" type="text" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" hint="Preenchido pelo catálogo de raças na aba 04 · RAÇA &amp; CLASSE (mestiçagem inclusive). Não se digita aqui: é a chave que liga as concessões raciais."/>
                                     </rectangle>
                                 </layout>
                             </layout>
@@ -14659,10 +14676,11 @@
                     </layout>
                     <rectangle align="top" height="1" color="#7FA8B8" margins="{bottom=12}" hitTest="false"/>
 
-                    <!-- Em 1366×768 as duas áreas ainda conservam mais de
-                         600px cada e deixam de consumir duas dobras da aba. -->
-                    <layout align="top" height="132">
-                        <layout align="left" width="600" margins="{right=14}">
+                    <!-- Duas áreas de mesma largura em qualquer resolução;
+                         o onResize desconta a margem central antes de dividir. -->
+                    <layout name="abaPerfil_linhaDescricao" align="top" height="132">
+                        <event name="onResize"><![CDATA[ajustarDescricaoPerfil();]]></event>
+                        <layout name="abaPerfil_colAparencia" align="left" width="600" margins="{right=14}">
                             <label align="top" height="20" text="APARÊNCIA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11"/>
                             <rectangle align="client" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3"><textEditor align="client" transparent="true" margins="{left=10,right=10,top=8,bottom=8}" field="aparencia" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14"/></rectangle>
                         </layout>

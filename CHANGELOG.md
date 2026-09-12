@@ -1,3 +1,19 @@
+## v0.53.10 — descrição simétrica e derivados legíveis (12/09/2026)
+
+O teste visual da v0.53.9 revelou que a largura fixa de Aparência deixava
+Personalidade crescer sozinha em monitores largos. A linha agora mede seu
+espaço real e desconta a margem central antes de dividi-lo em duas metades.
+O cálculo roda ao redimensionar a janela e quando a aba Perfil se torna
+visível, evitando medidas antigas após uma troca de seção.
+
+Raça e Classe continuam sendo campos derivados, permanentemente bloqueados e
+identificados com `ABA 04`. Valor, borda e selo receberam contraste maior para
+que o estado de somente leitura não seja confundido com conteúdo indisponível.
+
+Validação local: XML de todos os LFM; sintaxe dos blocos Lua; igualdade das
+duas áreas nas larguras de 1366, 1600 e 1920; campos e handlers anteriores
+preservados. A conferência visual permanece no Firecast.
+
 ## v0.53.9 — hierarquia visual da aba Perfil (12/09/2026)
 
 A aba Perfil inicia a revisão das cinco primeiras seções após a aprovação do
