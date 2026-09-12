@@ -1,3 +1,23 @@
+## v0.53.12 — perícias reativas ao estado da ficha (12/09/2026)
+
+Perícias que já estavam renderizadas agora acompanham o recálculo global. A
+mudança corrige o caso observado com Ferido: o atributo recebia a penalidade,
+mas uma perícia existente conservava o total anterior até ser removida e
+adicionada novamente. O mesmo redesenho cobre mudanças de nível, proficiência,
+itens, concessões e vantagens sem alterar os nós salvos.
+
+Cada item de perícia ganhou uma rotina visual própria por instância, chamada
+ao nascer, ao editar o ajuste manual e ao fim de `recalcularTudo`. A rotina
+atualiza em conjunto total, memória da conta, origem, vantagem e cores; ao
+perder vantagem, a borda base também é restaurada. Os subtítulos "Economia de
+pontos" e "Vagas da criação" foram retirados dos cards de resumo por repetirem
+informação já expressa pelas métricas.
+
+Validação local: XML de todos os LFM; sintaxe dos blocos Lua; teste executável
+que mantém uma perícia existente e reproduz Destreza `+1 → -3`, fazendo Arcos
+passar de `+4 → +0`; ajuste manual e entrada/saída de vantagem também cobertos.
+A conferência visual permanece no Firecast.
+
 ## v0.53.11 — hierarquia visual de Atributos & Perícias (12/09/2026)
 
 O resumo da criação deixou de concentrar as duas economias numa faixa presa à

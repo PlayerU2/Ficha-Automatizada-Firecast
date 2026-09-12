@@ -1445,6 +1445,12 @@
             end
 
             atualizarContadoresPericias()
+            -- As linhas de pericia sao forms filhos de recordLists. Seus
+            -- rotulos nao tem binding com o atributo pai, portanto precisam
+            -- ser redesenhados quando Ferido, nivel, itens ou concessoes
+            -- alteram a conta. Ate a v0.53.11 so uma linha criada DEPOIS da
+            -- mudanca via o novo valor.
+            pcall(function() atualizarLinhasPericias() end)
             atualizarPainelPontosQD()
             pcall(function() atualizarAbaCombate() end)
             pcall(function() atualizarAbaFavores() end)
@@ -10149,6 +10155,31 @@
             return total, valorAtributo, prof, extras, manual, textoExtras
         end
 
+        -- Atualiza as forms ja instanciadas pelos seis recordLists. O metodo
+        -- de desenho e uma closure propria de cada item (ver itemPericia.lfm),
+        -- evitando a armadilha dos metodos globais em templates de lista.
+        function atualizarLinhasPericias()
+            local nomes = {
+                "listaPericiasCarisma", "listaPericiasDestreza",
+                "listaPericiasForca", "listaPericiasInteligencia",
+                "listaPericiasManipulacao", "listaPericiasSabedoria",
+            }
+            for _, nome in ipairs(nomes) do
+                local lista = self[nome]
+                if lista ~= nil then
+                    local ok, linhas = pcall(function() return lista:getChildren() end)
+                    if ok then
+                        for _, linha in ipairs(linhas or {}) do
+                            local atualizar = linha.atualizarVisualPericia
+                            if type(atualizar) == "function" then
+                                pcall(atualizar)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
         -- ---------------------------------------------------------------
         -- PAINEL DO TOPO DA ABA
         -- ---------------------------------------------------------------
@@ -14382,7 +14413,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.11" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.12" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14739,8 +14770,7 @@
                             <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=12,top=8,bottom=8}">
                                 <layout align="top" height="24">
-                                    <label align="left" width="150" text="ATRIBUTOS" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
-                                    <label align="client" text="ECONOMIA DE PONTOS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="trailing" vertTextAlign="center" hitTest="false"/>
+                                    <label align="client" text="ATRIBUTOS" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
                                 </layout>
                                 <layout name="abaAtr_metricasAtributos" align="top" height="48">
                                     <event name="onResize"><![CDATA[ajustarResumoAtributos();]]></event>
@@ -14777,8 +14807,7 @@
                             <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=12,top=8,bottom=8}">
                                 <layout align="top" height="24">
-                                    <label align="left" width="150" text="PERÍCIAS" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
-                                    <label align="client" text="VAGAS DA CRIAÇÃO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="trailing" vertTextAlign="center" hitTest="false"/>
+                                    <label align="client" text="PERÍCIAS" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
                                 </layout>
                                 <layout name="abaAtr_metricasPericias" align="top" height="48">
                                     <event name="onResize"><![CDATA[ajustarResumoAtributos();]]></event>

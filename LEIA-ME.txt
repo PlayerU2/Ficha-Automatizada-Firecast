@@ -1,13 +1,13 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.11
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.12
 
-Revisao visual da aba Atributos & Pericias. O resumo da criacao agora separa
-Atributos e Pericias em dois cards de mesma largura, ambos responsivos e com
-seu ajuste do mestre. Cada equacao de atributo identifica Base, Bonus, Auto e
-Total; o resultado ganhou moldura dourada. Contadores e estados vazios de
-pericia ficaram mais claros sem alterar limites ou calculos.
-Conferir no Firecast em 1366x768 e em tela larga: simetria do resumo, leitura
-das equacoes, crescimento dos cards com pericias e todos os botoes.
-Validacao local: XML, sintaxe Lua, campos, handlers e calculo responsivo.
+Correcao reativa na aba Atributos & Pericias. Pericias que ja estavam na ficha
+agora recalculam imediatamente quando Ferido, nivel, itens ou concessoes mudam
+o atributo ou os bonus; antes apenas pericias adicionadas depois da mudanca
+mostravam o valor certo. O ajuste manual tambem atualiza total e memoria de
+calculo juntos. Os subtitulos redundantes dos dois cards foram removidos.
+Conferir no Firecast: adicione uma pericia de Destreza, altere Ferido na aba 06
+e confirme que o total e a linha "atributo ... · prof ..." mudam na hora.
+Validacao local: XML, sintaxe Lua e reproducao automatizada de +4 para +0.
 Pendente no Windows: verificar, testes, rdk l, rdk i e conferencia visual.
 
 
@@ -84,14 +84,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.49.4, o que esta rodando nao e este pacote.
+disser v0.53.12, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.49.4)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.53.12)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que

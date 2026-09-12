@@ -20,27 +20,32 @@
 
     <event name="onNodeReady"><![CDATA[
         if sheet ~= nil then
-            local origem = tostring(sheet.origemConcessao or "");
-            if self.lblOrigemPer ~= nil then
-                if origem ~= "" then
-                    self.lblOrigemPer:setText("◆ GRÁTIS por " .. string.upper(origem));
-                else
-                    self.lblOrigemPer:setText("");
+            -- Closure POR INSTANCIA: funcoes nomeadas neste template viram
+            -- globais e a ultima linha criada pisaria nas anteriores.
+            rawset(self, "atualizarVisualPericia", function()
+                if sheet == nil or calculoDaPericia == nil then return; end;
+
+                local origem = tostring(sheet.origemConcessao or "");
+                local corBorda = "#22323A";
+                local corBarra = "#22323A";
+                local corNome = "#E6E9E4";
+                if sheet.aprovadoMestre and origem == "" then
+                    corBorda = "#8B2332";
+                    corBarra = "#8B2332";
+                    corNome = "#D4838F";
+                elseif origem ~= "" then
+                    corBorda = "#C9A24B";
+                    corBarra = "#C9A24B";
                 end;
-            end;
 
-            if sheet.aprovadoMestre and origem == "" then
-                if self.rectItemPericia ~= nil then self.rectItemPericia:setStrokeColor("#8B2332"); end;
-                if self.barraItemPericia ~= nil then self.barraItemPericia:setColor("#8B2332"); end;
-                if self.lblNomePericia ~= nil then self.lblNomePericia:setFontColor("#D4838F"); end;
-            elseif origem ~= "" then
-                if self.rectItemPericia ~= nil then self.rectItemPericia:setStrokeColor("#C9A24B"); end;
-                if self.barraItemPericia ~= nil then self.barraItemPericia:setColor("#C9A24B"); end;
-            end;
+                if self.lblOrigemPer ~= nil then
+                    if origem ~= "" then
+                        self.lblOrigemPer:setText("◆ GRÁTIS por " .. string.upper(origem));
+                    else
+                        self.lblOrigemPer:setText("");
+                    end;
+                end;
 
-            -- Total de rolagem. A conta vive no ficha.lfm (calculoDaPericia)
-            -- para nao duplicar regra em cada template.
-            if calculoDaPericia ~= nil then
                 local total, atr, prof, extras, manual, textoExtras =
                     calculoDaPericia(tostring(sheet.atributo or ""), tostring(sheet.nome or ""), sheet.ajusteManual);
                 if self.lblTotalPericia ~= nil then
@@ -48,38 +53,44 @@
                     if total < 0 then sinal = ""; end;
                     self.lblTotalPericia:setText(sinal .. tostring(total));
                 end;
-                -- Vantagem nao e numero: marca na propria linha.
-                if self.lblVantagemPer ~= nil then
-                    local temVant = false;
-                    if periciaComVantagem ~= nil then
-                        temVant = periciaComVantagem(tostring(sheet.nome or ""));
-                    end;
-                    if temVant then
-                        self.lblVantagemPer:setText("VANTAGEM");
-                        if self.rectItemPericia ~= nil then self.rectItemPericia:setStrokeColor("#8A63C9"); end;
-                    else
-                        self.lblVantagemPer:setText("");
-                    end;
+
+                -- Vantagem nao e numero: marca na propria linha. A cor base
+                -- tambem e restaurada quando a vantagem deixa de existir.
+                local temVant = false;
+                if periciaComVantagem ~= nil then
+                    temVant = periciaComVantagem(tostring(sheet.nome or ""));
                 end;
+                if self.lblVantagemPer ~= nil then
+                    self.lblVantagemPer:setText(temVant and "VANTAGEM" or "");
+                end;
+                if temVant then corBorda = "#8A63C9"; end;
+                if self.rectItemPericia ~= nil then self.rectItemPericia:setStrokeColor(corBorda); end;
+                if self.barraItemPericia ~= nil then self.barraItemPericia:setColor(corBarra); end;
+                if self.lblNomePericia ~= nil then self.lblNomePericia:setFontColor(corNome); end;
+
                 if self.lblContaPericia ~= nil then
                     local partes = {};
                     table.insert(partes, "atributo " .. tostring(atr));
                     table.insert(partes, "prof +" .. tostring(prof));
                     if extras ~= 0 then
-                        local t = "extras +" .. tostring(extras);
+                        local sinalExtras = "+";
+                        if extras < 0 then sinalExtras = ""; end;
+                        local t = "extras " .. sinalExtras .. tostring(extras);
                         if textoExtras ~= nil and textoExtras ~= "" then
                             t = t .. " (" .. textoExtras .. ")";
                         end;
                         table.insert(partes, t);
                     end;
                     if manual ~= 0 then
-                        local s = "+";
-                        if manual < 0 then s = ""; end;
-                        table.insert(partes, "manual " .. s .. tostring(manual));
+                        local sinalManual = "+";
+                        if manual < 0 then sinalManual = ""; end;
+                        table.insert(partes, "manual " .. sinalManual .. tostring(manual));
                     end;
                     self.lblContaPericia:setText(table.concat(partes, "  ·  "));
                 end;
-            end;
+            end);
+
+            self.atualizarVisualPericia();
         end;
     ]]></event>
 
@@ -104,13 +115,8 @@
                 <rectangle align="client" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3">
                     <edit name="edAjustePericia" align="client" field="ajusteManual" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" transparent="true" hint="Bônus temporário: feitiço, item, situação. Some ou subtraia aqui — o resto a ficha calcula.">
                         <event name="onChange"><![CDATA[
-                            if sheet ~= nil and calculoDaPericia ~= nil then
-                                local total = calculoDaPericia(tostring(sheet.atributo or ""), tostring(sheet.nome or ""), sheet.ajusteManual);
-                                if self.lblTotalPericia ~= nil then
-                                    local sinal = "+";
-                                    if total < 0 then sinal = ""; end;
-                                    self.lblTotalPericia:setText(sinal .. tostring(total));
-                                end;
+                            if type(self.atualizarVisualPericia) == "function" then
+                                self.atualizarVisualPericia();
                             end;
                         ]]></event>
                     </edit>
