@@ -1,11 +1,12 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.10
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.11
 
-Correcao visual da aba Perfil. Aparencia e Personalidade agora dividem
-exatamente a largura disponivel, inclusive ao redimensionar a janela e ao
-voltar para a aba. Raca e Classe continuam travadas e vinculadas a aba 04,
-mas receberam contraste maior para permanecerem legiveis.
-Conferir no Firecast em 1366x768 e em tela larga: igualdade dos editores,
-leitura de Raca/Classe e ausencia de mudanca funcional nos campos.
+Revisao visual da aba Atributos & Pericias. O resumo da criacao agora separa
+Atributos e Pericias em dois cards de mesma largura, ambos responsivos e com
+seu ajuste do mestre. Cada equacao de atributo identifica Base, Bonus, Auto e
+Total; o resultado ganhou moldura dourada. Contadores e estados vazios de
+pericia ficaram mais claros sem alterar limites ou calculos.
+Conferir no Firecast em 1366x768 e em tela larga: simetria do resumo, leitura
+das equacoes, crescimento dos cards com pericias e todos os botoes.
 Validacao local: XML, sintaxe Lua, campos, handlers e calculo responsivo.
 Pendente no Windows: verificar, testes, rdk l, rdk i e conferencia visual.
 

@@ -375,6 +375,9 @@
             if abaAtual == 1 and ajustarDescricaoPerfil ~= nil then
                 pcall(function() ajustarDescricaoPerfil() end)
             end
+            if abaAtual == 2 and ajustarResumoAtributos ~= nil then
+                pcall(function() ajustarResumoAtributos() end)
+            end
         end
 
         function ativarAba(indice)
@@ -2124,7 +2127,7 @@
                 if label ~= nil then
                     local limite = limitePericiasDoAtributo(item.campo)
                     local extras = vagasExtrasPericia(item.campo)
-                    local txt = tostring(atual) .. " / " .. tostring(limite)
+                    local txt = "PERÍCIAS  " .. tostring(atual) .. " / " .. tostring(limite)
                     if extras > 0 then txt = txt .. "  (+" .. extras .. ")" end
                     label:setText(txt)
                     if atual > limite then
@@ -2139,7 +2142,7 @@
                 -- align="client" dentro: vazio, sobravam ~160px de nada
                 -- (sete vezes numa ficha nova, uma tela inteira em 1366×768);
                 -- cheio, a lista rolava dentro de uma janelinha. Agora o card
-                -- mede o que tem: cabecalho (40) + linha de botoes (36) +
+                -- mede o que tem: cabecalho (48) + linha de botoes (36) +
                 -- linhas × itemHeight (76) + margens, e o estado vazio e uma
                 -- linha so, como o bloco da Constituicao ja era.
                 -- Altura zero, e nao setVisible: esconder e mostrar um filho
@@ -2149,7 +2152,7 @@
                 local vazio = self["abaAtr_vazio" .. sufixo]
                 local alturaLista = (atual == 0) and 24 or (atual * 76 + 10)
                 if bloco ~= nil then
-                    pcall(function() bloco:setHeight(8 + 40 + 36 + alturaLista + 8) end)
+                    pcall(function() bloco:setHeight(8 + 48 + 36 + alturaLista + 8) end)
                 end
                 if vazio ~= nil then
                     pcall(function() vazio:setHeight((atual == 0) and 24 or 0) end)
@@ -4250,6 +4253,31 @@
             local total = larguraDe(self.abaPerfil_linhaDescricao)
             if total <= 14 then return end
             definirLargura(self.abaPerfil_colAparencia, math.floor((total - 14) / 2))
+        end
+
+        -- ===== Atributos: dois resumos equilibrados =====
+        -- Economia de atributos e vagas de perícia têm o mesmo peso na
+        -- criação. Cada card recebe metade da linha; dentro deles, as quatro
+        -- métricas também dividem a largura real, sem sobras em tela larga.
+        function ajustarResumoAtributos()
+            local total = larguraDe(self.abaAtr_linhaResumo)
+            if total > 10 then
+                definirLargura(self.abaAtr_cardResumoAtributos, math.floor((total - 10) / 2))
+            end
+
+            local grupos = {
+                {painel = "abaAtr_metricasAtributos", prefixo = "abaAtr_metricaAtr"},
+                {painel = "abaAtr_metricasPericias", prefixo = "abaAtr_metricaPer"},
+            }
+            for _, grupo in ipairs(grupos) do
+                local largura = larguraDe(self[grupo.painel])
+                if largura > 0 then
+                    local coluna = math.floor(largura / 4)
+                    for i = 1, 3 do
+                        definirLargura(self[grupo.prefixo .. i], coluna)
+                    end
+                end
+            end
         end
 
         -- ===== Qualidades & Defeitos: colunas sempre 50/50 =====
@@ -14354,7 +14382,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.10" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.11" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -14402,7 +14430,7 @@
         <rectangle align="top" height="52" color="#070A0C" hitTest="false">
             <rectangle align="bottom" height="1" color="#1A262C" hitTest="false"/>
             <layout name="layBarraAbas" align="client" margins="{left=12,right=12,top=6,bottom=6}">
-                    <event name="onResize"><![CDATA[ajustarBarraDeAbas(); ajustarGradeCombate(); ajustarDescricaoPerfil();]]></event>
+                    <event name="onResize"><![CDATA[ajustarBarraDeAbas(); ajustarGradeCombate(); ajustarDescricaoPerfil(); ajustarResumoAtributos();]]></event>
                     <rectangle name="btnAba1" align="left" width="131" color="#111A1E" strokeColor="#C9A24B" strokeSize="2" xradius="4" yradius="4" margins="{right=4}" cursor="handPoint" hint="Abrir capítulo I — Perfil">
                         <event name="onClick"><![CDATA[ativarAba(1);]]></event>
                         <rectangle name="marcAba1" align="bottom" height="3" color="#C9A24B" visible="true" hitTest="false"/>
@@ -14700,79 +14728,96 @@
                     </layout>
                     <rectangle align="top" height="1" color="#C9A24B" margins="{bottom=14}" hitTest="false"/>
 
-                    <!-- ===== PAINEL DE PONTOS =====
-                         Altura = soma dos filhos align="top": 56 + 48 + 16 + 16 = 136.
-                         Era 98 (B-05): os dois rotulos de baixo — o aviso de
-                         limite de atributo e a nota da Linhagem de Unaris —
-                         ficavam inteiros fora do card, e o Firecast nao avisa:
-                         simplesmente nao desenha. A checagem 43 cobra esta
-                         conta para todo container de altura fixa. -->
-                    <rectangle align="top" height="136" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="4" yradius="4" margins="{bottom=10}">
-                        <layout align="top" height="52" margins="{left=10,right=10,top=4}">
-                            <label align="left" width="96" text="ATRIBUTOS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" hitTest="false"/>
-                            <layout align="left" width="92">
-                                <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="15 pontos iniciais mais os ganhos por nível (2, 6, 8, 11, 13, 15, 17 e 18)."/>
-                                <label name="abaAtr_lblPontosTotal" align="top" height="24" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
+                    <!-- ===== ECONOMIA DA CRIAÇÃO =====
+                         Dois assuntos, dois cards com o mesmo peso visual.
+                         O onResize divide tanto a linha quanto as métricas,
+                         sem larguras acertadas apenas para um monitor. -->
+                    <layout name="abaAtr_linhaResumo" align="top" height="120" margins="{bottom=8}">
+                        <event name="onResize"><![CDATA[ajustarResumoAtributos();]]></event>
+
+                        <rectangle name="abaAtr_cardResumoAtributos" align="left" width="600" color="#0D1317" strokeColor="#34454E" strokeSize="1" xradius="5" yradius="5" margins="{right=10}">
+                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <layout align="client" margins="{left=12,right=12,top=8,bottom=8}">
+                                <layout align="top" height="24">
+                                    <label align="left" width="150" text="ATRIBUTOS" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                                    <label align="client" text="ECONOMIA DE PONTOS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="trailing" vertTextAlign="center" hitTest="false"/>
+                                </layout>
+                                <layout name="abaAtr_metricasAtributos" align="top" height="48">
+                                    <event name="onResize"><![CDATA[ajustarResumoAtributos();]]></event>
+                                    <layout name="abaAtr_metricaAtr1" align="left" width="110">
+                                        <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="15 pontos iniciais mais os ganhos por nível (2, 6, 8, 11, 13, 15, 17 e 18)."/>
+                                        <label name="abaAtr_lblPontosTotal" align="client" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    </layout>
+                                    <layout name="abaAtr_metricaAtr2" align="left" width="110">
+                                        <label align="top" height="14" text="GASTOS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                        <label name="abaAtr_lblPontosGastos" align="client" text="0" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="20" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    </layout>
+                                    <layout name="abaAtr_metricaAtr3" align="left" width="110">
+                                        <label align="top" height="14" text="SALDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                        <label name="abaAtr_lblPontosSaldo" align="client" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    </layout>
+                                    <layout align="client">
+                                        <label align="top" height="14" text="EXTRAS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="Soma dos bônus de raça e poderes (o campo '+' de cada atributo). Não sai do seu bolso."/>
+                                        <label name="abaAtr_lblPontosExtras" align="client" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="20" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    </layout>
+                                </layout>
+                                <layout align="client" margins="{top=4}">
+                                    <label align="left" width="144" text="AJUSTE DO MESTRE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" hint="Pontos concedidos fora da progressão normal — recompensa de narrativa, correção de mesa."/>
+                                    <rectangle align="left" width="100" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
+                                        <edit name="abaAtr_edAjustePontos" align="client" field="pontosAtributoAjuste" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Soma ou subtrai pontos de atributo. Use negativo para retirar.">
+                                            <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                        </edit>
+                                    </rectangle>
+                                    <label align="client" text="PONTOS" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                                </layout>
                             </layout>
-                            <layout align="left" width="92">
-                                <label align="top" height="14" text="GASTOS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hitTest="false"/>
-                                <label name="abaAtr_lblPontosGastos" align="top" height="24" text="0" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="20" horzTextAlign="center" hitTest="false"/>
+                        </rectangle>
+
+                        <rectangle align="client" color="#0D1317" strokeColor="#34454E" strokeSize="1" xradius="5" yradius="5">
+                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <layout align="client" margins="{left=12,right=12,top=8,bottom=8}">
+                                <layout align="top" height="24">
+                                    <label align="left" width="150" text="PERÍCIAS" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                                    <label align="client" text="VAGAS DA CRIAÇÃO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="trailing" vertTextAlign="center" hitTest="false"/>
+                                </layout>
+                                <layout name="abaAtr_metricasPericias" align="top" height="48">
+                                    <event name="onResize"><![CDATA[ajustarResumoAtributos();]]></event>
+                                    <layout name="abaAtr_metricaPer1" align="left" width="110">
+                                        <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="6 perícias iniciais mais as ganhas por nível, somadas às vagas concedidas por poderes."/>
+                                        <label name="abaAtr_lblPerTotal" align="client" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    </layout>
+                                    <layout name="abaAtr_metricaPer2" align="left" width="110">
+                                        <label align="top" height="14" text="ESCOLHIDAS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                        <label name="abaAtr_lblPerUsadas" align="client" text="0" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="20" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    </layout>
+                                    <layout name="abaAtr_metricaPer3" align="left" width="110">
+                                        <label align="top" height="14" text="SALDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                        <label name="abaAtr_lblPerSaldo" align="client" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    </layout>
+                                    <layout align="client">
+                                        <label align="top" height="14" text="EXTRAS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="Perícias concedidas por raça, poder ou qualidade — não ocupam vaga."/>
+                                        <label name="abaAtr_lblPerExtras" align="client" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="20" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    </layout>
+                                </layout>
+                                <layout align="client" margins="{top=4}">
+                                    <label align="left" width="144" text="AJUSTE DO MESTRE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" hint="Vagas concedidas fora da progressão normal — recompensa, correção ou decisão de mesa."/>
+                                    <rectangle align="left" width="100" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
+                                        <edit name="abaAtr_edAjustePericias" align="client" field="periciasAjuste" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Soma ou subtrai vagas de perícia. Use negativo para retirar.">
+                                            <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                        </edit>
+                                    </rectangle>
+                                    <label align="client" text="VAGAS" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                                </layout>
                             </layout>
-                            <layout align="left" width="92">
-                                <label align="top" height="14" text="SALDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hitTest="false"/>
-                                <label name="abaAtr_lblPontosSaldo" align="top" height="24" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
-                            </layout>
-                            <layout align="left" width="92">
-                                <label align="top" height="14" text="EXTRAS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="Soma dos bônus de raça e poderes (o campo '+' de cada atributo). Não sai do seu bolso."/>
-                                <label name="abaAtr_lblPontosExtras" align="top" height="24" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="20" horzTextAlign="center" hitTest="false"/>
-                            </layout>
-                            <rectangle align="left" width="1" color="#22323A" margins="{left=10,right=10,top=6,bottom=6}" hitTest="false"/>
-                            <label align="left" width="88" text="PERÍCIAS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" hitTest="false"/>
-                            <layout align="left" width="92">
-                                <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="6 perícias iniciais mais as ganhas por nível, somadas às vagas concedidas por poderes."/>
-                                <label name="abaAtr_lblPerTotal" align="top" height="24" text="0" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
-                            </layout>
-                            <layout align="left" width="92">
-                                <label align="top" height="14" text="ESCOLHIDAS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hitTest="false"/>
-                                <label name="abaAtr_lblPerUsadas" align="top" height="24" text="0" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="20" horzTextAlign="center" hitTest="false"/>
-                            </layout>
-                            <layout align="left" width="92">
-                                <label align="top" height="14" text="SALDO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hitTest="false"/>
-                                <label name="abaAtr_lblPerSaldo" align="top" height="24" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
-                            </layout>
-                            <layout align="client">
-                                <label align="top" height="14" text="EXTRAS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" hint="Perícias concedidas por raça, poder ou qualidade — não ocupam vaga."/>
-                                <label name="abaAtr_lblPerExtras" align="top" height="24" text="0" fontFamily="Cinzel" fontColor="#4E8C74" fontSize="20" horzTextAlign="center" hitTest="false"/>
-                            </layout>
-                        </layout>
-                    <!-- AJUSTE DO MESTRE: estes dois campos eram lidos pelo
-                         cálculo mas não existiam na tela — o mestre não tinha
-                         como usar a válvula de escape. Achado pela verificação
-                         de campos NDB órfãos. -->
-                    <layout align="top" height="42" margins="{top=4,bottom=2}">
-                        <label align="left" width="150" text="AJUSTE DO MESTRE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" hint="Pontos concedidos fora da progressão normal — recompensa de narrativa, correção de mesa."/>
-                        <layout align="left" width="180" margins="{right=10}">
-                            <label align="top" height="14" text="PONTOS DE ATRIBUTO" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" hitTest="false"/>
-                            <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
-                                <edit name="abaAtr_edAjustePontos" align="client" field="pontosAtributoAjuste" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Soma ou subtrai pontos de atributo. Use negativo para retirar.">
-                                    <event name="onChange"><![CDATA[recalcularTudo();]]></event>
-                                </edit>
-                            </rectangle>
-                        </layout>
-                        <layout align="left" width="180">
-                            <label align="top" height="14" text="VAGAS DE PERÍCIA" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" hitTest="false"/>
-                            <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
-                                <edit name="abaAtr_edAjustePericias" align="client" field="periciasAjuste" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Soma ou subtrai vagas de perícia. Use negativo para retirar.">
-                                    <event name="onChange"><![CDATA[recalcularTudo();]]></event>
-                                </edit>
-                            </rectangle>
-                        </layout>
-                        <label align="client" text="" hitTest="false"/>
+                        </rectangle>
                     </layout>
 
-                        <label name="abaAtr_lblAvisoLimite" align="top" height="16" text="" fontFamily="EB Garamond" fontColor="#E2AEB6" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
-                        <label name="abaAtr_lblNota" align="top" height="16" text="" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
-                    </rectangle>
+                    <!-- Avisos permanecem fora dos cards para ocupar toda a
+                         largura e não competir com nenhuma das duas economias. -->
+                    <layout align="top" height="36" margins="{bottom=10}">
+                        <label name="abaAtr_lblAvisoLimite" align="top" height="18" text="" fontFamily="EB Garamond" fontColor="#E2AEB6" fontSize="11" horzTextAlign="center" wordWrap="false" hitTest="false"/>
+                        <label name="abaAtr_lblNota" align="client" text="" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    </layout>
 
                     <!-- ESCOLA COM VANTAGEM da Linhagem de Unaris (v0.42.1, B-02).
                          O livro [2.2]: "escolha rolar dados com vantagem em uma
@@ -14809,29 +14854,35 @@
 
                     <rectangle name="abaAtr_blocoCarisma" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                            <layout align="top" height="34" margins="{bottom=6}">
+                            <layout align="top" height="42" margins="{bottom=6}">
                                 <!-- Orcamento horizontal preservado: icone 34 + titulo 156 = 190.
                                      Assim a arte entra sem deslocar base, bonus, automatico ou total. -->
                                 <image align="left" width="34" style="originalSize" src="imagens/atributo_carisma.png" hitTest="false"/>
                                 <label align="left" width="156" text="CARISMA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BASE" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit name="edBasecarisma" align="client" transparent="true" field="carismaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BÔNUS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit align="client" transparent="true" field="carismaBonus" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Bonus (racial/poder)">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="top" height="14" text="AUTO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <label align="client" field="carismaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="carismaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                    <rectangle align="client" color="#0A0C10" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                        <label align="client" field="carismaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    </rectangle>
                                 </layout>
                             </layout>
 
@@ -14840,7 +14891,7 @@
                                     <event name="onClick"><![CDATA[abrirPopupAjustado(self.popPericiaCarisma, 760, 560);]]></event>
                                     <label align="client" text="+ Adicionar Perícia" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label name="lblContadorCarisma" align="left" width="90" text="0 / 0" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
+                                <label name="lblContadorCarisma" align="left" width="130" text="PERÍCIAS  0 / 0" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
                                 <rectangle align="right" width="76" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=6}" cursor="handPoint" hint="Remover TODAS as perícias deste atributo">
                                     <event name="onClick"><![CDATA[limparListaPericias("listaPericiasCarisma");]]></event>
                                     <label align="client" text="Limpar" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -14848,7 +14899,7 @@
                                 
                             </layout>
 
-                                                        <label name="abaAtr_vazioCarisma" align="top" height="0" text="Nenhuma perícia neste atributo ainda — use  + Adicionar Perícia.  Só o número que couber nas vagas conta." fontFamily="EB Garamond" fontColor="#54636B" fontSize="12" vertTextAlign="center" hitTest="false"/>
+                                                        <label name="abaAtr_vazioCarisma" align="top" height="0" text="Nenhuma perícia vinculada. Use + Adicionar Perícia; só o que couber no limite conta." fontFamily="EB Garamond" fontColor="#6F7F87" fontSize="12" vertTextAlign="center" hitTest="false"/>
 <recordList name="listaPericiasCarisma" align="client" field="listaPericiasCarisma" templateForm="frmItemPericia" itemHeight="76" selectable="true"/>
                         </layout>
                     </rectangle>
@@ -14858,23 +14909,29 @@
                             <image align="left" width="34" style="originalSize" src="imagens/atributo_constituicao.png" hitTest="false"/>
                             <label align="left" width="156" text="CONSTITUIÇÃO" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                             <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                <label align="top" height="14" text="BASE" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                 <edit name="edBaseconstituicao" align="client" transparent="true" field="constituicaoBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                     <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                 </edit>
                             </rectangle>
                             <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                             <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                <label align="top" height="14" text="BÔNUS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                 <edit align="client" transparent="true" field="constituicaoBonus" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Bonus">
                                     <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                 </edit>
                             </rectangle>
                             <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="top" height="14" text="AUTO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <label align="client" field="constituicaoAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                             <layout align="left" width="86">
-                                <label align="client" field="constituicaoTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                <rectangle align="client" color="#0A0C10" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="client" field="constituicaoTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                </rectangle>
                             </layout>
                             <label align="client" text="Não possui perícias vinculadas (regra do sistema)" fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" vertTextAlign="center" horzTextAlign="trailing" margins="{left=10}"/>
                         </layout>
@@ -14882,27 +14939,33 @@
 
                     <rectangle name="abaAtr_blocoDestreza" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                            <layout align="top" height="34" margins="{bottom=6}">
+                            <layout align="top" height="42" margins="{bottom=6}">
                                 <image align="left" width="34" style="originalSize" src="imagens/atributo_destreza.png" hitTest="false"/>
                                 <label align="left" width="156" text="DESTREZA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BASE" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit name="edBasedestreza" align="client" transparent="true" field="destrezaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BÔNUS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit align="client" transparent="true" field="destrezaBonus" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Bonus (racial/poder)">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="top" height="14" text="AUTO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <label align="client" field="destrezaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="destrezaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                    <rectangle align="client" color="#0A0C10" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                        <label align="client" field="destrezaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    </rectangle>
                                 </layout>
                             </layout>
 
@@ -14911,7 +14974,7 @@
                                     <event name="onClick"><![CDATA[abrirPopupAjustado(self.popPericiaDestreza, 760, 560);]]></event>
                                     <label align="client" text="+ Adicionar Perícia" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label name="lblContadorDestreza" align="left" width="90" text="0 / 0" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
+                                <label name="lblContadorDestreza" align="left" width="130" text="PERÍCIAS  0 / 0" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
                                 <rectangle align="right" width="76" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=6}" cursor="handPoint" hint="Remover TODAS as perícias deste atributo">
                                     <event name="onClick"><![CDATA[limparListaPericias("listaPericiasDestreza");]]></event>
                                     <label align="client" text="Limpar" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -14919,34 +14982,40 @@
                                 
                             </layout>
 
-                                                        <label name="abaAtr_vazioDestreza" align="top" height="0" text="Nenhuma perícia neste atributo ainda — use  + Adicionar Perícia.  Só o número que couber nas vagas conta." fontFamily="EB Garamond" fontColor="#54636B" fontSize="12" vertTextAlign="center" hitTest="false"/>
+                                                        <label name="abaAtr_vazioDestreza" align="top" height="0" text="Nenhuma perícia vinculada. Use + Adicionar Perícia; só o que couber no limite conta." fontFamily="EB Garamond" fontColor="#6F7F87" fontSize="12" vertTextAlign="center" hitTest="false"/>
 <recordList name="listaPericiasDestreza" align="client" field="listaPericiasDestreza" templateForm="frmItemPericia" itemHeight="76" selectable="true"/>
                         </layout>
                     </rectangle>
 
                     <rectangle name="abaAtr_blocoForca" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                            <layout align="top" height="34" margins="{bottom=6}">
+                            <layout align="top" height="42" margins="{bottom=6}">
                                 <image align="left" width="34" style="originalSize" src="imagens/atributo_forca.png" hitTest="false"/>
                                 <label align="left" width="156" text="FORÇA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BASE" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit name="edBaseforca" align="client" transparent="true" field="forcaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BÔNUS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit align="client" transparent="true" field="forcaBonus" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Bonus (racial/poder)">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="top" height="14" text="AUTO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <label align="client" field="forcaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="forcaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                    <rectangle align="client" color="#0A0C10" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                        <label align="client" field="forcaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    </rectangle>
                                 </layout>
                             </layout>
 
@@ -14955,7 +15024,7 @@
                                     <event name="onClick"><![CDATA[abrirPopupAjustado(self.popPericiaForca, 760, 560);]]></event>
                                     <label align="client" text="+ Adicionar Perícia" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label name="lblContadorForca" align="left" width="90" text="0 / 0" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
+                                <label name="lblContadorForca" align="left" width="130" text="PERÍCIAS  0 / 0" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
                                 <rectangle align="right" width="76" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=6}" cursor="handPoint" hint="Remover TODAS as perícias deste atributo">
                                     <event name="onClick"><![CDATA[limparListaPericias("listaPericiasForca");]]></event>
                                     <label align="client" text="Limpar" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -14963,34 +15032,40 @@
                                 
                             </layout>
 
-                                                        <label name="abaAtr_vazioForca" align="top" height="0" text="Nenhuma perícia neste atributo ainda — use  + Adicionar Perícia.  Só o número que couber nas vagas conta." fontFamily="EB Garamond" fontColor="#54636B" fontSize="12" vertTextAlign="center" hitTest="false"/>
+                                                        <label name="abaAtr_vazioForca" align="top" height="0" text="Nenhuma perícia vinculada. Use + Adicionar Perícia; só o que couber no limite conta." fontFamily="EB Garamond" fontColor="#6F7F87" fontSize="12" vertTextAlign="center" hitTest="false"/>
 <recordList name="listaPericiasForca" align="client" field="listaPericiasForca" templateForm="frmItemPericia" itemHeight="76" selectable="true"/>
                         </layout>
                     </rectangle>
 
                     <rectangle name="abaAtr_blocoInteligencia" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                            <layout align="top" height="34" margins="{bottom=6}">
+                            <layout align="top" height="42" margins="{bottom=6}">
                                 <image align="left" width="34" style="originalSize" src="imagens/atributo_inteligencia.png" hitTest="false"/>
                                 <label align="left" width="156" text="INTELIGÊNCIA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BASE" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit name="edBaseinteligencia" align="client" transparent="true" field="inteligenciaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BÔNUS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit align="client" transparent="true" field="inteligenciaBonus" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Bonus (racial/poder)">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="top" height="14" text="AUTO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <label align="client" field="inteligenciaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="inteligenciaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                    <rectangle align="client" color="#0A0C10" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                        <label align="client" field="inteligenciaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    </rectangle>
                                 </layout>
                             </layout>
 
@@ -14999,7 +15074,7 @@
                                     <event name="onClick"><![CDATA[abrirPopupAjustado(self.popPericiaInteligencia, 760, 560);]]></event>
                                     <label align="client" text="+ Adicionar Perícia" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label name="lblContadorInteligencia" align="left" width="90" text="0 / 0" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
+                                <label name="lblContadorInteligencia" align="left" width="130" text="PERÍCIAS  0 / 0" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
                                 <rectangle align="right" width="76" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=6}" cursor="handPoint" hint="Remover TODAS as perícias deste atributo">
                                     <event name="onClick"><![CDATA[limparListaPericias("listaPericiasInteligencia");]]></event>
                                     <label align="client" text="Limpar" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -15007,34 +15082,40 @@
                                 
                             </layout>
 
-                                                        <label name="abaAtr_vazioInteligencia" align="top" height="0" text="Nenhuma perícia neste atributo ainda — use  + Adicionar Perícia.  Só o número que couber nas vagas conta." fontFamily="EB Garamond" fontColor="#54636B" fontSize="12" vertTextAlign="center" hitTest="false"/>
+                                                        <label name="abaAtr_vazioInteligencia" align="top" height="0" text="Nenhuma perícia vinculada. Use + Adicionar Perícia; só o que couber no limite conta." fontFamily="EB Garamond" fontColor="#6F7F87" fontSize="12" vertTextAlign="center" hitTest="false"/>
 <recordList name="listaPericiasInteligencia" align="client" field="listaPericiasInteligencia" templateForm="frmItemPericia" itemHeight="76" selectable="true"/>
                         </layout>
                     </rectangle>
 
                     <rectangle name="abaAtr_blocoManipulacao" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                            <layout align="top" height="34" margins="{bottom=6}">
+                            <layout align="top" height="42" margins="{bottom=6}">
                                 <image align="left" width="34" style="originalSize" src="imagens/atributo_manipulacao.png" hitTest="false"/>
                                 <label align="left" width="156" text="MANIPULAÇÃO" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BASE" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit name="edBasemanipulacao" align="client" transparent="true" field="manipulacaoBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BÔNUS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit align="client" transparent="true" field="manipulacaoBonus" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Bonus (racial/poder)">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="top" height="14" text="AUTO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <label align="client" field="manipulacaoAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="manipulacaoTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                    <rectangle align="client" color="#0A0C10" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                        <label align="client" field="manipulacaoTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    </rectangle>
                                 </layout>
                             </layout>
 
@@ -15043,7 +15124,7 @@
                                     <event name="onClick"><![CDATA[abrirPopupAjustado(self.popPericiaManipulacao, 760, 560);]]></event>
                                     <label align="client" text="+ Adicionar Perícia" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label name="lblContadorManipulacao" align="left" width="90" text="0 / 0" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
+                                <label name="lblContadorManipulacao" align="left" width="130" text="PERÍCIAS  0 / 0" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
                                 <rectangle align="right" width="76" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=6}" cursor="handPoint" hint="Remover TODAS as perícias deste atributo">
                                     <event name="onClick"><![CDATA[limparListaPericias("listaPericiasManipulacao");]]></event>
                                     <label align="client" text="Limpar" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -15051,34 +15132,40 @@
                                 
                             </layout>
 
-                                                        <label name="abaAtr_vazioManipulacao" align="top" height="0" text="Nenhuma perícia neste atributo ainda — use  + Adicionar Perícia.  Só o número que couber nas vagas conta." fontFamily="EB Garamond" fontColor="#54636B" fontSize="12" vertTextAlign="center" hitTest="false"/>
+                                                        <label name="abaAtr_vazioManipulacao" align="top" height="0" text="Nenhuma perícia vinculada. Use + Adicionar Perícia; só o que couber no limite conta." fontFamily="EB Garamond" fontColor="#6F7F87" fontSize="12" vertTextAlign="center" hitTest="false"/>
 <recordList name="listaPericiasManipulacao" align="client" field="listaPericiasManipulacao" templateForm="frmItemPericia" itemHeight="76" selectable="true"/>
                         </layout>
                     </rectangle>
 
                     <rectangle name="abaAtr_blocoSabedoria" align="top" height="260" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="6" yradius="6" margins="{bottom=10}">
                         <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
-                            <layout align="top" height="34" margins="{bottom=6}">
+                            <layout align="top" height="42" margins="{bottom=6}">
                                 <image align="left" width="34" style="originalSize" src="imagens/atributo_sabedoria.png" hitTest="false"/>
                                 <label align="left" width="156" text="SABEDORIA" fontFamily="Cinzel Decorative" fontColor="#E6E9E4" fontSize="15" fontStyle="bold" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BASE" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit name="edBasesabedoria" align="client" transparent="true" field="sabedoriaBase" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Base">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3">
+                                    <label align="top" height="14" text="BÔNUS" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <edit align="client" transparent="true" field="sabedoriaBonus" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="14" horzTextAlign="center" hint="Bonus (racial/poder)">
                                         <event name="onChange"><![CDATA[recalcularTudo();]]></event>
                                     </edit>
                                 </rectangle>
                                 <label align="left" width="26" text="+" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <rectangle align="left" width="78" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                    <label align="top" height="14" text="AUTO" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                                     <label align="client" field="sabedoriaAuto" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
                                 <label align="left" width="26" text="=" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="14" horzTextAlign="center" vertTextAlign="center"/>
                                 <layout align="left" width="86">
-                                    <label align="client" field="sabedoriaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                                    <rectangle align="client" color="#0A0C10" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" hitTest="false">
+                                        <label align="client" field="sabedoriaTotalRolagem" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" vertTextAlign="center"/>
+                                    </rectangle>
                                 </layout>
                             </layout>
 
@@ -15087,7 +15174,7 @@
                                     <event name="onClick"><![CDATA[abrirPopupAjustado(self.popPericiaSabedoria, 760, 560);]]></event>
                                     <label align="client" text="+ Adicionar Perícia" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 </rectangle>
-                                <label name="lblContadorSabedoria" align="left" width="90" text="0 / 0" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
+                                <label name="lblContadorSabedoria" align="left" width="130" text="PERÍCIAS  0 / 0" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{left=8}"/>
                                 <rectangle align="right" width="76" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{left=6}" cursor="handPoint" hint="Remover TODAS as perícias deste atributo">
                                     <event name="onClick"><![CDATA[limparListaPericias("listaPericiasSabedoria");]]></event>
                                     <label align="client" text="Limpar" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -15095,7 +15182,7 @@
                                 
                             </layout>
 
-                                                        <label name="abaAtr_vazioSabedoria" align="top" height="0" text="Nenhuma perícia neste atributo ainda — use  + Adicionar Perícia.  Só o número que couber nas vagas conta." fontFamily="EB Garamond" fontColor="#54636B" fontSize="12" vertTextAlign="center" hitTest="false"/>
+                                                        <label name="abaAtr_vazioSabedoria" align="top" height="0" text="Nenhuma perícia vinculada. Use + Adicionar Perícia; só o que couber no limite conta." fontFamily="EB Garamond" fontColor="#6F7F87" fontSize="12" vertTextAlign="center" hitTest="false"/>
 <recordList name="listaPericiasSabedoria" align="client" field="listaPericiasSabedoria" templateForm="frmItemPericia" itemHeight="76" selectable="true"/>
                         </layout>
                     </rectangle>

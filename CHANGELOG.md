@@ -1,3 +1,23 @@
+## v0.53.11 — hierarquia visual de Atributos & Perícias (12/09/2026)
+
+O resumo da criação deixou de concentrar as duas economias numa faixa presa à
+esquerda. Atributos e Perícias agora possuem cards próprios, de igual largura,
+com título, quatro métricas e o respectivo ajuste do mestre. As métricas também
+dividem o espaço interno em quatro partes e recalculam ao redimensionar ou ao
+retornar à aba, eliminando o vazio crescente em monitores largos.
+
+Nos sete cards de atributo, Base, Bônus, Automático e Total passaram a ter
+rótulos visíveis. O Total ganhou caixa com contorno dourado, distinguindo o
+resultado das três parcelas sem depender apenas do sinal de igualdade. Os seis
+contadores agora dizem explicitamente `PERÍCIAS`, e o estado vazio recebeu
+texto mais curto e contraste maior. A altura dinâmica foi ajustada aos novos
+rótulos; listas continuam crescendo pelo número real de perícias.
+
+Campos NDB, tipos, handlers, limites, cálculo dos atributos e cálculo das
+perícias permanecem os mesmos da v0.53.10. Validação local: XML de todos os
+LFM, sintaxe Lua, preservação estrutural e divisão responsiva em 1366, 1600 e
+1920 pixels. A conferência visual permanece no Firecast.
+
 ## v0.53.10 — descrição simétrica e derivados legíveis (12/09/2026)
 
 O teste visual da v0.53.9 revelou que a largura fixa de Aparência deixava
