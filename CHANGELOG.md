@@ -1,3 +1,21 @@
+## v0.53.14 — uma rolagem no construtor de habilidades (15/09/2026)
+
+Configuração deixou de possuir uma barra lateral própria. O construtor agora
+usa a mesma rolagem principal para percorrer Configuração, Descrição & Efeito e
+Arte; somente o catálogo de tags conserva sua rolagem interna, pois é uma lista
+longa e independente.
+
+A linha da configuração cresce dinamicamente entre 420 e 526 pixels conforme
+tipo, sustentação, Linhagem de Unaris e quantidade de poderes de origem. Assim,
+remover a rolagem interna não corta campos nos estados maiores. A moldura da
+arte passou de aproximadamente 2:1 para cerca de 1,15:1 no popup de 1020 pixels,
+mantendo a imagem proporcional, inteira e ligada ao mesmo campo NDB.
+
+Campos, permissões, handlers e regras permanecem idênticos à v0.53.13.
+Validação local: XML dos LFM, sintaxe Lua, preservação estrutural, exatamente
+duas rolagens no popup e geometria mínima de 1366×768. A conferência visual
+permanece no Firecast.
+
 ## v0.53.13 — equações de atributo alinhadas (15/09/2026)
 
 Base, Bônus e Automático deixaram de colocar o rótulo dentro da própria caixa

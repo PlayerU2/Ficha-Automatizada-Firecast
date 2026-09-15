@@ -1,14 +1,14 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.13
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.14
 
-Refino visual das equacoes de atributo. Base, Bonus, Auto e Total agora usam a
-mesma estrutura: rotulo acima e caixa numerica abaixo. Nenhum rotulo ocupa a
-area de digitacao. Os dois sinais de soma e o sinal de igualdade comecam apos
-a faixa dos rotulos, ficando centralizados exatamente na altura dos numeros.
-Campos, eventos, calculos, largura total e comportamento em Ferido permanecem
-os mesmos.
-Conferir no Firecast: os quatro rotulos devem formar uma linha; as quatro caixas
-outra; e os sinais +, + e = devem estar no centro vertical das caixas.
-Validacao local: XML, sintaxe Lua, hierarquia e geometria nas larguras minimas.
+Refino do construtor de habilidades. Configuracao, Descricao & Efeito e Arte
+agora percorrem uma unica barra lateral. Apenas o catalogo de tags conserva sua
+rolagem interna, por ser uma lista longa. A altura da configuracao acompanha
+tipo, sustentacao, linhagem e quantidade de poderes sem cortar campos. A
+moldura da arte ficou mais estreita e quase quadrada, ainda exibindo a imagem
+inteira e sem recorte.
+Conferir no Firecast: deve haver uma barra principal a direita do popup e outra
+somente dentro da lista de tags; a configuracao nao deve ter barra propria.
+Validacao local: XML, sintaxe Lua, estrutura, estados dinamicos e 1366x768.
 Pendente no Windows: verificar, testes, rdk l, rdk i e conferencia visual.
 
 
@@ -85,14 +85,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.53.13, o que esta rodando nao e este pacote.
+disser v0.53.14, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.53.13)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.53.14)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que

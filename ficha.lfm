@@ -6791,6 +6791,44 @@
         local ALT_LINHA_CAIXA_HAB = 36   -- height 30 + margins bottom 6
         local ALT_BLOCO_SUSTENTADO = 96  -- popHab_wrapSustentado aberto
 
+        -- A configuracao inteira pertence a rolagem principal do popup.
+        -- A altura desta linha acompanha os filhos que o Lua abre e fecha;
+        -- assim o painel da direita nao precisa de uma segunda barra de
+        -- rolagem. A lista de tags continua rolando por conta propria porque
+        -- ela e, de fato, uma lista longa.
+        local ALT_CONFIG_HAB_MIN = 420
+        local ALT_CONFIG_HAB_FIXA = 278
+
+        local function atualizarAlturaConfiguracaoHab()
+            if habRascunho == nil then return end
+
+            local abreBlocos = (habRascunho.tipo == "universal")
+                            or (habRascunho.tipo == "forma")
+            local alturaProgressiva = 0
+            if abreBlocos then
+                alturaProgressiva = ALT_LINHA_CAIXA_HAB * 2
+                if habRascunho.sustentacao == true then
+                    alturaProgressiva = alturaProgressiva + ALT_BLOCO_SUSTENTADO
+                end
+            end
+
+            local semPoderDeOrigem = (habRascunho.tipo == "classe")
+                or (habRascunho.tipo == "universal")
+                or (habRascunho.tipo == "forma")
+            local alturaOrigem = semPoderDeOrigem and 46 or 16
+            if not semPoderDeOrigem then
+                local qtd = #(poderesNoConstrutor or {})
+                if qtd > 8 then qtd = 8 end
+                alturaOrigem = alturaOrigem + qtd * 29
+            end
+
+            local alturaBruxa = (habRascunho.tipo == "feitico") and 54 or 0
+            local altura = ALT_CONFIG_HAB_FIXA + alturaProgressiva
+                + alturaOrigem + alturaBruxa
+            if altura < ALT_CONFIG_HAB_MIN then altura = ALT_CONFIG_HAB_MIN end
+            definirAlturaPod(self.popHab_linhaConfiguracao, altura)
+        end
+
         function atualizarBlocoProgressivo()
             if habRascunho == nil then return end
             -- v0.52.0: quem abre os blocos e o tipo UNIVERSAL, e nao mais
@@ -6940,6 +6978,7 @@
                     lbl:setText(resumo)
                 end
             end
+            atualizarAlturaConfiguracaoHab()
         end
 
         -- ---------------------------------------------------------------
@@ -7928,6 +7967,10 @@
                     self.popHab_lblCusto:setFontColor(COR.muted)
                 end
             end
+            -- A lista de poderes e os blocos condicionais ja estao em seu
+            -- estado final neste ponto; agora a rolagem externa recebe a
+            -- altura exata da configuracao.
+            atualizarAlturaConfiguracaoHab()
         end
 
         -- =================================================================
@@ -14413,7 +14456,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.13" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.14" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -24783,7 +24826,7 @@
                             </layout>
 
 
-                    <layout align="top" height="420" margins="{bottom=8}">
+                    <layout name="popHab_linhaConfiguracao" align="top" height="420" margins="{bottom=8}">
                         <rectangle align="left" width="190" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
                         <label name="popHab_lblTagsLimite" align="top" height="22" text="TAGS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" margins="{top=4}" hitTest="false"/>
                         <scrollBox align="client" margins="{left=8,right=8,top=2,bottom=8}">
@@ -25066,7 +25109,7 @@
                         </scrollBox>
                     </rectangle>
                         <rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" hitTest="false">
-                        <scrollBox align="client" margins="{left=14,right=14,top=10,bottom=8}">
+                        <layout align="client" margins="{left=14,right=14,top=10,bottom=8}">
                             <label align="top" height="16" text="TIPO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
                             <layout align="top" height="30" margins="{bottom=8}">
                                 <rectangle name="popHab_btnTipoPoder" align="left" width="120" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=6}" cursor="handPoint" hint="Habilidade vinculada a um poder ativo">
@@ -25282,7 +25325,7 @@
                                 </layout>
                             </layout>
 
-                        </scrollBox>
+                        </layout>
                     </rectangle>
                     </layout>
                     <label align="top" height="26" text="DESCRIÇÃO &amp; EFEITO" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="14" fontStyle="bold" vertTextAlign="center" margins="{top=8}" hitTest="false"/>
@@ -25342,7 +25385,7 @@
                     <label align="top" height="26" text="ARTE DA HABILIDADE" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="14" fontStyle="bold" vertTextAlign="center" margins="{top=8}" hitTest="false"/>
                     <rectangle align="top" height="1" color="#C9A24B" margins="{bottom=10}" hitTest="false"/>
                     <label align="top" height="24" text="Clique na moldura para escolher uma imagem. A arte é exibida inteira, sem recorte." fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="13" hitTest="false"/>
-                    <rectangle align="top" height="300" color="#0A0C10" strokeColor="#3A2E52" strokeSize="1" xradius="4" yradius="4" margins="{left=170,right=170,bottom=12}">
+                    <rectangle name="popHab_molduraArte" align="top" height="300" color="#0A0C10" strokeColor="#3A2E52" strokeSize="1" xradius="4" yradius="4" margins="{left=315,right=315,bottom=12}">
                         <!-- A peça inteira importa mais que preencher a moldura. -->
                         <image align="client" field="imagemHabEdicao" editable="true" style="proportional" showProgress="true" margins="{left=3,right=3,top=3,bottom=3}" hint="Clique para escolher a arte desta habilidade — de um endereço da internet ou do seu FireDrive. Ela aparece sempre que alguém abrir a habilidade, inclusive no meio do turno."/>
                     </rectangle>
