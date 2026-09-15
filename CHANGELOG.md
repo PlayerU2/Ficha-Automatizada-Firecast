@@ -1,3 +1,21 @@
+## v0.53.13 — equações de atributo alinhadas (15/09/2026)
+
+Base, Bônus e Automático deixaram de colocar o rótulo dentro da própria caixa
+numérica. Os quatro termos da equação agora compartilham a mesma hierarquia:
+uma coluna externa, o rótulo na faixa superior de 14 pixels e a caixa ocupando
+os 28 pixels inferiores. Total conserva a moldura dourada, mas já não quebra o
+padrão estrutural dos três termos anteriores.
+
+Os sinais `+`, `+` e `=` receberam a mesma margem superior de 14 pixels. Assim,
+em vez de serem centralizados na linha inteira de 42 pixels, passam a dividir o
+centro vertical `y=28` com as caixas e seus números. A equação mantém os mesmos
+588 pixels de largura, sem afetar o cenário mínimo de 1366×768.
+
+Campos NDB, eventos e cálculos permanecem idênticos à v0.53.12. Validação
+local: XML dos LFM, sintaxe Lua, preservação estrutural, 21 rótulos externos e
+21 sinais alinhados nos sete atributos. A conferência visual permanece no
+Firecast.
+
 ## v0.53.12 — perícias reativas ao estado da ficha (12/09/2026)
 
 Perícias que já estavam renderizadas agora acompanham o recálculo global. A
