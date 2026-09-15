@@ -161,6 +161,10 @@
                         NDB.deleteNode(sheet);
                         -- pede a ficha raiz para recalcular o painel de pontos
                         if atualizarPainelPontosQD ~= nil then atualizarPainelPontosQD(); end;
+                        -- Mestiço muda quais características raciais valem.
+                        -- Reconstrói a lista ANTES do recálculo para a retirada
+                        -- não deixar concessões da herança antiga ativas.
+                        if atualizarBlocoRaca ~= nil then atualizarBlocoRaca(); end;
                         if recalcularTudo ~= nil then recalcularTudo(); end;
                     end;
                 end;

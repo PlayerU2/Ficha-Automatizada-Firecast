@@ -1452,6 +1452,13 @@
             -- mudanca via o novo valor.
             pcall(function() atualizarLinhasPericias() end)
             atualizarPainelPontosQD()
+            -- Slots gratuitos dependem de tres fontes que podem mudar dentro
+            -- deste proprio recalculo: nivel (EX nos 15/20), poderes ativos e
+            -- subclasse. Sem esta sincronizacao central, eles so apareciam
+            -- depois de outra acao na aba de Habilidades ou de reabrir a
+            -- ficha. A rotina tambem renova a carteira de Poderes, que usa os
+            -- mesmos gastos.
+            pcall(function() atualizarBlocoHabilidades() end)
             pcall(function() atualizarAbaCombate() end)
             pcall(function() atualizarAbaFavores() end)
             pcall(function() atualizarAbaInventario() end)
@@ -3619,10 +3626,13 @@
                 end
             end
 
-            -- Painel de mesticagem (SEMPRE visivel: alternar visible= em
-            -- align="top" reordena o layout). Quando nao ha mesticagem, o
-            -- painel apenas explica isso.
+            -- Painel de mesticagem: so ocupa espaco quando a qualidade
+            -- "Mestiço" esta realmente na ficha. Em align="top" nao usamos
+            -- visible=false porque o Firecast pode recolocar o controle no
+            -- fim ao exibi-lo de novo; altura 0 preserva a ordem da aba e os
+            -- dados lacrados da heranca.
             local ehMestico = ctx.temMestico
+            definirAlturaPod(self.abaRaca_secMestico, ehMestico and 124 or 0)
             local caracsMestico = ehMestico and caracteristicasMesticoDefinidas() or {}
             local usandoMestico = (ehMestico and #caracsMestico > 0)
 
@@ -5797,6 +5807,7 @@
                 " elevou o poder **" .. nomePoder .. "** ao nível " .. novo ..
                 " (" .. poder.tipo .. ").", COR.gold)
             atualizarBlocoHabilidades()
+            recalcularTudo()
             if #avisosDeCompra > 0 then
                 avisarPoderes(table.concat(avisosDeCompra, "  "), COR.gold)
             end
@@ -5845,7 +5856,8 @@
             else
                 avisarPoderes("Ponto devolvido ao saldo.", COR.muted)
             end
-            atualizarBlocoPoderes()
+            atualizarBlocoHabilidades()
+            recalcularTudo()
         end
 
         -- Qual divindade oferece este poder (para gravar a origem).
@@ -7485,6 +7497,9 @@
             habRascunho = nil
             if self.popHabilidade ~= nil then self.popHabilidade:close() end
             atualizarBlocoHabilidades()
+            -- Uma habilidade já ativa pode ter seus efeitos alterados na
+            -- edição; refaz os derivados no mesmo salvamento.
+            recalcularTudo()
         end
 
         function fecharConstrutorHabilidade()
@@ -14464,7 +14479,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.16" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.17" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -16215,7 +16230,7 @@
                          O painel inteiro abre a janela de mestiçagem. Os dois
                          botões da linha de título têm onClick próprio e por
                          isso não disparam o clique do painel. -->
-                    <rectangle name="abaRaca_secMestico" align="top" height="124" color="#0B1014" strokeColor="#C9A24B" strokeSize="1" xradius="4" yradius="4" margins="{bottom=10}" cursor="handPoint" hint="Abrir a janela de mestiçagem para definir Humanos + outra raça e as características">
+                    <rectangle name="abaRaca_secMestico" align="top" height="0" color="#0B1014" strokeColor="#C9A24B" strokeSize="1" xradius="4" yradius="4" margins="{bottom=10}" cursor="handPoint" hint="Abrir a janela de mestiçagem para definir Humanos + outra raça e as características">
                         <event name="onClick"><![CDATA[abrirPopupMestico();]]></event>
                         <layout align="client" margins="{left=12,right=12,top=6,bottom=6}">
                             <layout align="top" height="18">

@@ -179,6 +179,9 @@
                         if podeRemover then
                             NDB.deleteNode(sheet);
                             if atualizarBlocoHabilidades ~= nil then atualizarBlocoHabilidades(); end;
+                            -- Se estava ativa, seus bônus precisam sair dos
+                            -- atributos derivados neste mesmo clique.
+                            if recalcularTudo ~= nil then recalcularTudo(); end;
                         end;
                     end;
                 ]]></event>

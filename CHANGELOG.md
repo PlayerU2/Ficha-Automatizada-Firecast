@@ -1,3 +1,28 @@
+## v0.53.17 — revisão de pré-lançamento (15/09/2026)
+
+Mestiçagem deixa de ocupar espaço na aba Raça & Classe quando a ficha não
+possui a qualidade Mestiço. O painel usa altura zero em vez de alternar
+`visible`, preservando sua posição no fluxo `align="top"` do Firecast e sem
+apagar a herança que já esteja lacrada. Ao remover Mestiço na aba de Qualidades
+& Defeitos, as características raciais são reconstruídas antes do recálculo,
+para que concessões da herança anterior não permaneçam ativas.
+
+A sincronização dos espaços gratuitos de habilidade foi ligada ao recálculo
+central. Mudanças de nível, poderes ativos e subclasse agora atualizam os
+espaços concedidos imediatamente. Comprar ou devolver nível de poder, salvar a
+edição de uma habilidade ativa e excluir uma habilidade também refazem os
+valores derivados no mesmo comando, evitando a necessidade de trocar de aba ou
+reabrir a ficha.
+
+A revisão preservou as dimensões compactas dos popups e das molduras de arte da
+v0.53.16. Meio-Gigante e transformações dos Selkies continuam declarados como
+pendências de regra e não receberam comportamento inventado.
+
+Validação local: XML dos LFM, preservação de campos NDB, controles, permissões
+e handlers, módulos e imagens referenciados, unicidade das funções principais,
+ordem dos recálculos e regressão das dimensões de popup e arte. A compilação e
+a conferência visual permanecem no Firecast para Windows.
+
 ## v0.53.16 — molduras de arte e criatura compacta (15/09/2026)
 
 Habilidades, itens e criaturas passam a seguir a mesma referência visual para

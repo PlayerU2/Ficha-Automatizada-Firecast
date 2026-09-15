@@ -1,12 +1,13 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.16
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.17
 
-Padronizacao das molduras de arte. Habilidades, itens e criaturas agora usam a
-mesma referencia visual: aproximadamente 400 x 320px, imagem inteira e borda
-roxa. O editor de criaturas voltou a 1000px e "O que ficou para voce" passa a
-abrir sempre dentro do formulario, usando a rolagem principal; o botao nao
-alarga mais o popup em nenhuma tela. Campos, cliques, gerador e salvamento
-permanecem iguais. Conferir no Firecast as tres molduras e abrir/fechar as
-decisoes da criatura em tela pequena e larga.
+Revisao de pre-lancamento. Mesticagem agora desaparece por inteiro quando a
+ficha nao possui a qualidade Mestico, sem apagar os dados lacrados da heranca.
+Retirar essa qualidade reconstrói as caracteristicas raciais antes de refazer
+os calculos. Slots gratuitos de habilidade passam a acompanhar imediatamente
+nivel, poderes e subclasse; poderes e habilidades editados ou removidos tambem
+refazem os derivados no mesmo clique. Larguras dos popups e molduras de arte
+permanecem iguais a versao anterior.
+Pendencias conhecidas de regra: Meio-Gigante e transformacoes dos Selkies.
 Pendente no Windows: verificar, testes, rdk l, rdk i e conferencia visual.
 
 
@@ -83,14 +84,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.53.16, o que esta rodando nao e este pacote.
+disser v0.53.17, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.53.16)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.53.17)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que
