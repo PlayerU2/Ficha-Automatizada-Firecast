@@ -1,4 +1,9 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.19
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.20
+
+A Forma Bestial Lupina da Lua agora recupera 100% da vida maxima quando a
+primeira transformacao do descanso longo acontece sob Lua Cheia. O Eclipse
+Carmesim herda o mesmo bonus; as fases comuns continuam em 50% e transformar
+novamente antes de outro descanso longo nao repete a cura.
 
 O editor de Acessorios e Ferramentas agora exibe os quatro campos de bonus de
 defesa que ja eram salvos e calculados pela ficha. Assim, itens como o Colar do
@@ -83,14 +88,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.53.19, o que esta rodando nao e este pacote.
+disser v0.53.20, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.53.19)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.53.20)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que

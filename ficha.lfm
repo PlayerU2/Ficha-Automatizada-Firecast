@@ -9328,6 +9328,9 @@
         --   Lua    "recupera 50% de vida máximo; recebe o bônus especial
         --           dependendo da fase da lua maior na primeira
         --           transformação a cada descanso longo."
+        --   Cheia  "Recupera 100% da vida máxima na transformação".
+        --   Eclipse "Recebe todos os bônus das outras fases", portanto
+        --           também herda os 100% da Cheia.
         --
         -- "A CADA DESCANSO LONGO" e o que o marcador guarda: ele liga na
         -- primeira transformacao e so o descanso longo o desliga. Sem o
@@ -9360,13 +9363,16 @@
             local partes = {}
             if not primeiraTransformacaoUsada() then
                 sheet.primeiraTransfUsada = true
-                local cura = math.floor(n(sheet.hp) * (n(h.curaPrimeiraTransf) / 100) + 0.5)
+                local fase = nil
+                if h.fasesLua then fase = faseLuaAtual() end
+                local percentualCura = CatalogoProgressiva.percentualCuraPrimeiraTransformacao(h, fase)
+                local cura = math.floor(n(sheet.hp) * (percentualCura / 100) + 0.5)
                 sheet.hpAtual = math.min(n(sheet.hpAtual) + cura, n(sheet.hp))
                 table.insert(partes, "Primeira transformação desde o descanso longo: +" ..
-                    cura .. " de vida (" .. h.curaPrimeiraTransf .. "% do máximo).")
-                if h.fasesLua then
+                    cura .. " de vida (" .. percentualCura .. "% do máximo).")
+                if fase ~= nil then
                     table.insert(partes, "Bônus lunar desta transformação: " ..
-                        faseLuaAtual().nome .. ".")
+                        fase.nome .. ".")
                 end
                 recalcularTudo()
             end
@@ -14500,7 +14506,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.19" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.20" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 

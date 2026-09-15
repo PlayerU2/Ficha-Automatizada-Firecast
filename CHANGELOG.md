@@ -1,3 +1,19 @@
+## v0.53.20 — cura lunar da Forma Bestial (15/09/2026)
+
+A primeira transformação dos Vigilantes da Lua continua recuperando 50% da
+vida máxima nas fases comuns, mas passa a recuperar 100% durante a Lua Cheia,
+como determina o bônus lunar. O Eclipse Carmesim também recebe os 100%, pois
+seu texto concede todos os bônus das outras fases.
+
+O marcador de uso permanece único por descanso longo: trocar de forma outra
+vez não repete a cura, e somente um descanso longo reabre o benefício. Filhos
+da Fúria continuam com seus 100% próprios e não passam a consumir efeitos de
+fase lunar.
+
+Validação local: matriz das cinco fases, isolamento entre as duas facções,
+consumo e reabertura por descanso longo, limite na vida máxima, XML válido e
+versão sincronizada. A conferência visual permanece no Firecast.
+
 ## v0.53.19 — defesas de acessórios e encantamentos integrais (15/09/2026)
 
 O editor da categoria Acessórios e Ferramentas passa a exibir o grupo de

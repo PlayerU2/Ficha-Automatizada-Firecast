@@ -272,14 +272,35 @@ CatalogoProgressiva.FASES_LUA = {
      texto = "+2 de iniciativa e imunidade a testes de resistência a dor."},
     {nome = "Cheia",
      deslocamento = 0, iniciativa = 0, tetoAbsorcao = 80,
+     -- Texto da fase, logo abaixo: "Recupera 100% da vida máxima na
+     -- transformação". Este valor SUBSTITUI os 50% básicos da Forma Bestial
+     -- Lupina da Lua somente na primeira transformação do descanso longo.
+     curaPrimeiraTransf = 100,
      texto = "Recupera 100% da vida máxima na transformação, e o limite sistêmico de absorção passa a ser 80%."},
     {nome = "Minguante",
      deslocamento = 0, iniciativa = 0, tetoAbsorcao = 0,
      texto = "Ao eliminar um inimigo ou causar dano crítico, recupere 30 pontos de vida."},
     {nome = "Eclipse Carmesim",
      deslocamento = 2, iniciativa = 2, tetoAbsorcao = 80,
+     -- "Recebe todos os bônus das outras fases": inclui a cura da Cheia.
+     curaPrimeiraTransf = 100,
      texto = "A cada dano aplicado o oponente recebe 1d[rank] níveis de [Sangramento]. A regeneração continua sob qualquer ferimento ou amputação, desde que cabeça e coração fiquem intactos. Recebe todos os bônus das outras fases."},
 }
+
+-- Percentual efetivo da primeira transformação. A fase lunar só pode
+-- substituir a cura quando a habilidade pertence aos Vigilantes; Filhos da
+-- Fúria não recebem bônus lunares mesmo que o card do mundo esteja em Cheia.
+-- Usar o maior valor também impede que uma fase futura reduza, por acidente,
+-- a cura básica escrita na própria habilidade.
+function CatalogoProgressiva.percentualCuraPrimeiraTransformacao(habilidade, fase)
+    local h = habilidade or {}
+    local percentual = tonumber(h.curaPrimeiraTransf) or 0
+    if h.fasesLua == true then
+        local percentualDaFase = tonumber((fase or {}).curaPrimeiraTransf) or 0
+        if percentualDaFase > percentual then percentual = percentualDaFase end
+    end
+    return percentual
+end
 
 function CatalogoProgressiva.faseLua(nome)
     for _, f in ipairs(CatalogoProgressiva.FASES_LUA) do
