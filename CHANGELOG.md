@@ -1,3 +1,21 @@
+## v0.53.15 — editor de criaturas responsivo (15/09/2026)
+
+O painel “O que ficou para você” não redimensiona mais um popup já aberto. No
+Firecast, a largura nova mantinha a borda esquerda parada e crescia somente
+para a direita; mesmo limitada a 94% da ficha, parte do editor saía da área
+visível em uma tela de 1366×768 cuja ficha recebia cerca de 1279 pixels.
+
+O editor agora abre uma única vez, centralizado na largura final. A partir de
+1230 pixels de área da ficha, as observações continuam na coluna lateral; em
+janelas menores, aparecem dentro do fluxo vertical e usam a rolagem principal,
+sem scroll aninhado. As quatro classificações da linha mais larga conservam no
+mínimo seus 816 pixels em ambos os modos.
+
+Campos NDB, handlers, texto das observações, gerador e salvamento permanecem
+idênticos à v0.53.14. Validação local: XML dos LFM, sintaxe Lua, preservação
+estrutural e simulação das larguras 1074, 1279, 1366 e 1600. A conferência
+visual permanece no Firecast.
+
 ## v0.53.14 — uma rolagem no construtor de habilidades (15/09/2026)
 
 Configuração deixou de possuir uma barra lateral própria. O construtor agora

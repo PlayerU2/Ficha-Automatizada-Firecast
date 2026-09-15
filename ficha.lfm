@@ -13792,7 +13792,10 @@
             -- resolve contra a raiz, entao a raiz vira rascunho.
             sheet.imagemCriaturaEdicao = tostring(c.imagem or "")
             preencherEditorCriatura(c)
-            abrirPopupAjustado(self.popCriatura, 1000, 760)
+            -- Abre ja na maior largura que o editor pode usar. Alterar a
+            -- largura depois de popup:show() mantem a borda esquerda parada
+            -- no Firecast e empurra a direita para fora da tela.
+            abrirPopupAjustado(self.popCriatura, 1300, 760)
         end
 
         function fecharEditorCriatura()
@@ -14125,6 +14128,12 @@
         -- estado. Largura 0 esconde o botao: setVisible(false) num filho
         -- align="left" reordena a linha quando volta.
         LARGURA_COLUNA_INSTRUCOES = 300
+        LARGURA_MINIMA_EDITOR_CRIATURA_LATERAL = 1230
+
+        local function editorCriaturaCompacto()
+            local w = larguraDe(self)
+            return w > 0 and w < LARGURA_MINIMA_EDITOR_CRIATURA_LATERAL
+        end
 
         function atualizarBotaoInstrucoes()
             local quantas = #(instrucoesCriatura or {})
@@ -14139,10 +14148,13 @@
                                         or "▾  O QUE FICOU PARA VOCÊ  (" .. quantas .. ")"))
             end
 
-            if instrucoesAbertas and quantas > 0 then
+            local aberto = instrucoesAbertas and quantas > 0
+            local compacto = editorCriaturaCompacto()
+            if aberto then
+                local texto = "O QUE FICOU PARA VOCÊ DECIDIR:\n\n· " ..
+                    table.concat(instrucoesCriatura, "\n\n· ")
                 if self.edCri_lblInstrucoes ~= nil then
-                    self.edCri_lblInstrucoes:setText("O QUE FICOU PARA VOCÊ DECIDIR:\n\n· " ..
-                        table.concat(instrucoesCriatura, "\n\n· "))
+                    self.edCri_lblInstrucoes:setText(texto)
                     -- Altura pelo texto: a coluna tem ~300px, uns 46
                     -- caracteres por linha em corpo 12. Rotulo com wordWrap
                     -- nao cresce sozinho; curto demais, corta em silencio.
@@ -14152,19 +14164,31 @@
                     end
                     pcall(function() self.edCri_lblInstrucoes:setHeight(linhas * 16 + 20) end)
                 end
-                definirLarguraPod(self.edCri_colInstrucoes, LARGURA_COLUNA_INSTRUCOES)
+
+                if self.edCri_lblInstrucoesCompacto ~= nil then
+                    self.edCri_lblInstrucoesCompacto:setText(texto)
+                    -- No modo compacto o texto ocupa a largura do formulario;
+                    -- 95 caracteres por linha e uma estimativa conservadora.
+                    local linhas = 2
+                    for _, t in ipairs(instrucoesCriatura) do
+                        linhas = linhas + math.ceil(contarCaracteres(t) / 95) + 1
+                    end
+                    local alturaTexto = linhas * 16 + 20
+                    definirAlturaPod(self.edCri_lblInstrucoesCompacto, alturaTexto)
+                    local alturaCompacta = compacto and (alturaTexto + 16) or 0
+                    definirAlturaPod(self.edCri_blocoInstrucoesCompacto, alturaCompacta)
+                end
+
+                if compacto then
+                    definirLarguraPod(self.edCri_colInstrucoes, 0)
+                else
+                    definirLarguraPod(self.edCri_colInstrucoes, LARGURA_COLUNA_INSTRUCOES)
+                    definirAlturaPod(self.edCri_blocoInstrucoesCompacto, 0)
+                end
             else
                 definirLarguraPod(self.edCri_colInstrucoes, 0)
+                definirAlturaPod(self.edCri_blocoInstrucoesCompacto, 0)
             end
-            -- O popup alarga para a coluna nao roubar espaco dos campos
-            -- (a linha das classificacoes precisa de ~830px). Em 1366 o teto
-            -- de 94% da janela segura tudo dentro da tela.
-            pcall(function()
-                local w = larguraDe(self)
-                local desejada = 1000 + ((instrucoesAbertas and quantas > 0) and LARGURA_COLUNA_INSTRUCOES or 0)
-                if w > 0 then desejada = math.min(desejada, math.floor(w * 0.94)) end
-                definirLarguraPod(self.popCriatura, desejada)
-            end)
         end
 
         function alternarInstrucoesCriatura()
@@ -14456,7 +14480,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.14" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.15" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -29209,12 +29233,12 @@
                     </rectangle>
                 </layout>
 
-                <!-- O QUE FICOU PARA VOCE, numa COLUNA AO LADO dos campos
-                     (v0.42.1, T-03). Ate a v0.41.1 a caixa abria DENTRO do
-                     scrollBox, acima dos campos: em 1366×768 ela empurrava
-                     para fora da tela justamente os atributos que mandava
-                     preencher. Agora abre a direita, com rolagem propria, e
-                     os campos continuam visiveis. Largura 0 esconde. -->
+                <!-- O QUE FICOU PARA VOCE. Com pelo menos 1230px de area da
+                     ficha, abre numa coluna lateral com rolagem propria. Em
+                     janelas menores usa o bloco compacto dentro do formulario
+                     e a rolagem principal. O popup ja nasce na largura final:
+                     redimensiona-lo aberto deslocava a borda direita para fora
+                     da tela no Firecast. Largura 0 esconde a coluna. -->
                 <layout name="edCri_colInstrucoes" align="right" width="0">
                     <rectangle align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="5" yradius="5" margins="{left=14}" hitTest="false">
                         <scrollBox align="client" margins="{left=10,right=6,top=8,bottom=8}">
@@ -29369,6 +29393,17 @@
                                 <event name="onClick"><![CDATA[alternarInstrucoesCriatura();]]></event>
                             </rectangle>
                         </layout>
+                    </layout>
+
+                    <!-- Em janela estreita, as observacoes entram no fluxo do
+                         formulario. A altura e calculada pelo Lua; quem rola e
+                         este scrollBox principal, sem barra aninhada. -->
+                    <layout name="edCri_blocoInstrucoesCompacto" align="top" height="0">
+                        <rectangle align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="5" yradius="5" margins="{bottom=8}" hitTest="false">
+                            <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">
+                                <label name="edCri_lblInstrucoesCompacto" align="top" height="0" text="" fontFamily="EB Garamond" fontColor="#A8B6BC" fontSize="12" wordWrap="true" vertTextAlign="leading" hitTest="false"/>
+                            </layout>
+                        </rectangle>
                     </layout>
 
                     <!-- A LINHA DE CONTEXTO TEM A LINHA INTEIRA (v0.42.1).
