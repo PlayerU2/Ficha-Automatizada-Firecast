@@ -962,13 +962,16 @@
             local atributos = {"carisma", "constituicao", "destreza", "forca", "inteligencia", "manipulacao", "sabedoria"}
             local valores = {}
             local penAtributo = penalidadeFerido()
+            local chaveInepto = chaveAtributoInepto()
             for _, chave in ipairs(atributos) do
                 local concedido = n(sheet[chave .. "Concedido"])
-                local limpo = n(sheet[chave .. "Base"]) + n(sheet[chave .. "Bonus"]) + concedido
+                local penalidadeInepto = (chave == chaveInepto) and -1 or 0
+                local automatizado = concedido + penalidadeInepto
+                local limpo = n(sheet[chave .. "Base"]) + n(sheet[chave .. "Bonus"]) + automatizado
                 valores[chave] = limpo
                 -- a coluna que a ficha mostra: o que ela automatizou, ja com
                 -- o ferimento dentro
-                sheet[chave .. "Auto"] = concedido - penAtributo
+                sheet[chave .. "Auto"] = automatizado - penAtributo
                 -- <chave>Total continua sendo o valor LIMPO, e essa escolha
                 -- e o coracao disto. Sete lugares o leem e NENHUM deles e
                 -- rolagem: quantas pericias cabem no atributo, a conta das
@@ -2198,6 +2201,89 @@
             return lista
         end
 
+        -- Livro [1.3], defeito "Inepto": "escolha um atributo; Você
+        -- começará recebendo -1 no atributo escolhido; Seu limite no
+        -- respectivo atributo é de 06 pontos ao invés de 08; Você fica
+        -- impossibilitado de qualquer um poder passivo vinculado ao atributo
+        -- escolhido." A escolha mora no próprio registro do defeito para
+        -- entrar e sair junto dele, sem deixar penalidade residual.
+        function atributoIneptoEscolhido()
+            for _, item in ipairs(NDB.getChildNodes(sheet and sheet.listaDefeitos) or {}) do
+                if tostring(item.nome or "") == "Inepto" then
+                    return tostring(item.atributoEscolhido or "")
+                end
+            end
+            return ""
+        end
+
+        function chaveAtributoInepto()
+            local mapa = {
+                ["Carisma"] = "carisma", ["Constituição"] = "constituicao",
+                ["Destreza"] = "destreza", ["Força"] = "forca",
+                ["Inteligência"] = "inteligencia", ["Manipulação"] = "manipulacao",
+                ["Sabedoria"] = "sabedoria",
+            }
+            return mapa[atributoIneptoEscolhido()] or ""
+        end
+
+        function selecionarAtributoInepto(noDefeito, nomeAtributo)
+            if sheet == nil or noDefeito == nil then return false end
+            if tostring(noDefeito.nome or "") ~= "Inepto" then return false end
+            if not podeEditarCriacao() then
+                avisarPoderes(motivoTravaCriacao(), COR.wine)
+                return false
+            end
+            -- Não apagamos um poder já comprado em silêncio. A escolha é
+            -- recusada e informa exatamente qual vínculo precisa ser revisto.
+            for _, item in ipairs(lerPoderes()) do
+                local poder = CatalogoPoderes.buscar(item.nome)
+                if poder ~= nil and poder.tipo == "passivo"
+                   and tostring(poder.atributo or "") == nomeAtributo
+                   and n(item.nivel) > 0 then
+                    avisarPoderes("Inepto em " .. nomeAtributo .. " não pode ser escolhido enquanto " ..
+                        tostring(item.nome) .. " estiver adquirido: ele é um poder passivo vinculado a esse atributo. " ..
+                        "[a ficha vê na sua lista: " .. tostring(item.nome) .. "]", COR.wine)
+                    return false
+                end
+            end
+            noDefeito.atributoEscolhido = nomeAtributo
+            recalcularTudo()
+            return true
+        end
+
+        function repintarAtributoInepto(formItem, noDefeito)
+            if formItem == nil or noDefeito == nil then return end
+            local escolhida = tostring(noDefeito.atributoEscolhido or "")
+            local itens = {
+                {"Carisma", "Car"}, {"Constituição", "Con"}, {"Destreza", "Des"},
+                {"Força", "For"}, {"Inteligência", "Int"}, {"Manipulação", "Man"},
+                {"Sabedoria", "Sab"},
+            }
+            for _, item in ipairs(itens) do
+                local botao = formItem["popQD_btnInepto" .. item[2]]
+                local rotulo = formItem["popQD_lblInepto" .. item[2]]
+                if botao ~= nil then
+                    if escolhida == item[1] then
+                        botao:setStrokeColor(COR.gold); botao:setStrokeSize(2)
+                        if rotulo ~= nil then rotulo:setFontColor(COR.gold) end
+                    else
+                        botao:setStrokeColor(COR.line); botao:setStrokeSize(1)
+                        if rotulo ~= nil then rotulo:setFontColor(COR.muted) end
+                    end
+                end
+            end
+            if formItem.popQD_lblIneptoAtual ~= nil then
+                if escolhida == "" then
+                    formItem.popQD_lblIneptoAtual:setText("Nenhum atributo escolhido — a penalidade ainda não foi aplicada.")
+                    formItem.popQD_lblIneptoAtual:setFontColor(COR.wine)
+                else
+                    formItem.popQD_lblIneptoAtual:setText(escolhida ..
+                        ": −1 automático, limite base 6 e bloqueio do poder passivo vinculado.")
+                    formItem.popQD_lblIneptoAtual:setFontColor(COR.rain)
+                end
+            end
+        end
+
         function atualizarPainelPontosQD()
             if sheet == nil then return end
             local brutoDefeitos = somarPontosLista("listaDefeitos")
@@ -2254,7 +2340,11 @@
             -- antigo e criamos um novo ja com os valores finais - a linha
             -- "renasce" e o visual atualiza na hora, sem precisar fechar e
             -- reabrir a ficha.
+            local personalizacao = ""
+            local atributoEscolhido = ""
             if noExistente ~= nil then
+                personalizacao = tostring(noExistente.personalizacao or "")
+                atributoEscolhido = tostring(noExistente.atributoEscolhido or "")
                 NDB.deleteNode(noExistente)
             end
             local node = widgetLista:append()
@@ -2265,6 +2355,8 @@
                 node.pontosPagos = pontosPagos
                 node.descricao = dados and dados.descricao or ""
                 node.pontosTexto = dados and dados.pontosTexto or ""
+                node.personalizacao = personalizacao
+                node.atributoEscolhido = atributoEscolhido
             end
             atualizarPainelPontosQD()
             atualizarBlocoRaca()
@@ -4556,8 +4648,8 @@
             for _, nomeLista in ipairs(listasPericia) do
                 repararSeNecessario(nomeLista, {"atributo", "nome", "aprovadoMestre", "descricao"})
             end
-            repararSeNecessario("listaQualidades", {"tipo", "nome", "pontosEscolhidos", "pontosPagos", "descricao", "pontosTexto"})
-            repararSeNecessario("listaDefeitos", {"tipo", "nome", "pontosEscolhidos", "pontosPagos", "descricao", "pontosTexto"})
+            repararSeNecessario("listaQualidades", {"tipo", "nome", "pontosEscolhidos", "pontosPagos", "descricao", "pontosTexto", "personalizacao", "atributoEscolhido"})
+            repararSeNecessario("listaDefeitos", {"tipo", "nome", "pontosEscolhidos", "pontosPagos", "descricao", "pontosTexto", "personalizacao", "atributoEscolhido"})
             repararSeNecessario("listaHabilidades", CAMPOS_HABILIDADE)
         end
 
@@ -5672,6 +5764,14 @@
             end
             local poder = CatalogoPoderes.buscar(nomePoder)
             if poder == nil then return end
+
+            if poder.tipo == "passivo" and tostring(poder.atributo or "") ~= ""
+               and tostring(poder.atributo) == atributoIneptoEscolhido() then
+                avisarPoderes("Inepto em " .. tostring(poder.atributo) ..
+                    " impede adquirir ou evoluir poderes passivos vinculados a esse atributo. " ..
+                    "[a ficha vê: " .. nomePoder .. " → " .. tostring(poder.atributo) .. "]", COR.wine)
+                return
+            end
 
             local lista = lerPoderes()
             local item = acharPoder(lista, nomePoder)
@@ -8889,6 +8989,11 @@
             local limite = 8
             if dados ~= nil and dados.limiteAtributo ~= nil then
                 limite = n(dados.limiteAtributo)
+            end
+            -- Inepto reduz somente o teto do valor base. Bônus continuam
+            -- podendo ultrapassar 6, como acontece com todos os outros tetos.
+            if atributoIneptoEscolhido() == nomeAtributo and limite > 6 then
+                limite = 6
             end
             -- REGRA DA MESA: o limite do NIVEL vale para TODOS os atributos,
             -- sem excecao - no nivel 7 nenhum passa de 5, tenha bonus racial
@@ -12169,6 +12274,9 @@
             "aparar", "esquiva", "empatica", "telepatica",
             "periciaNome", "periciaBonus",
             "municoes", "slotsEnc", "encantamentos", "descricao",
+            "encCustom1Nome", "encCustom1Classe", "encCustom1Tipos", "encCustom1Efeito",
+            "encCustom2Nome", "encCustom2Classe", "encCustom2Tipos", "encCustom2Efeito",
+            "encCustom3Nome", "encCustom3Classe", "encCustom3Tipos", "encCustom3Efeito",
             "visaoEscuro", "capacidade", "capacidadeTipo", "alcanceExtra",
             "imagem",
         }
@@ -12186,15 +12294,24 @@
         end
 
         -- ---------------------------------------------------------------
-        -- CAMPOS QUE GUARDAM URL
+        -- CAMPOS QUE PRECISAM PRESERVAR PONTUACAO
         --
         -- limparTextoItem troca ";&=|" por espaco, o que e certo para texto
         -- digitado e FATAL para um endereco: "?b=1&c=2" viraria "?b 1 c 2".
-        -- Estes campos passam por escape percentual na hora de serializar, e
+        -- A imagem e os textos livres de encantamentos personalizados passam
+        -- por escape percentual na hora de serializar, e
         -- voltam ao normal na leitura. Sem isso, colar a URL de uma imagem
-        -- quebrava a lista inteira de itens no primeiro "&".
+        -- ou escrever um efeito com ";", "&", "=" ou "|" quebraria a lista.
         -- ---------------------------------------------------------------
-        local CAMPOS_URL_ITEM = {imagem = true}
+        local CAMPOS_CODIFICADOS_ITEM = {
+            imagem = true,
+            encCustom1Nome = true, encCustom1Classe = true,
+            encCustom1Tipos = true, encCustom1Efeito = true,
+            encCustom2Nome = true, encCustom2Classe = true,
+            encCustom2Tipos = true, encCustom2Efeito = true,
+            encCustom3Nome = true, encCustom3Classe = true,
+            encCustom3Tipos = true, encCustom3Efeito = true,
+        }
 
         local function codificarURL(s)
             s = tostring(s or "")
@@ -12221,7 +12338,7 @@
                     local chave, valor = parte:match("^([^=]+)=(.*)$")
                     if chave ~= nil then
                         if NUMERICOS_ITEM[chave] then it[chave] = tonumber(valor) or 0
-                        elseif CAMPOS_URL_ITEM[chave] then it[chave] = decodificarURL(valor)
+                        elseif CAMPOS_CODIFICADOS_ITEM[chave] then it[chave] = decodificarURL(valor)
                         else it[chave] = valor end
                     end
                 end
@@ -12243,7 +12360,7 @@
                     for _, chave in ipairs(CAMPOS_ITEM) do
                         local v = it[chave]
                         if v ~= nil and v ~= "" and v ~= 0 then
-                            if CAMPOS_URL_ITEM[chave] then v = codificarURL(v) end
+                            if CAMPOS_CODIFICADOS_ITEM[chave] then v = codificarURL(v) end
                             table.insert(campos, chave .. "=" .. tostring(v))
                         end
                     end
@@ -12334,6 +12451,32 @@
 
         function gravarEncantamentos(it, lista)
             it.encantamentos = table.concat(lista, ",")
+        end
+
+        -- O livro permite encantamentos criados por artífices e exige quatro
+        -- informações: nome, classe, efeito desejado e tipos de equipamento
+        -- compatíveis. São até três registros porque nenhum item comporta
+        -- mais de três slots pelas regras atuais. Efeito personalizado é
+        -- documental/manual: a ficha não tenta adivinhar números do texto.
+        function encantamentosPersonalizadosDoItem(it)
+            local r = {}
+            for i = 1, 3 do
+                local prefixo = "encCustom" .. i
+                local nome = tostring((it or {})[prefixo .. "Nome"] or "")
+                if nome ~= "" then
+                    table.insert(r, {
+                        indice = i, nome = nome,
+                        classe = tostring(it[prefixo .. "Classe"] or ""),
+                        tipos = tostring(it[prefixo .. "Tipos"] or ""),
+                        efeito = tostring(it[prefixo .. "Efeito"] or ""),
+                    })
+                end
+            end
+            return r
+        end
+
+        function quantidadeEncantamentosItem(it)
+            return #encantamentosDoItem(it) + #encantamentosPersonalizadosDoItem(it)
         end
 
         -- Efeitos numericos que os encantamentos somam ao item.
@@ -12581,7 +12724,7 @@
                 end
             end
 
-            atualizarListaEncantamentosItem(it)
+            atualizarListaEncantamentosItem(it, ativos.encantamento == true)
         end
 
         -- Atributo e pericia sao ESCOLHIDOS numa lista, e nao digitados: o
@@ -12652,7 +12795,7 @@
             end
             it.nome = nome
             -- a imagem NAO passa por limparTextoItem: ela e uma URL, e a
-            -- limpeza trocaria "&" e "=" por espaco. Ver CAMPOS_URL_ITEM.
+            -- limpeza trocaria "&" e "=" por espaco. Ver CAMPOS_CODIFICADOS_ITEM.
             it.imagem = tostring(sheet.imagemItemEdicao or "")
             it.material = limparTextoItem(lerEdit("material"))
             it.qualidade = limparTextoItem(lerEdit("qualidade"))
@@ -12685,11 +12828,33 @@
         -- ---------------------------------------------------------------
         -- ENCANTAMENTOS NO EDITOR
         -- ---------------------------------------------------------------
-        function atualizarListaEncantamentosItem(it)
+        function atualizarListaEncantamentosItem(it, mostrarGrupo)
             local lista = encantamentosDoItem(it)
+            local personalizados = encantamentosPersonalizadosDoItem(it)
+            local nomes = {}
+            local detalhes = {}
+            for _, nome in ipairs(lista) do
+                table.insert(nomes, nome)
+                local dados = CatalogoEncantamentos.buscar(nome)
+                table.insert(detalhes, {
+                    titulo = nome,
+                    texto = (dados ~= nil and tostring(dados.descricao or "") or
+                        "Descrição não encontrada no catálogo."),
+                })
+            end
+            for _, enc in ipairs(personalizados) do
+                table.insert(nomes, enc.nome)
+                local complemento = ""
+                if enc.tipos ~= "" then complemento = "  Equipamentos: " .. enc.tipos .. "." end
+                table.insert(detalhes, {
+                    titulo = enc.nome .. "  ·  PERSONALIZADO" ..
+                        ((enc.classe ~= "") and ("  ·  CLASSE " .. enc.classe) or ""),
+                    texto = enc.efeito .. complemento,
+                })
+            end
             if self.edIt_lblEncantados ~= nil then
-                if #lista > 0 then
-                    self.edIt_lblEncantados:setText(table.concat(lista, "   ·   "))
+                if #nomes > 0 then
+                    self.edIt_lblEncantados:setText(table.concat(nomes, "   ·   "))
                     self.edIt_lblEncantados:setFontColor(COR.aura)
                 else
                     self.edIt_lblEncantados:setText("nenhum encantamento aplicado")
@@ -12697,12 +12862,37 @@
                 end
             end
             if self.edIt_lblSlotsInfo ~= nil then
-                local usados, total = #lista, n(it.slotsEnc)
+                local usados, total = #detalhes, n(it.slotsEnc)
                 self.edIt_lblSlotsInfo:setText(usados .. " de " .. total .. " slots usados")
                 if usados > total then
                     self.edIt_lblSlotsInfo:setFontColor(COR.wine)
                 else
                     self.edIt_lblSlotsInfo:setFontColor(COR.muted)
+                end
+            end
+            local alturaDetalhes = 0
+            for i = 1, 3 do
+                local painel = self["edIt_encDetalhe" .. i]
+                local titulo = self["edIt_encDetalheTitulo" .. i]
+                local texto = self["edIt_encDetalheTexto" .. i]
+                local dados = detalhes[i]
+                local altura = 0
+                if dados ~= nil then
+                    local linhas = math.ceil(#tostring(dados.texto or "") / 100)
+                    if linhas < 1 then linhas = 1 end
+                    if linhas > 4 then linhas = 4 end
+                    altura = 30 + linhas * 16
+                    if titulo ~= nil then titulo:setText(dados.titulo) end
+                    if texto ~= nil then texto:setText(dados.texto) end
+                end
+                if painel ~= nil then definirAlturaPod(painel, altura) end
+                alturaDetalhes = alturaDetalhes + altura
+            end
+            if self.edIt_grupoencantamento ~= nil then
+                if mostrarGrupo == false then
+                    definirAlturaPod(self.edIt_grupoencantamento, 0)
+                else
+                    definirAlturaPod(self.edIt_grupoencantamento, 100 + alturaDetalhes)
                 end
             end
         end
@@ -12723,6 +12913,16 @@
             if it == nil then return end
             local aplicados = {}
             for _, nome in ipairs(encantamentosDoItem(it)) do aplicados[nome] = true end
+            local personalizados = encantamentosPersonalizadosDoItem(it)
+            if self.popEnc_lblPersonalizados ~= nil then
+                if #personalizados == 0 then
+                    self.popEnc_lblPersonalizados:setText("+ CRIAR ENCANTAMENTO PERSONALIZADO")
+                else
+                    local nomes = {}
+                    for _, enc in ipairs(personalizados) do table.insert(nomes, enc.nome) end
+                    self.popEnc_lblPersonalizados:setText("PERSONALIZADOS (" .. #personalizados .. "): " .. table.concat(nomes, " · "))
+                end
+            end
             for _, e in ipairs(CatalogoEncantamentos.itens) do
                 local chave = chavePoder(e.nome)
                 local lbl = self["lblEnc_" .. chave]
@@ -12767,7 +12967,7 @@
             if achou ~= nil then
                 table.remove(atuais, achou)
             else
-                if #atuais >= n(it.slotsEnc) then
+                if quantidadeEncantamentosItem(it) >= n(it.slotsEnc) then
                     avisarInventario("Este item tem " .. n(it.slotsEnc) ..
                         " slot(s) de encantamento. Aumente os slots no editor se ele foi forjado com mais.", COR.muted)
                     return
@@ -12779,6 +12979,115 @@
             atualizarListaEncantamentosItem(it)
             atualizarListaEncPopup()
             recalcularTudo()
+        end
+
+        -- ---------------------------------------------------------------
+        -- ENCANTAMENTO PERSONALIZADO
+        -- ---------------------------------------------------------------
+        encCustomEmEdicao = 1
+
+        local function preencherEditorEncCustom(it, indice)
+            encCustomEmEdicao = indice
+            local prefixo = "encCustom" .. indice
+            if self.popEncCustom_lblSlot ~= nil then
+                self.popEncCustom_lblSlot:setText("REGISTRO " .. indice .. " DE 3")
+            end
+            local campos = {
+                nome = "Nome", classe = "Classe", tipos = "Tipos", efeito = "Efeito",
+            }
+            for controle, sufixo in pairs(campos) do
+                local widget = self["popEncCustom_" .. controle]
+                if widget ~= nil then widget:setText(tostring(it[prefixo .. sufixo] or "")) end
+            end
+            for i = 1, 3 do
+                local botao = self["popEncCustom_btn" .. i]
+                local rotulo = self["popEncCustom_lbl" .. i]
+                if botao ~= nil then
+                    botao:setStrokeColor(i == indice and COR.gold or COR.line)
+                    botao:setStrokeSize(i == indice and 2 or 1)
+                    if rotulo ~= nil then rotulo:setFontColor(i == indice and COR.gold or COR.muted) end
+                end
+            end
+        end
+
+        function selecionarRegistroEncCustom(indice)
+            if itemEmEdicao == nil then return end
+            local lista = lerItens()
+            local it = lista[itemEmEdicao]
+            if it ~= nil then preencherEditorEncCustom(it, indice) end
+        end
+
+        function abrirPopupEncantamentoPersonalizado()
+            if itemEmEdicao == nil or self.popEncantamentoPersonalizado == nil then return end
+            if not usuarioEhMestre() then
+                avisarInventario("Somente o MESTRE pode criar ou editar um encantamento personalizado.", COR.wine)
+                return
+            end
+            local lista = lerItens()
+            local it = lista[itemEmEdicao]
+            if it == nil then return end
+            local escolhido = 1
+            for i = 1, 3 do
+                if tostring(it["encCustom" .. i .. "Nome"] or "") == "" then
+                    escolhido = i
+                    break
+                end
+            end
+            preencherEditorEncCustom(it, escolhido)
+            abrirPopupAjustado(self.popEncantamentoPersonalizado, 640, 540)
+        end
+
+        function fecharPopupEncantamentoPersonalizado()
+            if self.popEncantamentoPersonalizado ~= nil then self.popEncantamentoPersonalizado:close() end
+        end
+
+        function salvarEncantamentoPersonalizado()
+            if itemEmEdicao == nil or not usuarioEhMestre() then return end
+            local lista = lerItens()
+            local it = lista[itemEmEdicao]
+            if it == nil then return end
+            local prefixo = "encCustom" .. encCustomEmEdicao
+            local nome = tostring(self.popEncCustom_nome:getText() or ""):gsub("^%s+", ""):gsub("%s+$", "")
+            local classe = tostring(self.popEncCustom_classe:getText() or ""):gsub("^%s+", ""):gsub("%s+$", "")
+            local tipos = tostring(self.popEncCustom_tipos:getText() or ""):gsub("^%s+", ""):gsub("%s+$", "")
+            local efeito = tostring(self.popEncCustom_efeito:getText() or ""):gsub("^%s+", ""):gsub("%s+$", "")
+            if nome == "" or classe == "" or tipos == "" or efeito == "" then
+                avisarInventario("Preencha nome, classe, tipos de equipamento e efeito do encantamento personalizado.", COR.wine)
+                return
+            end
+            local jaExistia = tostring(it[prefixo .. "Nome"] or "") ~= ""
+            if not jaExistia and quantidadeEncantamentosItem(it) >= n(it.slotsEnc) then
+                avisarInventario("Este item já usa todos os seus " .. n(it.slotsEnc) .. " slot(s) de encantamento.", COR.wine)
+                return
+            end
+            it[prefixo .. "Nome"] = nome
+            it[prefixo .. "Classe"] = classe
+            it[prefixo .. "Tipos"] = tipos
+            it[prefixo .. "Efeito"] = efeito
+            gravarItens(lista)
+            atualizarListaEncantamentosItem(it)
+            atualizarListaEncPopup()
+            fecharPopupEncantamentoPersonalizado()
+            recalcularTudo()
+            avisarInventario("Encantamento personalizado “" .. nome .. "” aplicado. O efeito fica registrado para resolução manual da mesa.", COR.moss)
+        end
+
+        function removerEncantamentoPersonalizado()
+            if itemEmEdicao == nil or not usuarioEhMestre() then return end
+            local lista = lerItens()
+            local it = lista[itemEmEdicao]
+            if it == nil then return end
+            local prefixo = "encCustom" .. encCustomEmEdicao
+            local nome = tostring(it[prefixo .. "Nome"] or "")
+            for _, sufixo in ipairs({"Nome", "Classe", "Tipos", "Efeito"}) do
+                it[prefixo .. sufixo] = ""
+            end
+            gravarItens(lista)
+            atualizarListaEncantamentosItem(it)
+            atualizarListaEncPopup()
+            fecharPopupEncantamentoPersonalizado()
+            recalcularTudo()
+            if nome ~= "" then avisarInventario("Encantamento personalizado “" .. nome .. "” removido.", COR.muted) end
         end
 
         -- =================================================================
@@ -12829,7 +13138,12 @@
                 table.insert(p, "requer " .. n(it.reqValor) .. " de " .. it.reqAtributo)
             end
             local enc = encantamentosDoItem(it)
-            if #enc > 0 then table.insert(p, "✦ " .. table.concat(enc, ", ")) end
+            local nomesEnc = {}
+            for _, nome in ipairs(enc) do table.insert(nomesEnc, nome) end
+            for _, personalizado in ipairs(encantamentosPersonalizadosDoItem(it)) do
+                table.insert(nomesEnc, personalizado.nome .. " [personalizado]")
+            end
+            if #nomesEnc > 0 then table.insert(p, "✦ " .. table.concat(nomesEnc, ", ")) end
             if #p == 0 then return "sem efeitos" end
             return table.concat(p, "  ·  ")
         end
@@ -14506,7 +14820,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.20" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.21" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -27057,7 +27371,7 @@
                             </layout>
                         </rectangle>
                     </layout>
-                    <layout name="edIt_grupoencantamento" align="top" height="96">
+                    <layout name="edIt_grupoencantamento" align="top" height="128">
                         <rectangle align="client" color="#0D1317" strokeColor="#8A63C9" strokeSize="1" xradius="5" yradius="5" margins="{bottom=8}">
                             <layout align="client" margins="{left=14,right=14,top=4,bottom=6}">
                                 <label align="top" height="18" text="ENCANTAMENTOS" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" vertTextAlign="center" hitTest="false"/>
@@ -27081,6 +27395,15 @@
                                     </layout>
                                 </layout>
                                 <label name="edIt_lblEncantados" align="top" height="20" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="false" margins="{top=2}" hitTest="false"/>
+                                <rectangle name="edIt_encDetalhe1" align="top" height="0" color="#0A0E12" strokeColor="#3A2E52" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" hitTest="false">
+                                    <layout align="client" margins="{left=10,right=10,top=5,bottom=5}"><label name="edIt_encDetalheTitulo1" align="top" height="18" text="" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="11" fontStyle="bold" hitTest="false"/><label name="edIt_encDetalheTexto1" align="client" text="" fontFamily="EB Garamond" fontColor="#C9CFCE" fontSize="12" wordWrap="true" vertTextAlign="leading" hitTest="false"/></layout>
+                                </rectangle>
+                                <rectangle name="edIt_encDetalhe2" align="top" height="0" color="#0A0E12" strokeColor="#3A2E52" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" hitTest="false">
+                                    <layout align="client" margins="{left=10,right=10,top=5,bottom=5}"><label name="edIt_encDetalheTitulo2" align="top" height="18" text="" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="11" fontStyle="bold" hitTest="false"/><label name="edIt_encDetalheTexto2" align="client" text="" fontFamily="EB Garamond" fontColor="#C9CFCE" fontSize="12" wordWrap="true" vertTextAlign="leading" hitTest="false"/></layout>
+                                </rectangle>
+                                <rectangle name="edIt_encDetalhe3" align="top" height="0" color="#0A0E12" strokeColor="#3A2E52" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" hitTest="false">
+                                    <layout align="client" margins="{left=10,right=10,top=5,bottom=5}"><label name="edIt_encDetalheTitulo3" align="top" height="18" text="" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="11" fontStyle="bold" hitTest="false"/><label name="edIt_encDetalheTexto3" align="client" text="" fontFamily="EB Garamond" fontColor="#C9CFCE" fontSize="12" wordWrap="true" vertTextAlign="leading" hitTest="false"/></layout>
+                                </rectangle>
                             </layout>
                         </rectangle>
                     </layout>
@@ -27440,6 +27763,10 @@
                 <label align="top" height="26" text="ENCANTAMENTOS" fontFamily="Cinzel Decorative" fontColor="#8A63C9" fontSize="15" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                 <rectangle align="top" height="1" color="#8A63C9" margins="{top=4,bottom=6}" hitTest="false"/>
                 <label align="top" height="30" text="Só é possível encantar um item que tenha slot para isso, e ter slot depende da qualidade e do material com que ele foi forjado. Clique para aplicar ou remover." fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="true" margins="{bottom=6}" hitTest="false"/>
+                <rectangle align="top" height="34" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="4" yradius="4" margins="{bottom=8}" cursor="handPoint" hint="MESTRE: criar ou editar um encantamento próprio, validado para esta mesa">
+                    <label name="popEnc_lblPersonalizados" align="client" text="+ CRIAR ENCANTAMENTO PERSONALIZADO" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <event name="onClick"><![CDATA[abrirPopupEncantamentoPersonalizado();]]></event>
+                </rectangle>
                 <rectangle align="bottom" height="30" color="#12181C" strokeColor="#3A4750" strokeSize="1" xradius="3" yradius="3" margins="{top=10}" cursor="handPoint" hint="Voltar ao editor">
                     <label align="client" text="VOLTAR" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                     <event name="onClick"><![CDATA[fecharPopupEncantamentos();]]></event>
@@ -27899,6 +28226,34 @@
                             </rectangle>
                     </scrollBox>
                 </rectangle>
+            </layout>
+        </rectangle>
+    </popup>
+
+    <popup name="popEncantamentoPersonalizado" width="640" height="540" backOpacity="0.82" cancelable="true">
+        <rectangle align="client" color="#070A0C" strokeColor="#8A63C9" strokeSize="2" xradius="6" yradius="6" hitTest="false">
+            <layout align="client" margins="{left=20,right=20,top=16,bottom=16}">
+                <label align="top" height="26" text="ENCANTAMENTO PERSONALIZADO" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
+                <label name="popEncCustom_lblSlot" align="top" height="18" text="REGISTRO 1 DE 3" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" hitTest="false"/>
+                <rectangle align="top" height="1" color="#8A63C9" margins="{top=4,bottom=8}" hitTest="false"/>
+                <layout align="top" height="34" margins="{bottom=8}">
+                    <rectangle name="popEncCustom_btn1" align="left" width="180" color="#12181C" strokeColor="#C9A24B" strokeSize="2" xradius="3" yradius="3" margins="{right=8}" cursor="handPoint"><event name="onClick"><![CDATA[selecionarRegistroEncCustom(1);]]></event><label name="popEncCustom_lbl1" align="client" text="REGISTRO 1" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                    <rectangle name="popEncCustom_btn2" align="left" width="180" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=8}" cursor="handPoint"><event name="onClick"><![CDATA[selecionarRegistroEncCustom(2);]]></event><label name="popEncCustom_lbl2" align="client" text="REGISTRO 2" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                    <rectangle name="popEncCustom_btn3" align="client" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint"><event name="onClick"><![CDATA[selecionarRegistroEncCustom(3);]]></event><label name="popEncCustom_lbl3" align="client" text="REGISTRO 3" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                </layout>
+                <label align="top" height="16" text="NOME" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
+                <rectangle align="top" height="34" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=8}"><edit name="popEncCustom_nome" align="client" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="13" transparent="true" margins="{left=8,right=8}"/></rectangle>
+                <layout align="top" height="58" margins="{bottom=8}">
+                    <layout align="left" width="180" margins="{right=10}"><label align="top" height="16" text="CLASSE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/><rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3"><edit name="popEncCustom_classe" align="client" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="13" transparent="true" margins="{left=8,right=8}" hint="Ex.: I, II ou III"/></rectangle></layout>
+                    <layout align="client"><label align="top" height="16" text="TIPOS DE EQUIPAMENTO COMPATÍVEIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/><rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3"><edit name="popEncCustom_tipos" align="client" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="13" transparent="true" margins="{left=8,right=8}" hint="Ex.: armas, armaduras e acessórios"/></rectangle></layout>
+                </layout>
+                <label align="top" height="16" text="EFEITO VALIDADO PELO MESTRE" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hitTest="false"/>
+                <layout align="bottom" height="36">
+                    <rectangle align="left" width="150" color="#12181C" strokeColor="#3A4750" strokeSize="1" xradius="3" yradius="3" margins="{right=8}" cursor="handPoint"><event name="onClick"><![CDATA[fecharPopupEncantamentoPersonalizado();]]></event><label align="client" text="CANCELAR" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                    <rectangle align="left" width="150" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{right=8}" cursor="handPoint"><event name="onClick"><![CDATA[removerEncantamentoPersonalizado();]]></event><label align="client" text="REMOVER REGISTRO" fontFamily="Marcellus SC" fontColor="#9E3B4A" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                    <rectangle align="client" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" cursor="handPoint"><event name="onClick"><![CDATA[salvarEncantamentoPersonalizado();]]></event><label align="client" text="SALVAR E APLICAR" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                </layout>
+                <rectangle align="client" color="#0D1317" strokeColor="#3A2E52" strokeSize="1" xradius="3" yradius="3" margins="{bottom=10}"><edit name="popEncCustom_efeito" align="client" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="13" transparent="true" wordWrap="true" margins="{left=10,right=10,top=8,bottom=8}" hint="Descreva o efeito completo. Efeitos personalizados são resolvidos manualmente pela mesa."/></rectangle>
             </layout>
         </rectangle>
     </popup>

@@ -92,6 +92,29 @@
                 end;
             end;
 
+            -- Inepto tem uma escolha fechada de atributo. A penalidade não é
+            -- gravada no atributo: a ficha a deriva desta escolha, então
+            -- trocar ou remover o defeito sempre reverte o cálculo direito.
+            if self.popQD_secInepto ~= nil then
+                local ehInepto = (tostring(sheet.nome or "") == "Inepto");
+                pcall(function() self.popQD_secInepto:setHeight(ehInepto and 92 or 0); end);
+                if ehInepto and repintarAtributoInepto ~= nil then
+                    repintarAtributoInepto(self, sheet);
+                end;
+            end;
+
+            -- Toda Qualidade e todo Defeito recebe um campo livre. Mesmo os
+            -- itens com botões estruturados podem precisar registrar uma
+            -- pessoa, grupo, maldição, exceção ou detalhe decidido em mesa.
+            if self.popQD_edPersonalizacao ~= nil then
+                local habilitado = true;
+                if podeEditarCriacao ~= nil then
+                    local ok, permitido = pcall(function() return podeEditarCriacao(); end);
+                    if ok then habilitado = permitido; end;
+                end;
+                pcall(function() self.popQD_edPersonalizacao:setEnabled(habilitado); end);
+            end;
+
             if self.popQD_lblTitulo ~= nil then self.popQD_lblTitulo:setText(tostring(sheet.nome or "")); end;
             if self.popQD_lblPontos ~= nil then self.popQD_lblPontos:setText(tostring(sheet.pontosTexto or "")); end;
 
@@ -179,6 +202,13 @@
                 -- a 94% da tela. Com :show() direto o popup vazava em monitor
                 -- menor - era o unico da ficha fora desse padrao.
                 if self.popQDDetalhe ~= nil then
+                    -- field= grava direto no NDB; por isso a permissão precisa
+                    -- ser reavaliada a cada abertura, inclusive se a ficha
+                    -- foi finalizada depois que esta linha nasceu.
+                    if self.popQD_edPersonalizacao ~= nil and podeEditarCriacao ~= nil then
+                        local ok, permitido = pcall(function() return podeEditarCriacao(); end);
+                        if ok then pcall(function() self.popQD_edPersonalizacao:setEnabled(permitido); end); end;
+                    end;
                     if abrirPopupAjustado ~= nil then
                         abrirPopupAjustado(self.popQDDetalhe, 760, 600);
                     else
@@ -377,6 +407,29 @@
                     </layout>
                     <label name="popQD_lblEscolaAtual" align="top" height="16" text="" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="11" hitTest="false"/>
                     <rectangle align="top" height="1" color="#22323A" margins="{top=8,bottom=10}" hitTest="false"/>
+                </layout>
+
+                <!-- ATRIBUTO INEPTO: exclusivo do defeito Inepto. -->
+                <layout name="popQD_secInepto" align="top" height="0">
+                    <label align="top" height="16" text="ATRIBUTO INEPTO — recebe −1 e passa a ter limite base 6" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" hitTest="false"/>
+                    <layout align="top" height="34">
+                        <rectangle name="popQD_btnIneptoCar" align="left" width="94" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=6,top=4,bottom=4}" cursor="handPoint"><event name="onClick"><![CDATA[if selecionarAtributoInepto ~= nil and selecionarAtributoInepto(sheet, "Carisma") and repintarAtributoInepto ~= nil then repintarAtributoInepto(self, sheet); end;]]></event><label name="popQD_lblIneptoCar" align="client" text="Carisma" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                        <rectangle name="popQD_btnIneptoCon" align="left" width="94" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=6,top=4,bottom=4}" cursor="handPoint"><event name="onClick"><![CDATA[if selecionarAtributoInepto ~= nil and selecionarAtributoInepto(sheet, "Constituição") and repintarAtributoInepto ~= nil then repintarAtributoInepto(self, sheet); end;]]></event><label name="popQD_lblIneptoCon" align="client" text="Constituição" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                        <rectangle name="popQD_btnIneptoDes" align="left" width="94" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=6,top=4,bottom=4}" cursor="handPoint"><event name="onClick"><![CDATA[if selecionarAtributoInepto ~= nil and selecionarAtributoInepto(sheet, "Destreza") and repintarAtributoInepto ~= nil then repintarAtributoInepto(self, sheet); end;]]></event><label name="popQD_lblIneptoDes" align="client" text="Destreza" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                        <rectangle name="popQD_btnIneptoFor" align="left" width="94" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=6,top=4,bottom=4}" cursor="handPoint"><event name="onClick"><![CDATA[if selecionarAtributoInepto ~= nil and selecionarAtributoInepto(sheet, "Força") and repintarAtributoInepto ~= nil then repintarAtributoInepto(self, sheet); end;]]></event><label name="popQD_lblIneptoFor" align="client" text="Força" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                        <rectangle name="popQD_btnIneptoInt" align="left" width="94" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=6,top=4,bottom=4}" cursor="handPoint"><event name="onClick"><![CDATA[if selecionarAtributoInepto ~= nil and selecionarAtributoInepto(sheet, "Inteligência") and repintarAtributoInepto ~= nil then repintarAtributoInepto(self, sheet); end;]]></event><label name="popQD_lblIneptoInt" align="client" text="Inteligência" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                        <rectangle name="popQD_btnIneptoMan" align="left" width="94" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=6,top=4,bottom=4}" cursor="handPoint"><event name="onClick"><![CDATA[if selecionarAtributoInepto ~= nil and selecionarAtributoInepto(sheet, "Manipulação") and repintarAtributoInepto ~= nil then repintarAtributoInepto(self, sheet); end;]]></event><label name="popQD_lblIneptoMan" align="client" text="Manipulação" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                        <rectangle name="popQD_btnIneptoSab" align="client" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{top=4,bottom=4}" cursor="handPoint"><event name="onClick"><![CDATA[if selecionarAtributoInepto ~= nil and selecionarAtributoInepto(sheet, "Sabedoria") and repintarAtributoInepto ~= nil then repintarAtributoInepto(self, sheet); end;]]></event><label name="popQD_lblIneptoSab" align="client" text="Sabedoria" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="10" horzTextAlign="center" vertTextAlign="center" hitTest="false"/></rectangle>
+                    </layout>
+                    <label name="popQD_lblIneptoAtual" align="top" height="16" text="" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="11" hitTest="false"/>
+                    <rectangle align="top" height="1" color="#22323A" margins="{top=8,bottom=10}" hitTest="false"/>
+                </layout>
+
+                <layout align="top" height="76" margins="{bottom=8}">
+                    <label align="top" height="18" text="ESCOLHA / PERSONALIZAÇÃO" fontFamily="Marcellus SC" fontColor="#7FA8B8" fontSize="11" hitTest="false"/>
+                    <rectangle align="client" color="#0B1014" strokeColor="#2A4652" strokeSize="1" xradius="4" yradius="4">
+                        <edit name="popQD_edPersonalizacao" field="personalizacao" align="client" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="13" transparent="true" wordWrap="true" margins="{left=10,right=10,top=6,bottom=6}" hint="Registre aqui a escolha ou o detalhe desta Qualidade/Defeito: alvo, grupo, inimigo, reputação, condição ou qualquer decisão de mesa."/>
+                    </rectangle>
                 </layout>
 
                 <rectangle align="bottom" height="36" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="4" yradius="4" margins="{top=10}" cursor="handPoint" hint="Fechar esta janela">

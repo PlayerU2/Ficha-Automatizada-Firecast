@@ -1,3 +1,23 @@
+## v0.53.21 — escolhas de Q/D e encantamentos personalizados (15/09/2026)
+
+O editor de itens passa a aceitar até três encantamentos personalizados,
+editáveis pelo mestre. Cada registro exige nome, classe, tipos de equipamento
+compatíveis e o efeito validado em mesa, ocupa um slot real do item e permanece
+documental: a ficha não inventa uma interpretação numérica para texto livre.
+
+No próprio editor do item, encantamentos de catálogo e personalizados agora
+ganham cartões separados com nome e descrição completos. O resumo compacto
+continua mostrando os nomes, enquanto a leitura do efeito deixa de depender do
+texto pequeno da linha de slots.
+
+Toda Qualidade e todo Defeito ganhou um campo persistente de escolha ou
+personalização. Isso cobre tanto opções previstas no livro — Intolerância,
+Inimigo e Boa Reputação, entre outras — quanto decisões excepcionais da mesa.
+Inepto recebeu também o seletor fechado dos sete atributos: a escolha aplica
+−1 na coluna automática, limita o valor base a 6 e impede adquirir ou evoluir
+o poder passivo vinculado. Trocar ou remover a escolha recalcula e reverte os
+efeitos sem deixar valores residuais.
+
 ## v0.53.20 — cura lunar da Forma Bestial (15/09/2026)
 
 A primeira transformação dos Vigilantes da Lua continua recuperando 50% da

@@ -1,4 +1,12 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.20
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.21
+
+Mestres agora podem criar ate tres encantamentos personalizados por item,
+registrando nome, classe, equipamentos compativeis e efeito completo. Os
+encantamentos aplicados aparecem no editor com nome e descricao legiveis.
+
+Toda Qualidade e todo Defeito ganhou um campo de escolha/personalizacao. O
+defeito Inepto tambem recebeu seletor de atributo e automacao completa: -1 no
+atributo, limite base 6 e bloqueio do poder passivo vinculado.
 
 A Forma Bestial Lupina da Lua agora recupera 100% da vida maxima quando a
 primeira transformacao do descanso longo acontece sob Lua Cheia. O Eclipse
@@ -88,14 +96,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.53.20, o que esta rodando nao e este pacote.
+disser v0.53.21, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.53.20)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.53.21)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que
