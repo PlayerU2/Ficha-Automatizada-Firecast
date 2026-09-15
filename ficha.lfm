@@ -13792,10 +13792,10 @@
             -- resolve contra a raiz, entao a raiz vira rascunho.
             sheet.imagemCriaturaEdicao = tostring(c.imagem or "")
             preencherEditorCriatura(c)
-            -- Abre ja na maior largura que o editor pode usar. Alterar a
-            -- largura depois de popup:show() mantem a borda esquerda parada
-            -- no Firecast e empurra a direita para fora da tela.
-            abrirPopupAjustado(self.popCriatura, 1300, 760)
+            -- O editor conserva a largura de projeto. As decisoes deixadas
+            -- pelo livro aparecem no fluxo vertical; portanto nao existe
+            -- motivo para alargar o popup nem antes nem depois de show().
+            abrirPopupAjustado(self.popCriatura, 1000, 760)
         end
 
         function fecharEditorCriatura()
@@ -14127,14 +14127,6 @@
         -- Mostra/esconde a caixa e mantem o rotulo do botao coerente com o
         -- estado. Largura 0 esconde o botao: setVisible(false) num filho
         -- align="left" reordena a linha quando volta.
-        LARGURA_COLUNA_INSTRUCOES = 300
-        LARGURA_MINIMA_EDITOR_CRIATURA_LATERAL = 1230
-
-        local function editorCriaturaCompacto()
-            local w = larguraDe(self)
-            return w > 0 and w < LARGURA_MINIMA_EDITOR_CRIATURA_LATERAL
-        end
-
         function atualizarBotaoInstrucoes()
             local quantas = #(instrucoesCriatura or {})
             definirLarguraPod(self.edCri_wrapBtnInstrucoes, (quantas > 0) and 290 or 0)
@@ -14149,7 +14141,6 @@
             end
 
             local aberto = instrucoesAbertas and quantas > 0
-            local compacto = editorCriaturaCompacto()
             if aberto then
                 local texto = "O QUE FICOU PARA VOCÊ DECIDIR:\n\n· " ..
                     table.concat(instrucoesCriatura, "\n\n· ")
@@ -14175,16 +14166,9 @@
                     end
                     local alturaTexto = linhas * 16 + 20
                     definirAlturaPod(self.edCri_lblInstrucoesCompacto, alturaTexto)
-                    local alturaCompacta = compacto and (alturaTexto + 16) or 0
-                    definirAlturaPod(self.edCri_blocoInstrucoesCompacto, alturaCompacta)
+                    definirAlturaPod(self.edCri_blocoInstrucoesCompacto, alturaTexto + 16)
                 end
-
-                if compacto then
-                    definirLarguraPod(self.edCri_colInstrucoes, 0)
-                else
-                    definirLarguraPod(self.edCri_colInstrucoes, LARGURA_COLUNA_INSTRUCOES)
-                    definirAlturaPod(self.edCri_blocoInstrucoesCompacto, 0)
-                end
+                definirLarguraPod(self.edCri_colInstrucoes, 0)
             else
                 definirLarguraPod(self.edCri_colInstrucoes, 0)
                 definirAlturaPod(self.edCri_blocoInstrucoesCompacto, 0)
@@ -14480,7 +14464,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.15" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.16" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -25409,7 +25393,7 @@
                     <label align="top" height="26" text="ARTE DA HABILIDADE" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="14" fontStyle="bold" vertTextAlign="center" margins="{top=8}" hitTest="false"/>
                     <rectangle align="top" height="1" color="#C9A24B" margins="{bottom=10}" hitTest="false"/>
                     <label align="top" height="24" text="Clique na moldura para escolher uma imagem. A arte é exibida inteira, sem recorte." fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="13" hitTest="false"/>
-                    <rectangle name="popHab_molduraArte" align="top" height="300" color="#0A0C10" strokeColor="#3A2E52" strokeSize="1" xradius="4" yradius="4" margins="{left=315,right=315,bottom=12}">
+                    <rectangle name="popHab_molduraArte" align="top" height="320" color="#080B0E" strokeColor="#3A2E52" strokeSize="1" xradius="4" yradius="4" margins="{left=280,right=280,bottom=10}">
                         <!-- A peça inteira importa mais que preencher a moldura. -->
                         <image align="client" field="imagemHabEdicao" editable="true" style="proportional" showProgress="true" margins="{left=3,right=3,top=3,bottom=3}" hint="Clique para escolher a arte desta habilidade — de um endereço da internet ou do seu FireDrive. Ela aparece sempre que alguém abrir a habilidade, inclusive no meio do turno."/>
                     </rectangle>
@@ -27074,7 +27058,7 @@
                          em vez de brigar com a armadilha usamos ela.
                          Ver preencherEditorItem. -->
                     <label align="top" height="16" text="ARTE DO ITEM" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" margins="{top=2,bottom=2}" hitTest="false"/>
-                    <rectangle align="top" height="320" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{left=200,right=200,bottom=10}">
+                    <rectangle align="top" height="320" color="#080B0E" strokeColor="#3A2E52" strokeSize="1" xradius="4" yradius="4" margins="{left=200,right=200,bottom=10}">
                         <!-- style="proportional" e DECISAO DE MESA, nao sobra: aqui a peca
                                      inteira importa mais que preencher a moldura. Uma arte
                                      de equipamento ou de criatura cortada perde justamente o
@@ -29233,12 +29217,9 @@
                     </rectangle>
                 </layout>
 
-                <!-- O QUE FICOU PARA VOCE. Com pelo menos 1230px de area da
-                     ficha, abre numa coluna lateral com rolagem propria. Em
-                     janelas menores usa o bloco compacto dentro do formulario
-                     e a rolagem principal. O popup ja nasce na largura final:
-                     redimensiona-lo aberto deslocava a borda direita para fora
-                     da tela no Firecast. Largura 0 esconde a coluna. -->
+                <!-- Compatibilidade estrutural: a antiga coluna lateral fica
+                     permanentemente recolhida. As decisoes agora aparecem no
+                     bloco do formulario e usam a rolagem principal. -->
                 <layout name="edCri_colInstrucoes" align="right" width="0">
                     <rectangle align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="5" yradius="5" margins="{left=14}" hitTest="false">
                         <scrollBox align="client" margins="{left=10,right=6,top=8,bottom=8}">
@@ -29395,9 +29376,9 @@
                         </layout>
                     </layout>
 
-                    <!-- Em janela estreita, as observacoes entram no fluxo do
-                         formulario. A altura e calculada pelo Lua; quem rola e
-                         este scrollBox principal, sem barra aninhada. -->
+                    <!-- As observacoes entram sempre no fluxo do formulario.
+                         A altura e calculada pelo Lua; quem rola e este
+                         scrollBox principal, sem barra aninhada. -->
                     <layout name="edCri_blocoInstrucoesCompacto" align="top" height="0">
                         <rectangle align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="5" yradius="5" margins="{bottom=8}" hitTest="false">
                             <layout align="client" margins="{left=10,right=10,top=8,bottom=8}">

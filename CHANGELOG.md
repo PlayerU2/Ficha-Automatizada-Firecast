@@ -1,3 +1,20 @@
+## v0.53.16 — molduras de arte e criatura compacta (15/09/2026)
+
+Habilidades, itens e criaturas passam a seguir a mesma referência visual para
+a arte: aproximadamente 400 × 320 pixels, fundo `#080B0E`, borda roxa discreta
+e imagem proporcional inteira. Os campos NDB, o seletor do Firecast e o
+salvamento das imagens não mudaram.
+
+O editor de criaturas voltou ao teto de 1000 pixels. “O que ficou para você”
+agora abre sempre dentro do formulário e usa a rolagem principal, sem criar uma
+coluna lateral e sem alterar a largura do popup. Isso preserva o acesso em telas
+menores e evita transformar a correção de estouro em um editor excessivamente
+largo nas telas maiores.
+
+Validação local: XML dos LFM, sintaxe Lua, preservação de campos e handlers,
+geometria das três molduras e simulações de largura do editor. A conferência
+visual permanece no Firecast.
+
 ## v0.53.15 — editor de criaturas responsivo (15/09/2026)
 
 O painel “O que ficou para você” não redimensiona mais um popup já aberto. No
