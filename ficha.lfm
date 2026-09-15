@@ -3632,7 +3632,14 @@
             -- fim ao exibi-lo de novo; altura 0 preserva a ordem da aba e os
             -- dados lacrados da heranca.
             local ehMestico = ctx.temMestico
-            definirAlturaPod(self.abaRaca_secMestico, ehMestico and 124 or 0)
+            -- Esta rotina fica antes dos auxiliares responsivos locais no
+            -- arquivo. Chamar definirAlturaPod aqui procuraria uma GLOBAL
+            -- nil em Lua; por isso o ajuste precisa ser autocontido.
+            if self.abaRaca_secMestico ~= nil then
+                pcall(function()
+                    self.abaRaca_secMestico:setHeight(ehMestico and 124 or 0)
+                end)
+            end
             local caracsMestico = ehMestico and caracteristicasMesticoDefinidas() or {}
             local usandoMestico = (ehMestico and #caracsMestico > 0)
 
@@ -14479,7 +14486,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.17" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.18" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 

@@ -1,3 +1,16 @@
+## v0.53.18 — hotfix do painel de mestiçagem (15/09/2026)
+
+Corrige a falha de inicialização `attempt to call a nil value (global
+'definirAlturaPod')`. A v0.53.17 chamou um auxiliar `local` antes da linha em
+que ele era declarado; pelas regras de escopo do Lua, a referência naquele
+ponto era tratada como global e chegava ao Firecast como `nil`.
+
+O painel continua alternando somente entre 0 e 124 pixels conforme a qualidade
+Mestiço, mas agora faz o `setHeight` protegido diretamente dentro da rotina
+racial. A verificação de pré-lançamento passou a rejeitar chamadas dos
+auxiliares locais de dimensão antes de suas declarações, cobrindo também o
+irmão desse defeito. Nenhuma regra, campo NDB ou dimensão de popup foi alterada.
+
 ## v0.53.17 — revisão de pré-lançamento (15/09/2026)
 
 Mestiçagem deixa de ocupar espaço na aba Raça & Classe quando a ficha não
