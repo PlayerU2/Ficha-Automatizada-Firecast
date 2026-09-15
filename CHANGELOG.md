@@ -1,3 +1,24 @@
+## v0.53.19 — defesas de acessórios e encantamentos integrais (15/09/2026)
+
+O editor da categoria Acessórios e Ferramentas passa a exibir o grupo de
+bônus em Aparar, Esquiva, Empática e Telepática. Esses campos já faziam parte
+do formato do item, do salvamento e do recálculo de equipamento, mas a tabela
+de visibilidade da categoria os mantinha com altura zero. Colar do Resiliente
+e Cinto do Gladiador agora podem receber no próprio editor a distribuição
+determinada pelo livro e descrita no item.
+
+As descrições do popup de Encantamentos deixam de depender da cópia estática
+do XML. Seis das 64 linhas haviam sido gravadas já cortadas no caractere
+150, então ativar apenas `wordWrap` não recuperaria o trecho perdido. Cada card
+agora busca o texto integral de `catalogoEncantamentos.lua`, quebra linhas e
+calcula 40, 56 ou 72 pixels conforme o comprimento. A lista continua usando a
+própria rolagem e o popup mantém suas dimensões anteriores.
+
+Validação local: vínculos NDB, controles, permissões e handlers preservados;
+quatro defesas carregadas, salvas e somadas ao equipar; 64 descrições ligadas
+à fonte integral; caso de regressão maior que 150 caracteres; XML válido e
+dimensões do popup inalteradas. A conferência visual permanece no Firecast.
+
 ## v0.53.18 — hotfix do painel de mestiçagem (15/09/2026)
 
 Corrige a falha de inicialização `attempt to call a nil value (global

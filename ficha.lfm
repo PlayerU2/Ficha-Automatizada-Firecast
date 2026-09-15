@@ -12462,7 +12462,7 @@
             ["Armadura"]  = {"durabilidade", "requisito", "defesas", "absorcao", "deslocamento", "encantamento"},
             ["Armas"]     = {"durabilidade", "requisito", "dano", "alcance", "defesas", "encantamento"},
             ["Projéteis"] = {"dano", "alcance", "municoes"},
-            ["Acessórios e Ferramentas"] = {"durabilidade", "pericia", "espacos", "encantamento"},
+            ["Acessórios e Ferramentas"] = {"durabilidade", "defesas", "pericia", "espacos", "encantamento"},
             ["Consumíveis"] = {"municoes"},
             -- As quatro categorias recuperadas da Loja em 21/08/2026.
             -- Nenhuma equipa no personagem: sela equipa na MONTARIA, e kits,
@@ -12718,8 +12718,15 @@
             local aplicados = {}
             for _, nome in ipairs(encantamentosDoItem(it)) do aplicados[nome] = true end
             for _, e in ipairs(CatalogoEncantamentos.itens) do
-                local lbl = self["lblEnc_" .. chavePoder(e.nome)]
-                local rect = self["rectEnc_" .. chavePoder(e.nome)]
+                local chave = chavePoder(e.nome)
+                local lbl = self["lblEnc_" .. chave]
+                local desc = self["descEnc_" .. chave]
+                local rect = self["rectEnc_" .. chave]
+                -- O catálogo é a fonte do texto. O XML antigo guardava só
+                -- os 150 primeiros caracteres de algumas descrições; mesmo
+                -- com wordWrap, a continuação já não existia para desenhar.
+                local textoCompleto = tostring(e.descricao or "")
+                if desc ~= nil then desc:setText(textoCompleto) end
                 if lbl ~= nil then
                     if aplicados[e.nome] then
                         lbl:setFontColor(COR.gold)
@@ -12729,6 +12736,13 @@
                 end
                 if rect ~= nil then
                     rect:setStrokeColor(aplicados[e.nome] and COR.gold or COR.line)
+                    -- 40px comportam título + uma linha. Cada bloco adicional
+                    -- de até 100 caracteres recebe mais 16px; a própria lista
+                    -- rola, então crescer a linha não estoura o popup.
+                    local linhas = math.ceil(#textoCompleto / 100)
+                    if linhas < 1 then linhas = 1 end
+                    if linhas > 3 then linhas = 3 end
+                    definirAlturaPod(rect, 24 + (linhas * 16))
                 end
             end
         end
@@ -14486,7 +14500,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.18" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.19" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -27431,196 +27445,196 @@
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de fogo");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedefogo" align="top" height="16" text="Afinidade de fogo" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Fogo]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedefogo" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Fogo]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedegelo" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de gelo");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedegelo" align="top" height="16" text="Afinidade de gelo" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Gelo]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedegelo" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Gelo]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedeagua" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de água");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedeagua" align="top" height="16" text="Afinidade de água" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Água]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedeagua" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Água]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedeluz" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de luz");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedeluz" align="top" height="16" text="Afinidade de luz" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Dia]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedeluz" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Dia]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedesombra" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de sombra");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedesombra" align="top" height="16" text="Afinidade de sombra" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Noite]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedesombra" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Noite]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedeeletricidade" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de eletricidade");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedeeletricidade" align="top" height="16" text="Afinidade de eletricidade" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Eletricidade]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedeeletricidade" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Eletricidade]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedeterra" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de terra");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedeterra" align="top" height="16" text="Afinidade de terra" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Terra]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedeterra" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Terra]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedevento" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de vento");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedevento" align="top" height="16" text="Afinidade de vento" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Vento]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedevento" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Vento]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedeveneno" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de veneno");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedeveneno" align="top" height="16" text="Afinidade de veneno" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Veneno]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedeveneno" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Veneno]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedeplanta" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de planta");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedeplanta" align="top" height="16" text="Afinidade de planta" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Planta]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedeplanta" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Planta]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedemaldicao" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de maldição");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedemaldicao" align="top" height="16" text="Afinidade de maldição" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Maldição]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedemaldicao" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Maldição]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Afinidadedesagrado" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Afinidade de sagrado");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Afinidadedesagrado" align="top" height="16" text="Afinidade de sagrado" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Sagrado]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Afinidadedesagrado" align="client" text="o portador do objeto com este encantamento recebe afinidade com o elemento [Sagrado]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Aprendizarcano" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Aprendiz arcano");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Aprendizarcano" align="top" height="16" text="Aprendiz arcano" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="escolha um poder ativo, e toda vez que o portador usar uma habilidade de tal poder receberá +1 de acerto ou" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Aprendizarcano" align="client" text="escolha um poder ativo, e toda vez que o portador usar uma habilidade de tal poder receberá +1 de acerto ou" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Aracnopassos" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Aracnopassos");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Aracnopassos" align="top" height="16" text="Aracnopassos" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="torna o portador do objeto com este encantamento capaz de andar pelas paredes e pelo teto respeitando seu deslocamento." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Aracnopassos" align="client" text="torna o portador do objeto com este encantamento capaz de andar pelas paredes e pelo teto respeitando seu deslocamento." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_ChefedoNinho" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Chefe do Ninho");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_ChefedoNinho" align="top" height="16" text="Chefe do Ninho" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador se torna capaz de falar com uma espécie específica de Criaturas; Não é possível com Entidades ou Aberrações." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_ChefedoNinho" align="client" text="o portador se torna capaz de falar com uma espécie específica de Criaturas; Não é possível com Entidades ou Aberrações." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Contrabando" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Contrabando");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Contrabando" align="top" height="16" text="Contrabando" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o recipiente com este encantamento recebe +3 espaços permanentemente, seja ele um baú, caixa, barril, mochila etc." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Contrabando" align="client" text="o recipiente com este encantamento recebe +3 espaços permanentemente, seja ele um baú, caixa, barril, mochila etc." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Guiadoaventureiro" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Guia do aventureiro");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Guiadoaventureiro" align="top" height="16" text="Guia do aventureiro" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento sempre saberá as quatro direções cardeais independente de estar vendo o céu ou não." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Guiadoaventureiro" align="client" text="o portador do objeto com este encantamento sempre saberá as quatro direções cardeais independente de estar vendo o céu ou não." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Incorporacao" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Incorporação");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Incorporacao" align="top" height="16" text="Incorporação" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="acrescenta +5% de Absorção de Danos ao portador, respeitando os limites de Absorção de Dano." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Incorporacao" align="client" text="acrescenta +5% de Absorção de Danos ao portador, respeitando os limites de Absorção de Dano." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Mentefortalecida" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Mente fortalecida");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Mentefortalecida" align="top" height="16" text="Mente fortalecida" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="garante ao portador do objeto com este encantamento +2 em sua defesa telepática, torna acertos críticos de oponentes em acertos comuns." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Mentefortalecida" align="client" text="garante ao portador do objeto com este encantamento +2 em sua defesa telepática, torna acertos críticos de oponentes em acertos comuns." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Quedasuave" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Queda suave");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Quedasuave" align="top" height="16" text="Queda suave" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="torna o portador do objeto com este encantamento imune a dano de quedas, sempre antes de cair sua queda se torna muito suave." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Quedasuave" align="client" text="torna o portador do objeto com este encantamento imune a dano de quedas, sempre antes de cair sua queda se torna muito suave." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Refugiodoaventureiro" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Refúgio do aventureiro");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Refugiodoaventureiro" align="top" height="16" text="Refúgio do aventureiro" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="personagens que possuam objetos com este encantamento recebem os efeitos de um descanso longo com um mero descanso curto." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Refugiodoaventureiro" align="client" text="personagens que possuam objetos com este encantamento recebem os efeitos de um descanso longo com um mero descanso curto." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_RemoverEncantamentoI" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Remover Encantamento I");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_RemoverEncantamentoI" align="top" height="16" text="Remover Encantamento I" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o artíficie remove um encantamento de Classe I de um objeto, desde que seja um encantamento presente nesta loja." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_RemoverEncantamentoI" align="client" text="o artíficie remove um encantamento de Classe I de um objeto, desde que seja um encantamento presente nesta loja." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Retornomistico" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Retorno místico");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Retornomistico" align="top" height="16" text="Retorno místico" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador gasta uma ação bônus para fazer este objeto retornar até ele automaticamente; Raio de funcionamento (10 x Rank) metros de distância." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Retornomistico" align="client" text="o portador gasta uma ação bônus para fazer este objeto retornar até ele automaticamente; Raio de funcionamento (10 x Rank) metros de distância." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Sifaoarcano" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Sifão arcano");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Sifaoarcano" align="top" height="16" text="Sifão arcano" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="sempre que uma arma/canalizador com este encantamento fizer um" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Sifaoarcano" align="client" text="sempre que uma arma/canalizador com este encantamento fizer um" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Sifaodesangue" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Sifão de sangue");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Sifaodesangue" align="top" height="16" text="Sifão de sangue" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="sempre que uma arma/canalizador com este encantamento fizer um" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Sifaodesangue" align="client" text="sempre que uma arma/canalizador com este encantamento fizer um" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Sortedeaventureiro" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Sorte de aventureiro");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Sortedeaventureiro" align="top" height="16" text="Sorte de aventureiro" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="personagens que possuam objetos com este encantamento podem rolar os d100 de viagem/sorte em narrativas com vantagem, e escolherem o melhor resultado." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Sortedeaventureiro" align="client" text="personagens que possuam objetos com este encantamento podem rolar os d100 de viagem/sorte em narrativas com vantagem, e escolherem o melhor resultado." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Telemancia" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Telemancia");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Telemancia" align="top" height="16" text="Telemancia" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento se torna capaz de enviar mensagens telepáticas curtas para aliados a até 8 metros de distância; 3 usos por " fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Telemancia" align="client" text="o portador do objeto com este encantamento se torna capaz de enviar mensagens telepáticas curtas para aliados a até 8 metros de distância; 3 usos por " fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Vontadefortalecida" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Vontade fortalecida");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Vontadefortalecida" align="top" height="16" text="Vontade fortalecida" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="garante ao portador do objeto com este encantamento +2 em sua defesa empatica, torna acertos críticos de oponentes em acertos comuns." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Vontadefortalecida" align="client" text="garante ao portador do objeto com este encantamento +2 em sua defesa empatica, torna acertos críticos de oponentes em acertos comuns." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <label align="top" height="24" text="CLASSE II — 10 AUREUS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=3}" hitTest="false"/>
@@ -27628,175 +27642,175 @@
                                 <event name="onClick"><![CDATA[alternarEncantamento("Altar do aventureiro");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Altardoaventureiro" align="top" height="16" text="Altar do aventureiro" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="sempre que o portador do objeto com este encantamento gastar um ponto de favor, deverá rolar 1d100: se tirar de 85 a 95, meio ponto de favor será rest" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Altardoaventureiro" align="client" text="sempre que o portador do objeto com este encantamento gastar um ponto de favor, deverá rolar 1d100: se tirar de 85 a 95, meio ponto de favor será rest" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Autoequipamento" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Autoequipamento");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Autoequipamento" align="top" height="16" text="Autoequipamento" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o objeto pode se equipar e desequipar uma vez por turno, trocando com outro objeto no inventário/mochila." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Autoequipamento" align="client" text="o objeto pode se equipar e desequipar uma vez por turno, trocando com outro objeto no inventário/mochila." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Autocarga" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Autocarga");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Autocarga" align="top" height="16" text="Autocarga" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="Quando a munição acaba, o equipamento recarrega automaticamente ao custo de uma ação de Reação desde que a munição esteja no bolso ou em um acessório." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Autocarga" align="client" text="Quando a munição acaba, o equipamento recarrega automaticamente ao custo de uma ação de Reação desde que a munição esteja no bolso ou em um acessório." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Chamadodoportador" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Chamado do portador");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Chamadodoportador" align="top" height="16" text="Chamado do portador" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento gasta uma ação bônus para fazê-lo retornar voando para si; Raio de funcionamento [rank] quilômetros de dist" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Chamadodoportador" align="client" text="o portador do objeto com este encantamento gasta uma ação bônus para fazê-lo retornar voando para si; Raio de funcionamento [rank] quilômetros de dist" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Domesticador" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Domesticador");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Domesticador" align="top" height="16" text="Domesticador" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="garante ao portador do acessório com este encantamento vantagem nos testes sociais para amansar e domar criaturas durante o primeiro contato." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Domesticador" align="client" text="garante ao portador do acessório com este encantamento vantagem nos testes sociais para amansar e domar criaturas durante o primeiro contato." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Escudeirodoaventureiro" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Escudeiro do aventureiro");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Escudeirodoaventureiro" align="top" height="16" text="Escudeiro do aventureiro" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento pode rolar dados de iniciativa com vantagem e ficar com o critério de desempate ao seu favor." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Escudeirodoaventureiro" align="client" text="o portador do objeto com este encantamento pode rolar dados de iniciativa com vantagem e ficar com o critério de desempate ao seu favor." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Golpeduplo" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Golpe duplo");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Golpeduplo" align="top" height="16" text="Golpe duplo" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="sempre que o portador da arma/canalizador com este encantamento tirar crítico positivo no acerto, ganhará o direito de rolar um segundo ataque contra " fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Golpeduplo" align="client" text="sempre que o portador da arma/canalizador com este encantamento tirar crítico positivo no acerto, ganhará o direito de rolar um segundo ataque contra " fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Guerreiroarcano" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Guerreiro arcano");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Guerreiroarcano" align="top" height="16" text="Guerreiro arcano" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="escolha um poder ativo, e toda vez que o portador usar uma habilidade de tal poder receberá +2 de acerto ou" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Guerreiroarcano" align="client" text="escolha um poder ativo, e toda vez que o portador usar uma habilidade de tal poder receberá +2 de acerto ou" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Incorporacaomelhorada" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Incorporação melhorada");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Incorporacaomelhorada" align="top" height="16" text="Incorporação melhorada" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="acrescenta +10% de Absorção de Danos ao portador, respeitando os limites de Absorção de Dano." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Incorporacaomelhorada" align="client" text="acrescenta +10% de Absorção de Danos ao portador, respeitando os limites de Absorção de Dano." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Melhoramigo" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Melhor amigo");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Melhoramigo" align="top" height="16" text="Melhor amigo" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="garante ao equipamento com este encantamento a capacidade de se transformar em uma Besta doméstica comum, leal ao portador." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Melhoramigo" align="client" text="garante ao equipamento com este encantamento a capacidade de se transformar em uma Besta doméstica comum, leal ao portador." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Quebrador" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Quebrador");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Quebrador" align="top" height="16" text="Quebrador" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="a arma/canalizador com este encantamento aplica 50% mais de dano contra construções e outros objetos." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Quebrador" align="client" text="a arma/canalizador com este encantamento aplica 50% mais de dano contra construções e outros objetos." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_RemoverEncantamentoII" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Remover Encantamento II");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_RemoverEncantamentoII" align="top" height="16" text="Remover Encantamento II" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o artíficie remove um encantamento de Classe II de um objeto, desde que seja um encantamento presente nesta loja." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_RemoverEncantamentoII" align="client" text="o artíficie remove um encantamento de Classe II de um objeto, desde que seja um encantamento presente nesta loja." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Salvaguarda" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Salvaguarda");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Salvaguarda" align="top" height="16" text="Salvaguarda" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="uma vez por combate, o portador do objeto com este encantamento pode recuperar 4d6 de vida; Este valor é 6d6 caso esteja caído." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Salvaguarda" align="client" text="uma vez por combate, o portador do objeto com este encantamento pode recuperar 4d6 de vida; Este valor é 6d6 caso esteja caído." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadeflamejante" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade flamejante");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadeflamejante" align="top" height="16" text="Tenacidade flamejante" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Fogo]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadeflamejante" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Fogo]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadeaquatica" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade aquática");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadeaquatica" align="top" height="16" text="Tenacidade aquática" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Água]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadeaquatica" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Água]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadeiluminada" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade iluminada");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadeiluminada" align="top" height="16" text="Tenacidade iluminada" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Dia]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadeiluminada" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Dia]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadesombria" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade sombria");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadesombria" align="top" height="16" text="Tenacidade sombria" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Noite]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadesombria" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Noite]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadeeletrica" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade elétrica");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadeeletrica" align="top" height="16" text="Tenacidade elétrica" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Eletricidade]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadeeletrica" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Eletricidade]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadeterrana" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade terrana");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadeterrana" align="top" height="16" text="Tenacidade terrana" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Terra]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadeterrana" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Terra]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadesagrada" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade sagrada");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadesagrada" align="top" height="16" text="Tenacidade sagrada" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Sagrado]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadesagrada" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Sagrado]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidademaldita" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade maldita");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidademaldita" align="top" height="16" text="Tenacidade maldita" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Maldição]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidademaldita" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Maldição]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadevenenosa" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade venenosa");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadevenenosa" align="top" height="16" text="Tenacidade venenosa" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Veneno]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadevenenosa" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Veneno]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadevegetal" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade vegetal");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadevegetal" align="top" height="16" text="Tenacidade vegetal" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Planta]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadevegetal" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Planta]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadeaerea" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade aérea");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadeaerea" align="top" height="16" text="Tenacidade aérea" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Vento]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadeaerea" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Vento]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidadegelada" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade gelada");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidadegelada" align="top" height="16" text="Tenacidade gelada" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Gelo]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidadegelada" align="client" text="o portador do escudo/armadura com este encantamento recebe resistência ao elemento [Gelo]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <label align="top" height="24" text="CLASSE III — 15 AUREUS" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=10,bottom=3}" hitTest="false"/>
@@ -27804,77 +27818,77 @@
                                 <event name="onClick"><![CDATA[alternarEncantamento("Artefato arcano");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Artefatoarcano" align="top" height="16" text="Artefato arcano" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="permite que um pergaminho de habilidades seja absorvido pelo objeto com este encantamento, e dará ao portador a capacidade de usar a habilidade por" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Artefatoarcano" align="client" text="permite que um pergaminho de habilidades seja absorvido pelo objeto com este encantamento, e dará ao portador a capacidade de usar a habilidade por" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Contragolpe" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Contragolpe");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Contragolpe" align="top" height="16" text="Contragolpe" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="dá ao portador do escudo/armadura/arma/canalizador com este encantamento a chance de gastar uma reação por combate, por inimigo, para atacar o mesmo c" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Contragolpe" align="client" text="dá ao portador do escudo/armadura/arma/canalizador com este encantamento a chance de gastar uma reação por combate, por inimigo, para atacar o mesmo c" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Dominiodaleitura" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Domínio da leitura");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Dominiodaleitura" align="top" height="16" text="Domínio da leitura" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="acessórios com este encantamento dão ao portador capacidade de ler e escrever sem a necessidade da perícia &quot;Acadêmicos&quot;, desde que seja um idioma que " fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Dominiodaleitura" align="client" text="acessórios com este encantamento dão ao portador capacidade de ler e escrever sem a necessidade da perícia &quot;Acadêmicos&quot;, desde que seja um idioma que " fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Figadodemendigo" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Fígado de mendigo");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Figadodemendigo" align="top" height="16" text="Fígado de mendigo" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o portador do objeto com este encantamento se torna imune a efeitos de [Embriagado], [Ébrio] e [Dopado]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Figadodemendigo" align="client" text="o portador do objeto com este encantamento se torna imune a efeitos de [Embriagado], [Ébrio] e [Dopado]." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Golpearcano" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Golpe arcano");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Golpearcano" align="top" height="16" text="Golpe arcano" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="aumenta o passo de dano da arma em 1. Em canalizadores energéticos, apenas funciona com habilidades ou feitiços de" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Golpearcano" align="client" text="aumenta o passo de dano da arma em 1. Em canalizadores energéticos, apenas funciona com habilidades ou feitiços de" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Heroiarcano" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Herói arcano");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Heroiarcano" align="top" height="16" text="Herói arcano" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="escolha um poder ativo, e toda vez que o portador usar uma habilidade de tal poder receberá +3 de acerto ou" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Heroiarcano" align="client" text="escolha um poder ativo, e toda vez que o portador usar uma habilidade de tal poder receberá +3 de acerto ou" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_IncorporacaoTotal" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Incorporação Total");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_IncorporacaoTotal" align="top" height="16" text="Incorporação Total" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="acrescenta +15% de Absorção de Danos ao portador, respeitando os limites de Absorção de Dano." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_IncorporacaoTotal" align="client" text="acrescenta +15% de Absorção de Danos ao portador, respeitando os limites de Absorção de Dano." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Nemesis" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Nemesis");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Nemesis" align="top" height="16" text="Nemesis" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="durante o encantamento de uma armadura ou escudo, o portador escolhe um tipo de [" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Nemesis" align="client" text="durante o encantamento de uma armadura ou escudo, o portador escolhe um tipo de [" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_RemoverEncantamentoIII" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Remover Encantamento III");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_RemoverEncantamentoIII" align="top" height="16" text="Remover Encantamento III" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="o artíficie remove um encantamento de Classe III de um objeto, desde que seja um encantamento presente nesta loja." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_RemoverEncantamentoIII" align="client" text="o artíficie remove um encantamento de Classe III de um objeto, desde que seja um encantamento presente nesta loja." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tenacidademultipla" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tenacidade múltipla");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tenacidademultipla" align="top" height="16" text="Tenacidade múltipla" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="escolha dois elementos não-neutros para ganhar resistência aos mesmos." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tenacidademultipla" align="client" text="escolha dois elementos não-neutros para ganhar resistência aos mesmos." fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                             <rectangle name="rectEnc_Tesourodoaventureiro" align="top" height="40" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="4" yradius="4" margins="{bottom=4}" cursor="handPoint" hint="Aplicar ou remover este encantamento">
                                 <event name="onClick"><![CDATA[alternarEncantamento("Tesouro do aventureiro");]]></event>
                                 <layout align="client" margins="{left=10,right=10,top=3,bottom=3}">
                                     <label name="lblEnc_Tesourodoaventureiro" align="top" height="16" text="Tesouro do aventureiro" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" wordWrap="false" hitTest="false"/>
-                                    <label align="client" text="permite ao portador do objeto com este encantamento rolar todos os seus testes de" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="false" hitTest="false"/>
+                                    <label name="descEnc_Tesourodoaventureiro" align="client" text="permite ao portador do objeto com este encantamento rolar todos os seus testes de" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="11" wordWrap="true" hitTest="false"/>
                                 </layout>
                             </rectangle>
                     </scrollBox>
