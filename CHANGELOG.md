@@ -1,3 +1,13 @@
+## v0.53.28 — novo brasão dos Humanos (16/09/2026)
+
+Substitui o antigo brasão de martelo, mão e pena pela nova composição de mãos
+erguidas, ramos e símbolo divino. A arte recebida foi limpa dos resíduos
+cromáticos, convertida para gradiente dourado, preservada com transparência e
+adequada ao ativo `96×96` já utilizado nos dois retratos raciais da ficha.
+
+O caminho do recurso e o layout não mudaram: todas as referências continuam
+apontando para `imagens/brasao_raca_humanos.png`.
+
 ## v0.53.27 — alinhamento uniforme da durabilidade (16/09/2026)
 
 Itens sem durabilidade passam a exibir `0 / 0` e conservam a mesma largura de
