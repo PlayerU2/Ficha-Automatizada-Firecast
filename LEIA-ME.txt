@@ -1,4 +1,9 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.23
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.24
+
+HOTFIX v0.53.24: o campo Descricao e Observacoes dos itens agora usa o mesmo
+textEditor multilinha empregado nas descricoes de habilidades e criaturas.
+Isto substitui a tentativa insuficiente da v0.53.23, em que wordWrap foi
+adicionado a um edit que continuava sendo de linha unica no Firecast.
 
 CORRECAO v0.53.23: descricoes longas de itens agora quebram linha dentro do
 campo de observacoes. A area recebeu mais altura e continua contida na rolagem
@@ -106,14 +111,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.53.23, o que esta rodando nao e este pacote.
+disser v0.53.24, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.53.23)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.53.24)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que

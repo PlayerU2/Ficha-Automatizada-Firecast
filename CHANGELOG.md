@@ -1,3 +1,15 @@
+## v0.53.24 — descrição de item realmente multilinha (16/09/2026)
+
+Corrige a tentativa incompleta da v0.53.23. No Firecast, acrescentar
+`wordWrap="true"` a um controle `edit` não o transforma em editor multilinha;
+por isso o campo ficou mais alto, mas o texto continuou em uma única linha.
+
+Descrição e Observações agora usa `textEditor`, exatamente como os campos de
+descrição e efeito das habilidades e como a descrição das criaturas. O caminho
+de leitura e salvamento (`getText`/`setText`) permanece o mesmo, portanto os
+textos já gravados são preservados. A verificação agora exige o tipo estrutural
+`textEditor`, e não apenas uma propriedade sem efeito no controle errado.
+
 ## v0.53.23 — descrições de itens com quebra de linha (16/09/2026)
 
 O campo Descrição e Observações do editor de itens passa a quebrar textos
