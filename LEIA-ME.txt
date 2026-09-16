@@ -1,4 +1,9 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.26
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.27
+
+AJUSTE VISUAL v0.53.27: itens sem durabilidade agora exibem 0 / 0 e mantem
+a mesma largura de coluna dos demais. Quantidade e botoes de acao permanecem
+alinhados em todas as linhas; os controles de durabilidade continuam inertes
+nesses itens e nao criam durabilidade acidentalmente.
 
 MELHORIA v0.53.26: o inventario detalhado agora organiza os itens em tres
 grupos visuais, sempre nesta ordem: Equipados, Mochila e Bau. Cada grupo tem
@@ -121,14 +126,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.53.26, o que esta rodando nao e este pacote.
+disser v0.53.27, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.53.26)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.53.27)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que

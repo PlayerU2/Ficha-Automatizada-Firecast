@@ -13591,21 +13591,27 @@
                     -- DURABILIDADE direto na linha, com + e −. Antes so dava
                     -- para mexer abrindo o popup do item, e e uma das coisas
                     -- que mais se faz no meio de um combate.
-                    -- Item sem durabilidade (projetil, consumivel) some com o
-                    -- bloco inteiro: LARGURA zero, e nao visibilidade, senao o
-                    -- elemento align="left" reordena ao voltar.
+                    -- Item sem durabilidade conserva a mesma coluna e mostra
+                    -- 0 / 0. O ajuste continua inerte pela guarda de
+                    -- ajustarDurItem; aqui a largura fixa evita que quantidade
+                    -- e acoes saltem para a esquerda em algumas linhas.
                     local wrapDur = self["abaInv_wrapDur" .. i]
                     local lblDur = self["abaInv_lblDur" .. i]
                     local temDur = itemTemDurabilidade(it)
-                    definirLarguraPod(wrapDur, temDur and 118 or 0)
-                    if temDur and lblDur ~= nil then
-                        lblDur:setText(n(it.durAtual) .. " / " .. n(it.durMax))
-                        if itemQuebrado(it) then
-                            lblDur:setFontColor(COR.wine)
-                        elseif n(it.durAtual) * 2 <= n(it.durMax) then
-                            lblDur:setFontColor(COR.gold)     -- metade ou menos
+                    definirLarguraPod(wrapDur, 118)
+                    if lblDur ~= nil then
+                        if temDur then
+                            lblDur:setText(n(it.durAtual) .. " / " .. n(it.durMax))
+                            if itemQuebrado(it) then
+                                lblDur:setFontColor(COR.wine)
+                            elseif n(it.durAtual) * 2 <= n(it.durMax) then
+                                lblDur:setFontColor(COR.gold) -- metade ou menos
+                            else
+                                lblDur:setFontColor(COR.text)
+                            end
                         else
-                            lblDur:setFontColor(COR.text)
+                            lblDur:setText("0 / 0")
+                            lblDur:setFontColor(COR.faint)
                         end
                     end
 
@@ -14898,7 +14904,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.26" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.27" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 

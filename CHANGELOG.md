@@ -1,3 +1,14 @@
+## v0.53.27 — alinhamento uniforme da durabilidade (16/09/2026)
+
+Itens sem durabilidade passam a exibir `0 / 0` e conservam a mesma largura de
+coluna dos equipamentos duráveis. Com isso, quantidade e ações permanecem
+alinhadas em todas as linhas dos grupos Equipados, Mochila e Baú.
+
+Os botões de durabilidade continuam protegidos pela regra existente:
+`ajustarDurItem` retorna sem alterar o item quando `durMax` é zero. A mudança é
+visual e não transforma consumíveis, projéteis ou pergaminhos em itens
+duráveis.
+
 ## v0.53.26 — inventário separado por local (16/09/2026)
 
 A lista detalhada do inventário passa a ser organizada em três grupos, na
