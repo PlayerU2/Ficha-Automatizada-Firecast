@@ -1,4 +1,8 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.24
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.25
+
+CORRECAO v0.53.25: Acessorios e Ferramentas agora exibem um grupo proprio de
+Capacidade de Carga. O campo Espacos Extras de Mochila permite ajustar quanto
+uma mochila, sapochila ou recipiente acrescenta enquanto estiver equipado.
 
 HOTFIX v0.53.24: o campo Descricao e Observacoes dos itens agora usa o mesmo
 textEditor multilinha empregado nas descricoes de habilidades e criaturas.
@@ -111,14 +115,14 @@ reabrir a ficha: o Firecast mantem cache do plug-in e voce vai continuar
 vendo a versao antiga, achando que a instalacao falhou.
 
 A versao fica carimbada NA TELA, a esquerda de "SECAO 01". Se o selo nao
-disser v0.53.24, o que esta rodando nao e este pacote.
+disser v0.53.25, o que esta rodando nao e este pacote.
 
 
 =======================================================================
  4. ESTRUTURA DO PACOTE
 =======================================================================
 
-  module.xml                            manifesto (sdkVersion 3.7b, v0.53.24)
+  module.xml                            manifesto (sdkVersion 3.7b, v0.53.25)
   ficha.lfm                             ficha completa, 10 abas
   LEIA-ME.txt                           este arquivo
   CHANGELOG.md                          o que mudou em cada versao, e por que

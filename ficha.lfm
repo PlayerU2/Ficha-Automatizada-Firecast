@@ -12715,7 +12715,7 @@
             -- linha fina: nao cabia titulo (16) + rotulo (15) + campo.
             local alturas = {identidade = 80, durabilidade = 80, requisito = 80,
                              dano = 80, alcance = 0, defesas = 88, absorcao = 80,
-                             deslocamento = 0, pericia = 80, espacos = 0,
+                             deslocamento = 0, pericia = 80, espacos = 76,
                              municoes = 80, encantamento = 128}
             for grupo, altura in pairs(alturas) do
                 local w = self["edIt_grupo" .. grupo]
@@ -14820,7 +14820,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.24" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.25" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -27319,7 +27319,7 @@
                     <layout name="edIt_grupoabsorcao" align="top" height="76">
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=8}">
                             <layout align="client" margins="{left=14,right=14,top=4,bottom=6}">
-                                <label align="top" height="18" text="PROTEÇÃO, CARGA E MOVIMENTO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                <label align="top" height="18" text="PROTEÇÃO E MOVIMENTO" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                 <layout align="top" height="46">
                                     <layout align="left" width="140" margins="{right=10}">
                                         <label align="top" height="14" text="ABSORÇÃO (%)" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hint="Percentual de dano absorvido"/>
@@ -27334,17 +27334,27 @@
                                         </rectangle>
                                     </layout>
                                     <layout align="left" width="170" margins="{right=10}">
-                                        <label align="top" height="14" text="ESPAÇOS DE MOCHILA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hint="A Mochila do Peregrino dá +2 ou +4; o encantamento Contrabando, +3"/>
-                                        <rectangle align="top" height="28" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
-                                            <edit name="edIt_espacos" align="client" text="" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" horzTextAlign="center" transparent="true" margins="{left=6,right=6}" hint="A Mochila do Peregrino dá +2 ou +4; o encantamento Contrabando, +3"/>
-                                        </rectangle>
-                                    </layout>
-                                    <layout align="left" width="170" margins="{right=10}">
                                         <label align="top" height="14" text="VISÃO NO ESCURO (m)" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hint="Raio extra para enxergar no escuro"/>
                                         <rectangle align="top" height="28" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
                                             <edit name="edIt_visaoEscuro" align="client" text="" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" horzTextAlign="center" transparent="true" margins="{left=6,right=6}" hint="Raio extra para enxergar no escuro"/>
                                         </rectangle>
                                     </layout>
+                                </layout>
+                            </layout>
+                        </rectangle>
+                    </layout>
+                    <layout name="edIt_grupoespacos" align="top" height="76">
+                        <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=8}">
+                            <layout align="client" margins="{left=14,right=14,top=4,bottom=6}">
+                                <label align="top" height="18" text="CAPACIDADE DE CARGA — ENTRA AO EQUIPAR" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" vertTextAlign="center" hitTest="false"/>
+                                <layout align="top" height="46">
+                                    <layout align="left" width="220" margins="{right=10}">
+                                        <label align="top" height="14" text="ESPAÇOS EXTRAS DE MOCHILA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" hint="Quanto este item acrescenta à capacidade. Mochila do Peregrino: +2 comum ou +4 ótima."/>
+                                        <rectangle align="top" height="28" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
+                                            <edit name="edIt_espacos" align="client" text="" type="number" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" horzTextAlign="center" transparent="true" margins="{left=6,right=6}" hint="Quanto este item acrescenta à capacidade. Mochila do Peregrino: +2 comum ou +4 ótima."/>
+                                        </rectangle>
+                                    </layout>
+                                    <label align="client" text="O valor é somado à capacidade da mochila enquanto o acessório estiver equipado." fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="true" vertTextAlign="center" hitTest="false"/>
                                 </layout>
                             </layout>
                         </rectangle>

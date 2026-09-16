@@ -1,3 +1,19 @@
+## v0.53.25 — capacidade de carga no editor de acessórios (16/09/2026)
+
+O editor de Acessórios e Ferramentas passa a exibir um grupo próprio de
+Capacidade de Carga, com o campo Espaços Extras de Mochila. O mesmo grupo
+também aparece em Montarias e itens Livres, categorias que já declaravam usar
+esse valor.
+
+O dado e a automação já existiam: `espacos` era carregado, salvo e somado à
+capacidade enquanto o item estivesse equipado. A interface solicitava o grupo
+`espacos`, porém não havia `edIt_grupoespacos` e a tabela de alturas o mantinha
+em zero. O controle foi retirado do painel de absorção e ligado ao grupo que
+essas categorias realmente exibem. Nenhuma fórmula foi alterada.
+
+Regra preservada: o livro concede +2 espaços à Mochila do Peregrino comum e
++4 à ótima; o catálogo já fornece esses valores.
+
 ## v0.53.24 — descrição de item realmente multilinha (16/09/2026)
 
 Corrige a tentativa incompleta da v0.53.23. No Firecast, acrescentar
