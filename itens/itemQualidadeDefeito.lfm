@@ -106,7 +106,14 @@
             -- Toda Qualidade e todo Defeito recebe um campo livre. Mesmo os
             -- itens com botões estruturados podem precisar registrar uma
             -- pessoa, grupo, maldição, exceção ou detalhe decidido em mesa.
+            -- Não usar field="personalizacao" aqui: dentro deste popup o SDK
+            -- resolve o vínculo contra a raiz da ficha e faria todos os itens
+            -- compartilharem o mesmo texto. A leitura e a escrita são feitas
+            -- explicitamente no nó desta linha da recordList.
             if self.popQD_edPersonalizacao ~= nil then
+                pcall(function()
+                    self.popQD_edPersonalizacao:setText(tostring(sheet.personalizacao or ""));
+                end);
                 local habilitado = true;
                 if podeEditarCriacao ~= nil then
                     local ok, permitido = pcall(function() return podeEditarCriacao(); end);
@@ -202,12 +209,19 @@
                 -- a 94% da tela. Com :show() direto o popup vazava em monitor
                 -- menor - era o unico da ficha fora desse padrao.
                 if self.popQDDetalhe ~= nil then
-                    -- field= grava direto no NDB; por isso a permissão precisa
-                    -- ser reavaliada a cada abertura, inclusive se a ficha
-                    -- foi finalizada depois que esta linha nasceu.
-                    if self.popQD_edPersonalizacao ~= nil and podeEditarCriacao ~= nil then
-                        local ok, permitido = pcall(function() return podeEditarCriacao(); end);
-                        if ok then pcall(function() self.popQD_edPersonalizacao:setEnabled(permitido); end); end;
+                    -- O edit não usa field=: o vínculo direto cairia na raiz
+                    -- da ficha. Recarrega sempre o texto exclusivo deste nó e
+                    -- reavalia a permissão caso a ficha tenha sido finalizada.
+                    if self.popQD_edPersonalizacao ~= nil then
+                        pcall(function()
+                            self.popQD_edPersonalizacao:setText(tostring(sheet.personalizacao or ""));
+                        end);
+                        local habilitado = true;
+                        if podeEditarCriacao ~= nil then
+                            local ok, permitido = pcall(function() return podeEditarCriacao(); end);
+                            if ok then habilitado = permitido; end;
+                        end;
+                        pcall(function() self.popQD_edPersonalizacao:setEnabled(habilitado); end);
                     end;
                     if abrirPopupAjustado ~= nil then
                         abrirPopupAjustado(self.popQDDetalhe, 760, 600);
@@ -425,15 +439,18 @@
                     <rectangle align="top" height="1" color="#22323A" margins="{top=8,bottom=10}" hitTest="false"/>
                 </layout>
 
-                <layout align="top" height="76" margins="{bottom=8}">
-                    <label align="top" height="18" text="ESCOLHA / PERSONALIZAÇÃO" fontFamily="Marcellus SC" fontColor="#7FA8B8" fontSize="11" hitTest="false"/>
-                    <rectangle align="client" color="#0B1014" strokeColor="#2A4652" strokeSize="1" xradius="4" yradius="4">
-                        <edit name="popQD_edPersonalizacao" field="personalizacao" align="client" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="13" transparent="true" wordWrap="true" margins="{left=10,right=10,top=6,bottom=6}" hint="Registre aqui a escolha ou o detalhe desta Qualidade/Defeito: alvo, grupo, inimigo, reputação, condição ou qualquer decisão de mesa."/>
-                    </rectangle>
-                </layout>
-
                 <rectangle align="bottom" height="36" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="4" yradius="4" margins="{top=10}" cursor="handPoint" hint="Fechar esta janela">
                     <event name="onClick"><![CDATA[
+                        if sheet ~= nil and self.popQD_edPersonalizacao ~= nil then
+                            local habilitado = true;
+                            if podeEditarCriacao ~= nil then
+                                local ok, permitido = pcall(function() return podeEditarCriacao(); end);
+                                if ok then habilitado = permitido; end;
+                            end;
+                            if habilitado then
+                                sheet.personalizacao = tostring(self.popQD_edPersonalizacao:getText() or "");
+                            end;
+                        end;
                         if self.popQDDetalhe ~= nil then self.popQDDetalhe:close(); end;
                     ]]></event>
                     <label align="client" text="FECHAR" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -462,6 +479,27 @@
                         <layout align="client" margins="{left=12,right=12,top=8,bottom=8}">
                             <label align="top" height="20" text="AUTOMAÇÃO NA FICHA" fontFamily="Marcellus SC" fontColor="#7FA8B8" fontSize="12" margins="{bottom=4}"/>
                             <label name="popQD_lblAutomacao" align="client" text="" fontFamily="EB Garamond" fontColor="#B9D3DD" fontSize="15" wordWrap="true" vertTextAlign="leading"/>
+                        </layout>
+                    </rectangle>
+                    <rectangle name="popQD_secPersonalizacao" align="top" height="112" color="#0B1014" strokeColor="#2A4652" strokeSize="1" xradius="4" yradius="4" margins="{bottom=10}">
+                        <layout align="client" margins="{left=12,right=12,top=8,bottom=8}">
+                            <label align="top" height="20" text="ESCOLHA / PERSONALIZAÇÃO" fontFamily="Marcellus SC" fontColor="#7FA8B8" fontSize="12" margins="{bottom=4}" hitTest="false"/>
+                            <rectangle align="client" color="#090D10" strokeColor="#2A4652" strokeSize="1" xradius="4" yradius="4">
+                                <edit name="popQD_edPersonalizacao" align="client" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="13" transparent="true" wordWrap="true" margins="{left=10,right=10,top=6,bottom=6}" hint="Registre aqui a escolha ou o detalhe desta Qualidade/Defeito: alvo, grupo, inimigo, reputação, condição ou qualquer decisão de mesa.">
+                                    <event name="onChange"><![CDATA[
+                                        if sheet ~= nil then
+                                            local habilitado = true;
+                                            if podeEditarCriacao ~= nil then
+                                                local ok, permitido = pcall(function() return podeEditarCriacao(); end);
+                                                if ok then habilitado = permitido; end;
+                                            end;
+                                            if habilitado then
+                                                sheet.personalizacao = tostring(self.popQD_edPersonalizacao:getText() or "");
+                                            end;
+                                        end;
+                                    ]]></event>
+                                </edit>
+                            </rectangle>
                         </layout>
                     </rectangle>
                 </scrollBox>

@@ -1,3 +1,18 @@
+## v0.53.22 — personalização isolada por Q/D (16/09/2026)
+
+Corrige o campo de escolha/personalização das Qualidades e Defeitos. O vínculo
+direto `field="personalizacao"` dentro do popup era resolvido pelo Firecast
+contra a raiz da ficha; por isso dois registros diferentes exibiam e alteravam
+o mesmo texto. O editor agora carrega e grava explicitamente
+`personalizacao` no nó individual de cada linha da recordList, inclusive ao
+fechar o popup por Esc ou clique externo.
+
+O bloco também deixa a área fixa do cabeçalho e passa a ser o último cartão do
+conteúdo rolável, depois de Automação na Ficha. O valor global criado pela
+versão anterior é apenas ignorado: ele não é copiado para nenhum item, pois a
+ficha não tem como descobrir com segurança a qual Qualidade ou Defeito ele
+pertencia.
+
 ## v0.53.21 — escolhas de Q/D e encantamentos personalizados (15/09/2026)
 
 O editor de itens passa a aceitar até três encantamentos personalizados,
