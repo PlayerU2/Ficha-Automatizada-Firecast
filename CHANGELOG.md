@@ -1,3 +1,16 @@
+## v0.53.26 — inventário separado por local (16/09/2026)
+
+A lista detalhada do inventário passa a ser organizada em três grupos, na
+ordem de uso: Equipados, Mochila e Baú. Cada seção possui cabeçalho, contagem
+de itens e cor própria; equipar ou mover um item atualiza os grupos no mesmo
+recálculo já usado pelos efeitos e pela capacidade da mochila.
+
+A ordenação é estável e acontece sobre a mesma lista serializada que alimenta
+os botões. Não foram criadas cópias dos itens nem limites separados por local:
+os 40 espaços continuam podendo ser distribuídos livremente entre mochila e
+baú, e os índices usados por editar, quantidade, durabilidade, equipar, mover
+e remover permanecem coerentes.
+
 ## v0.53.25 — capacidade de carga no editor de acessórios (16/09/2026)
 
 O editor de Acessórios e Ferramentas passa a exibir um grupo próprio de

@@ -12293,6 +12293,36 @@
             return tostring(s or ""):gsub("[;&=|]", " ")
         end
 
+        -- A ordem visual do inventario e uma regra de interface, nao uma
+        -- propriedade nova do item. Reagrupar na leitura mantem uma unica
+        -- fonte de verdade (itensDados) e, principalmente, preserva o
+        -- contrato dos botoes fixos: a linha N e o item N em toda funcao.
+        -- A montagem por baldes e estavel, portanto itens do mesmo local nao
+        -- trocam de ordem entre um redesenho e outro.
+        function grupoInventario(it)
+            local onde = tostring((it or {}).onde or "mochila")
+            for _, slot in ipairs(SLOTS_EQUIPADOS) do
+                if slot.chave == onde then return "equipados" end
+            end
+            if onde == "bau" then return "bau" end
+            return "mochila"
+        end
+
+        function ordenarItensPorLocal(lista)
+            local grupos = {equipados = {}, mochila = {}, bau = {}}
+            for _, it in ipairs(lista or {}) do
+                local grupo = grupoInventario(it)
+                table.insert(grupos[grupo], it)
+            end
+            local ordenada = {}
+            for _, grupo in ipairs({"equipados", "mochila", "bau"}) do
+                for _, it in ipairs(grupos[grupo]) do
+                    table.insert(ordenada, it)
+                end
+            end
+            return ordenada
+        end
+
         -- ---------------------------------------------------------------
         -- CAMPOS QUE PRECISAM PRESERVAR PONTUACAO
         --
@@ -12348,7 +12378,7 @@
                     table.insert(lista, it)
                 end
             end
-            return lista
+            return ordenarItensPorLocal(lista)
         end
 
         function gravarItens(lista)
@@ -13351,11 +13381,17 @@
             if #lista >= 40 then
                 avisarInventario("Limite de 40 itens na ficha.", COR.wine); return
             end
-            table.insert(lista, {nome = "Item novo", categoria = "Livre", qualidade = "Livre",
-                                 material = "", onde = "mochila", qtd = 1, slotsEnc = 0})
+            local novo = {nome = "Item novo", categoria = "Livre", qualidade = "Livre",
+                          material = "", onde = "mochila", qtd = 1, slotsEnc = 0}
+            table.insert(lista, novo)
+            lista = ordenarItensPorLocal(lista)
+            local indiceNovo = 1
+            for i, it in ipairs(lista) do
+                if it == novo then indiceNovo = i; break end
+            end
             gravarItens(lista)
             recalcularTudo()
-            abrirEditorItem(#lista)
+            abrirEditorItem(indiceNovo)
         end
 
         -- ---------------------------------------------------------------
@@ -13477,12 +13513,54 @@
                 end
             end
 
-            -- ----- lista de itens -----
+            -- ----- lista de itens, separada por local -----
+            -- Os cabecalhos vivem dentro da primeira linha de cada grupo.
+            -- Assim eles descem junto com o conteudo sem reservar limites
+            -- artificiais (por exemplo, 20 linhas para mochila e 20 para
+            -- bau), e os 40 espacos continuam disponiveis para qualquer
+            -- combinacao de locais.
+            local contagemGrupo = {equipados = 0, mochila = 0, bau = 0}
+            for _, itemContado in ipairs(lista) do
+                local grupo = grupoInventario(itemContado)
+                contagemGrupo[grupo] = contagemGrupo[grupo] + 1
+            end
+            local tituloGrupo = {
+                equipados = "EQUIPADOS",
+                mochila = "MOCHILA",
+                bau = "BAÚ",
+            }
+            local corGrupo = {
+                equipados = COR.gold,
+                mochila = COR.rain,
+                bau = COR.faint,
+            }
+
             definirAlturaPod(self.abaInv_wrapVazio, (#lista == 0) and 56 or 0)
             for i = 1, MAX_LINHAS_ITEM do
                 local it = lista[i]
-                definirAlturaPod(self["abaInv_wrapItem" .. i], (it ~= nil) and 52 or 0)
+                local abreGrupo = false
+                local grupo = nil
                 if it ~= nil then
+                    grupo = grupoInventario(it)
+                    abreGrupo = (i == 1) or (grupoInventario(lista[i - 1]) ~= grupo)
+                end
+                local alturaCabecalho = abreGrupo and 34 or 0
+                definirAlturaPod(self["abaInv_wrapGrupo" .. i], alturaCabecalho)
+                definirAlturaPod(self["abaInv_wrapItem" .. i],
+                    (it ~= nil) and (52 + alturaCabecalho) or 0)
+                if it ~= nil then
+                    local lblGrupo = self["abaInv_lblGrupo" .. i]
+                    if lblGrupo ~= nil and abreGrupo then
+                        local qtdGrupo = contagemGrupo[grupo]
+                        local sufixo = (qtdGrupo == 1) and " ITEM" or " ITENS"
+                        lblGrupo:setText(tituloGrupo[grupo] .. "   ·   " .. qtdGrupo .. sufixo)
+                        lblGrupo:setFontColor(corGrupo[grupo])
+                    end
+                    local linhaGrupo = self["abaInv_linhaGrupo" .. i]
+                    if linhaGrupo ~= nil then linhaGrupo:setColor(corGrupo[grupo]) end
+                    local faixaItem = self["abaInv_faixaItem" .. i]
+                    if faixaItem ~= nil then faixaItem:setColor(corGrupo[grupo]) end
+
                     local lbl = self["abaInv_lblItem" .. i]
                     if lbl ~= nil then
                         local txt = it.nome
@@ -14820,7 +14898,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.25" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.26" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -19240,7 +19318,7 @@
 
                     <layout align="top" height="28" margins="{top=6,bottom=2}">
                         <label align="left" width="22" text="◆" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
-                        <label align="left" width="300" text="ITENS" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                        <label align="left" width="300" text="ITENS POR LOCAL" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
                         <rectangle align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=13,bottom=13}" hitTest="false"/>
                     </layout>
 
@@ -19264,8 +19342,13 @@
                     </layout>
 
                     <layout name="abaInv_wrapItem1" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo1" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo1" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo1" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem1" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19330,8 +19413,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem2" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo2" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo2" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo2" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem2" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19396,8 +19484,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem3" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo3" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo3" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo3" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem3" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19462,8 +19555,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem4" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo4" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo4" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo4" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem4" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19528,8 +19626,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem5" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo5" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo5" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo5" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem5" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19594,8 +19697,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem6" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo6" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo6" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo6" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem6" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19660,8 +19768,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem7" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo7" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo7" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo7" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem7" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19726,8 +19839,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem8" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo8" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo8" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo8" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem8" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19792,8 +19910,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem9" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo9" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo9" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo9" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem9" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19858,8 +19981,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem10" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo10" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo10" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo10" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem10" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19924,8 +20052,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem11" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo11" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo11" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo11" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem11" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -19990,8 +20123,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem12" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo12" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo12" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo12" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem12" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20056,8 +20194,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem13" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo13" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo13" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo13" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem13" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20122,8 +20265,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem14" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo14" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo14" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo14" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem14" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20188,8 +20336,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem15" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo15" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo15" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo15" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem15" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20254,8 +20407,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem16" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo16" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo16" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo16" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem16" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20320,8 +20478,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem17" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo17" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo17" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo17" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem17" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20386,8 +20549,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem18" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo18" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo18" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo18" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem18" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20452,8 +20620,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem19" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo19" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo19" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo19" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem19" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20518,8 +20691,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem20" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo20" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo20" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo20" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem20" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20584,8 +20762,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem21" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo21" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo21" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo21" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem21" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20650,8 +20833,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem22" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo22" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo22" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo22" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem22" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20716,8 +20904,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem23" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo23" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo23" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo23" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem23" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20782,8 +20975,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem24" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo24" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo24" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo24" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem24" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20848,8 +21046,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem25" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo25" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo25" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo25" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem25" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20914,8 +21117,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem26" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo26" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo26" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo26" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem26" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -20980,8 +21188,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem27" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo27" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo27" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo27" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem27" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21046,8 +21259,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem28" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo28" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo28" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo28" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem28" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21112,8 +21330,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem29" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo29" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo29" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo29" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem29" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21178,8 +21401,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem30" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo30" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo30" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo30" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem30" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21244,8 +21472,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem31" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo31" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo31" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo31" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem31" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21310,8 +21543,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem32" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo32" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo32" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo32" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem32" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21376,8 +21614,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem33" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo33" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo33" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo33" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem33" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21442,8 +21685,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem34" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo34" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo34" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo34" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem34" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21508,8 +21756,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem35" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo35" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo35" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo35" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem35" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21574,8 +21827,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem36" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo36" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo36" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo36" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem36" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21640,8 +21898,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem37" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo37" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo37" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo37" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem37" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21706,8 +21969,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem38" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo38" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo38" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo38" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem38" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21772,8 +22040,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem39" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo39" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo39" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo39" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem39" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
@@ -21838,8 +22111,13 @@
                         </rectangle>
                     </layout>>
                     <layout name="abaInv_wrapItem40" align="top" height="0">
+                        <layout name="abaInv_wrapGrupo40" align="top" height="0">
+                            <label align="left" width="22" text="&#9670;" fontFamily="Petrichor Simbolos" fontColor="#C9A24B" fontSize="14" vertTextAlign="center" horzTextAlign="center" hitTest="false"/>
+                            <label name="abaInv_lblGrupo40" align="left" width="330" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="13" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                            <rectangle name="abaInv_linhaGrupo40" align="client" height="1" color="#1E2A31" margins="{left=4,right=4,top=16,bottom=16}" hitTest="false"/>
+                        </layout>
                         <rectangle align="client" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="5" yradius="5" margins="{bottom=6}">
-                            <rectangle align="left" width="3" color="#C9A24B" hitTest="false"/>
+                            <rectangle name="abaInv_faixaItem40" align="left" width="3" color="#C9A24B" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=5,bottom=5}">
 
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
