@@ -1,3 +1,14 @@
+## v0.53.23 — descrições de itens com quebra de linha (16/09/2026)
+
+O campo Descrição e Observações do editor de itens passa a quebrar textos
+longos dentro da largura disponível. A área cresce de 62 para 112 pixels para
+facilitar a leitura e permanece dentro da rolagem única do popup; o editor não
+muda de largura nem de altura por causa do conteúdo.
+
+O controle e o caminho de carregamento e salvamento foram preservados. A
+mudança é exclusivamente de apresentação e vale para todas as categorias de
+item, inclusive itens livres.
+
 ## v0.53.22 — personalização isolada por Q/D (16/09/2026)
 
 Corrige o campo de escolha/personalização das Qualidades e Defeitos. O vínculo

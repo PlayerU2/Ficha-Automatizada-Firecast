@@ -14820,7 +14820,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.22" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.23" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -27408,8 +27408,8 @@
                         </rectangle>
                     </layout>
                     <label align="top" height="16" text="DESCRIÇÃO E OBSERVAÇÕES" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" margins="{top=2,bottom=2}" hitTest="false"/>
-                    <rectangle align="top" height="62" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=8}">
-                        <edit name="edIt_descricao" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" transparent="true" margins="{left=10,right=10,top=6,bottom=6}" hint="História do item, origem, quem forjou, efeitos que a ficha não calcula"/>
+                    <rectangle name="edIt_secDescricao" align="top" height="112" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3" margins="{bottom=8}">
+                        <edit name="edIt_descricao" align="client" text="" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="11" transparent="true" wordWrap="true" margins="{left=10,right=10,top=6,bottom=6}" hint="História do item, origem, quem forjou, efeitos que a ficha não calcula"/>
                     </rectangle>
 
                     <!-- ARTE DO ITEM, por último e grande.
