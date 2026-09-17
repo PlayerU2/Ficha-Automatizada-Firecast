@@ -1,3 +1,13 @@
+## v0.53.31 — Divindade própria do Legado Desperto (17/09/2026)
+
+- **Legado desperto** deixa de usar equivocadamente o pai/mãe como origem do poder gratuito;
+- ao adquirir a qualidade, exige escolher uma segunda divindade grande, diferente do Aspecto Divino principal;
+- a divindade do legado é gravada separadamente e lacrada permanentemente, inclusive contra remover e recomprar a qualidade;
+- o kit da divindade escolhida passa a ficar acessível e aparece em um grupo próprio na aba de Poderes;
+- o jogador escolhe uma vez um poder desse kit para receber o nível inicial sem gastar ponto; o mestre pode revogar apenas para corrigir a escolha;
+- fichas que já possuíam a qualidade podem completar a nova associação sem pagar novamente;
+- corrige também poderes repetidos em vários kits: a origem gravada agora é a do card realmente clicado, em vez de recair no pai/mãe.
+
 ## v0.53.30 — Quantidade racial e migração de Mestiço (17/09/2026)
 
 - a quantidade de características do mestiço passa a ser a maior quantidade entre suas duas raças, permitindo totais como 4 ou 5;

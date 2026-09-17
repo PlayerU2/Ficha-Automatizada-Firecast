@@ -46,11 +46,44 @@
             -- veio, para o jogador nao achar que pagou por isso.
             if self.lblOrigemQD ~= nil then
                 local origem = tostring(sheet.origemConcessao or "");
-                if origem ~= "" then
+                local raiz = NDB.getRoot(sheet);
+                local ehLegado = (tostring(sheet.nome or "") == "Legado desperto");
+                local deusLegado = "";
+                if raiz ~= nil then deusLegado = tostring(raiz.deusLegado or ""); end;
+                if ehLegado and deusLegado ~= "" then
+                    self.lblOrigemQD:setText("◆ LEGADO DE " .. string.upper(deusLegado) .. " — ESCOLHA PERMANENTE");
+                    self.lblOrigemQD:setFontColor("#C9A24B");
+                    if self.rectItemQD ~= nil then self.rectItemQD:setStrokeColor("#C9A24B"); end;
+                elseif ehLegado then
+                    self.lblOrigemQD:setText("◆ FALTA ESCOLHER A DIVINDADE DO LEGADO");
+                    self.lblOrigemQD:setFontColor("#9E3B4A");
+                elseif origem ~= "" then
                     self.lblOrigemQD:setText("◆ GRÁTIS por " .. string.upper(origem));
                     if self.rectItemQD ~= nil then self.rectItemQD:setStrokeColor("#C9A24B"); end;
                 else
                     self.lblOrigemQD:setText("");
+                end;
+            end;
+
+            -- Legado Desperto guarda a segunda divindade na raiz da ficha.
+            -- O campo não mora no item porque remover e recomprar a qualidade
+            -- não pode apagar o lacre nem permitir escolher outro deus.
+            if self.popQD_secLegado ~= nil then
+                local ehLegado = (tostring(sheet.nome or "") == "Legado desperto");
+                pcall(function() self.popQD_secLegado:setHeight(ehLegado and 68 or 0); end);
+                if ehLegado then
+                    local raiz = NDB.getRoot(sheet);
+                    local deusLegado = "";
+                    if raiz ~= nil then deusLegado = tostring(raiz.deusLegado or ""); end;
+                    if self.popQD_lblLegadoAtual ~= nil then
+                        if deusLegado == "" then
+                            self.popQD_lblLegadoAtual:setText("ESCOLHER DIVINDADE DO LEGADO — obrigatório");
+                            self.popQD_lblLegadoAtual:setFontColor("#C9A24B");
+                        else
+                            self.popQD_lblLegadoAtual:setText(string.upper(deusLegado) .. " — LACRADO PARA SEMPRE");
+                            self.popQD_lblLegadoAtual:setFontColor("#6EA88A");
+                        end;
+                    end;
                 end;
             end;
 
@@ -187,6 +220,20 @@
                         end;
                     end;
 
+                    -- O deus do Legado é uma escolha permanente. Mesmo que
+                    -- a qualidade seja removida pelo mestre, o valor fica na
+                    -- raiz; para o jogador, remover/recomprar nem sequer é uma
+                    -- rota disponível depois do lacre.
+                    if tostring(sheet.nome or "") == "Legado desperto"
+                        and raiz ~= nil and tostring(raiz.deusLegado or "") ~= "" then
+                        if not ehMestreReal() then
+                            bloqueadoPeloLacre = true;
+                            if avisarPoderes ~= nil then
+                                avisarPoderes("Legado desperto não pode ser removido pelo jogador depois que a divindade do legado foi lacrada.", "#8B2332");
+                            end;
+                        end;
+                    end;
+
                     if ((not travada) or ehMestre) and (not bloqueadoPeloLacre) then
                         NDB.deleteNode(sheet);
                         -- pede a ficha raiz para recalcular o painel de pontos
@@ -242,6 +289,20 @@
                 <label name="popQD_lblTitulo" align="top" height="28" text="" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="19" fontStyle="bold"/>
                 <label name="popQD_lblPontos" align="top" height="20" text="" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="13" margins="{bottom=6}"/>
                 <rectangle align="top" height="1" color="#22323A" margins="{bottom=12}" hitTest="false"/>
+
+                <layout name="popQD_secLegado" align="top" height="0">
+                    <label align="top" height="16" text="DIVINDADE DO LEGADO — deve ser diferente do pai/mãe" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" hitTest="false"/>
+                    <rectangle align="top" height="34" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{top=4,bottom=4}" cursor="handPoint" hint="Escolher ou consultar a divindade permanente do Legado Desperto">
+                        <event name="onClick"><![CDATA[
+                            if abrirPopupDeusesParaLegado ~= nil then
+                                if self.popQDDetalhe ~= nil then self.popQDDetalhe:close(); end;
+                                abrirPopupDeusesParaLegado();
+                            end;
+                        ]]></event>
+                        <label name="popQD_lblLegadoAtual" align="client" text="ESCOLHER DIVINDADE DO LEGADO" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                    </rectangle>
+                    <rectangle align="top" height="1" color="#22323A" margins="{top=5,bottom=8}" hitTest="false"/>
+                </layout>
 
                 <!-- ESCOLA DE MAGIA: so aparece na Linhagem de Unaris.
                      ATENCAO - sao DUAS coisas distintas no efeito da

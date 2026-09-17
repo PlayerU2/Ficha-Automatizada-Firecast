@@ -239,7 +239,7 @@ CatalogoQD.itens = {
         pontosMin = 5,
         pontosMax = 5,
         faixaContinua = false,
-        automacao = [==[]==],
+        automacao = [==[Ao adquirir esta qualidade, escolha uma divindade do legado diferente do seu pai/mãe. Essa associação é lacrada permanentemente, libera o kit do deus escolhido e permite selecionar um poder inicial desse kit sem gastar ponto de poder.]==],
         descricao = [==[Um semideus é um ser nascido da relação entre uma divindade e um mortal. Estas criaturas são dotadas de poder e grandiosidade, devido a união de sua força divina e o espírito mortal. Existem no entanto um nome dado àqueles que são filhos de semideuses com divindades: Legados. Você faz parte deste seleto grupo, possuindo em seu sangue duas forças divinas que lhe tornam naturalmente mais poderoso do que um semideus comum, isto também significa que você vem de um ambiente familiar mais acostumado a essas questões, e por isso a integração neste mundo será mais fácil.]==],
         efeito = [==[Ganha o direito de colocar associação a divindade principal (parente) e divindade legado (avô/avó); receba um poder adicional inicial ligado ao seu legado que será definido pelo narrador da divindade.]==],
         restricao = [==[]==],

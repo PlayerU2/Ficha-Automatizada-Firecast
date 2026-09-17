@@ -1730,9 +1730,43 @@
         end
 
         local deusEmDetalhe = nil
+        local modoSelecaoDeus = "aspecto"
+
+        local function atualizarModoPopupDeuses()
+            local escolhendoLegado = (modoSelecaoDeus == "legado")
+            if self.popDeus_lblTituloModo ~= nil then
+                self.popDeus_lblTituloModo:setText(escolhendoLegado and
+                    "DIVINDADE DO LEGADO" or "ASPECTO DIVINO")
+            end
+            if self.popDeus_lblInstrucaoModo ~= nil then
+                if escolhendoLegado then
+                    local aspecto = tostring(sheet and sheet.aspectoDivino or "")
+                    local legado = tostring(sheet and sheet.deusLegado or "")
+                    if legado ~= "" then
+                        self.popDeus_lblInstrucaoModo:setText(
+                            "Legado lacrado em " .. legado .. ". Esta associação é permanente e não pode ser substituída.")
+                        self.popDeus_lblInstrucaoModo:setFontColor(COR.gold)
+                    else
+                        self.popDeus_lblInstrucaoModo:setText(
+                            "Escolha um deus grande diferente de " .. aspecto ..
+                            ". A escolha será lacrada para sempre e abrirá o kit do legado para o poder inicial gratuito.")
+                        self.popDeus_lblInstrucaoModo:setFontColor(COR.aura)
+                    end
+                else
+                    self.popDeus_lblInstrucaoModo:setText(
+                        "A divindade define o kit principal de poderes do semideus. Somente os deuses grandes podem ser escolhidos como Aspecto Divino.")
+                    self.popDeus_lblInstrucaoModo:setFontColor(COR.faint)
+                end
+            end
+            if self.popDeus_btnLimpar ~= nil then
+                pcall(function() self.popDeus_btnLimpar:setWidth(escolhendoLegado and 0 or 200) end)
+            end
+        end
 
         function abrirPopupDeuses()
             if self.popDeuses == nil then return end
+            modoSelecaoDeus = "aspecto"
+            atualizarModoPopupDeuses()
             -- Guarda a largura ANTES de montar o detalhe: as alturas dos
             -- paragrafos dependem dela e o popup ainda nao esta na tela.
             larguraTextoLore = tamanhoPopupDeuses() - LARGURA_CROMO_POPUP_DEUSES
@@ -1748,7 +1782,44 @@
             abrirPopupAjustado(self.popDeuses, 1080, 680)
         end
 
+        function abrirPopupDeusesParaLegado()
+            if self.popDeuses == nil or sheet == nil then return end
+            if not temLegadoDesperto() then return end
+            local aspecto = tostring(sheet.aspectoDivino or "")
+            if aspecto == "" then
+                if self.lblLimiteQDTexto ~= nil then
+                    self.lblLimiteQDTexto:setText(
+                        "Escolha primeiro o pai/mãe no campo Aspecto Divino do Perfil. O deus do legado deve ser outra divindade.")
+                end
+                if self.popLimiteQD ~= nil then self.popLimiteQD:show() end
+                return
+            end
+
+            modoSelecaoDeus = "legado"
+            atualizarModoPopupDeuses()
+            larguraTextoLore = tamanhoPopupDeuses() - LARGURA_CROMO_POPUP_DEUSES
+            if larguraTextoLore < 320 then larguraTextoLore = 320 end
+
+            local legado = tostring(sheet.deusLegado or "")
+            if CatalogoDeuses.buscarPorNome(legado) ~= nil then
+                mostrarDetalheDeus(legado)
+            elseif deusEmDetalhe ~= nil then
+                mostrarDetalheDeus(deusEmDetalhe)
+            end
+            destacarDeusSelecionado()
+            abrirPopupAjustado(self.popDeuses, 1080, 680)
+        end
+
         function fecharPopupDeuses()
+            if modoSelecaoDeus == "legado" and sheet ~= nil
+               and tostring(sheet.deusLegado or "") == "" then
+                if self.popDeus_lblInstrucaoModo ~= nil then
+                    self.popDeus_lblInstrucaoModo:setText(
+                        "A qualidade Legado desperto exige escolher agora a divindade do legado. Esta escolha será permanente.")
+                    self.popDeus_lblInstrucaoModo:setFontColor(COR.wine)
+                end
+                return
+            end
             if self.popDeuses ~= nil then self.popDeuses:close() end
             atualizarRotuloAspecto()
         end
@@ -1866,9 +1937,26 @@
                 if not d.selecionavel then
                     self.popDeus_lblBtnEscolher:setText("SOMENTE DEUSES GRANDES PODEM SER ESCOLHIDOS")
                     self.popDeus_lblBtnEscolher:setFontColor(COR.faint)
+                elseif modoSelecaoDeus == "legado" then
+                    local aspecto = tostring(sheet and sheet.aspectoDivino or "")
+                    local legado = tostring(sheet and sheet.deusLegado or "")
+                    if legado ~= "" then
+                        self.popDeus_lblBtnEscolher:setText("DIVINDADE DO LEGADO LACRADA EM " .. string.upper(legado))
+                        self.popDeus_lblBtnEscolher:setFontColor(COR.moss)
+                    elseif d.nome == aspecto then
+                        self.popDeus_lblBtnEscolher:setText("O LEGADO DEVE VIR DE OUTRO DEUS, NÃO DO PAI/MÃE")
+                        self.popDeus_lblBtnEscolher:setFontColor(COR.wine)
+                    else
+                        self.popDeus_lblBtnEscolher:setText(
+                            "ESCOLHER " .. d.nome:upper() .. " COMO DIVINDADE DO LEGADO — PERMANENTE")
+                        self.popDeus_lblBtnEscolher:setFontColor(COR.gold)
+                    end
                 elseif tostring(sheet and sheet.aspectoDivino or "") == d.nome then
                     self.popDeus_lblBtnEscolher:setText("JÁ É O SEU ASPECTO DIVINO")
                     self.popDeus_lblBtnEscolher:setFontColor(COR.moss)
+                elseif tostring(sheet and sheet.deusLegado or "") == d.nome then
+                    self.popDeus_lblBtnEscolher:setText("ESTA DIVINDADE JÁ ESTÁ LACRADA COMO SEU LEGADO")
+                    self.popDeus_lblBtnEscolher:setFontColor(COR.wine)
                 else
                     self.popDeus_lblBtnEscolher:setText("ESCOLHER " .. d.nome:upper() .. " COMO ASPECTO DIVINO")
                     self.popDeus_lblBtnEscolher:setFontColor(COR.gold)
@@ -1921,12 +2009,25 @@
             if deusEmDetalhe == nil then return end
             local d = CatalogoDeuses.buscarPorNome(deusEmDetalhe)
             if d == nil or not d.selecionavel then return end
-            selecionarDeus(d.nome)
+            if modoSelecaoDeus == "legado" then
+                selecionarDeusLegado(d.nome)
+            else
+                selecionarDeus(d.nome)
+            end
         end
 
         function selecionarDeus(nome)
             if sheet == nil then return end
             local anterior = tostring(sheet.aspectoDivino or "")
+
+            if nome == tostring(sheet.deusLegado or "") then
+                if self.popDeus_lblCategoria ~= nil then
+                    self.popDeus_lblCategoria:setText(
+                        "ESCOLHA RECUSADA — pai/mãe e divindade do legado precisam ser deuses diferentes.")
+                    self.popDeus_lblCategoria:setFontColor(COR.wine)
+                end
+                return
+            end
 
             -- LACRE DO ASPECTO: depois do primeiro ponto de poder gasto,
             -- trocar de divindade zeraria o kit adquirido. So o mestre
@@ -1941,14 +2042,22 @@
 
             if anterior ~= nome and aspectoLacrado() then
                 -- Consome a autorizacao, devolve os pontos e reabre o lacre
-                -- para a nova divindade.
+                -- para a nova divindade. Agora que Legado e bênçãos possuem
+                -- origens próprias, só os poderes do aspecto anterior saem;
+                -- limpar a lista inteira apagaria kits que não foram trocados.
                 sheet.autorizacaoMestreAspecto = false
                 sheet.aspectoLacre = false
-                sheet.poderesDados = ""
+                local preservados = {}
+                for _, item in ipairs(lerPoderes()) do
+                    if tostring(item.deus or "") ~= anterior then
+                        table.insert(preservados, item)
+                    end
+                end
+                gravarPoderes(preservados)
                 publicarNoChat(anuncio("aspecto", "TROCA DE ASPECTO DIVINO",
                     tostring(sheet.nome or "Personagem") .. " deixou " .. anterior ..
                     " e passou a servir **" .. nome ..
-                    "**. Os poderes adquiridos foram devolvidos ao saldo."), COR.wine)
+                    "**. Somente os poderes do aspecto anterior foram devolvidos ao saldo; legado e bênçãos foram preservados."), COR.wine)
             end
 
             sheet.aspectoDivino = nome
@@ -1956,19 +2065,82 @@
             atualizarBlocoPoderes()
         end
 
+        function selecionarDeusLegado(nome)
+            if sheet == nil or not temLegadoDesperto() then return end
+            local atual = tostring(sheet.deusLegado or "")
+            if atual ~= "" then
+                if self.popDeus_lblCategoria ~= nil then
+                    self.popDeus_lblCategoria:setText(
+                        "LEGADO LACRADO — " .. atual .. " não pode ser substituído.")
+                    self.popDeus_lblCategoria:setFontColor(COR.wine)
+                end
+                return
+            end
+            local aspecto = tostring(sheet.aspectoDivino or "")
+            if aspecto == "" or nome == aspecto then
+                if self.popDeus_lblCategoria ~= nil then
+                    self.popDeus_lblCategoria:setText(
+                        "ESCOLHA RECUSADA — o legado deve vir de um deus diferente do pai/mãe.")
+                    self.popDeus_lblCategoria:setFontColor(COR.wine)
+                end
+                return
+            end
+            local d = CatalogoDeuses.buscarPorNome(nome)
+            if d == nil or not d.selecionavel or not d.kitConhecido then return end
+
+            sheet.deusLegado = nome
+            sheet.legadoLacre = true
+            sheet.legadoLacreAutor = nickDoUsuario()
+            sheet.legadoLacreData = carimboDeTempo()
+
+            -- A v0.53.29 marcava por engano um poder do pai/mãe. Não deixa
+            -- essa marca antiga atravessar para o novo deus do legado.
+            local antigo = tostring(sheet.poderLegadoGratuito or "")
+            local itemAntigo = acharPoder(lerPoderes(), antigo)
+            if itemAntigo == nil or tostring(itemAntigo.deus or "") ~= nome then
+                sheet.poderLegadoGratuito = ""
+            end
+
+            publicarNoChat(anuncio("legado", "DIVINDADE DO LEGADO LACRADA",
+                tostring(sheet.nome or "Personagem") .. " carrega o legado de **" .. nome ..
+                "**, diferente de seu pai/mãe " .. aspecto .. ". Esta escolha é permanente."), COR.gold)
+
+            modoSelecaoDeus = "aspecto"
+            if self.popDeuses ~= nil then self.popDeuses:close() end
+            atualizarLinhaLegadoDesperto()
+            atualizarBlocoPoderes()
+            recalcularTudo()
+
+            -- Leva diretamente ao kit escolhido para concluir a segunda
+            -- metade da qualidade: selecionar o poder inicial gratuito.
+            local primeiro = d.slots[1] and d.slots[1][1] or nil
+            if primeiro ~= nil then
+                poderEmDetalhe = primeiro
+                deusEmDetalhePoder = nome
+            end
+            abrirPopupPoderes()
+        end
+
         function limparAspectoDivino()
+            if modoSelecaoDeus == "legado" then return end
             if sheet ~= nil then sheet.aspectoDivino = "" end
             fecharPopupDeuses()
         end
 
         function destacarDeusSelecionado()
             if sheet == nil then return end
-            local atual = tostring(sheet.aspectoDivino or "")
+            local atual = (modoSelecaoDeus == "legado") and
+                tostring(sheet.deusLegado or "") or tostring(sheet.aspectoDivino or "")
+            local bloqueado = (modoSelecaoDeus == "legado") and
+                tostring(sheet.aspectoDivino or "") or tostring(sheet.deusLegado or "")
             for _, d in ipairs(CatalogoDeuses.itens) do
                 local card = self["rectDeus_" .. d.chave]
                 if card ~= nil then
                     if d.nome == atual then
                         card:setStrokeColor(COR.gold)
+                        card:setStrokeSize(2)
+                    elseif d.nome == bloqueado and bloqueado ~= "" then
+                        card:setStrokeColor(COR.wine)
                         card:setStrokeSize(2)
                     elseif d.nome == deusEmDetalhe then
                         card:setStrokeColor(COR.aura)
@@ -2361,6 +2533,21 @@
             atualizarPainelPontosQD()
             atualizarBlocoRaca()
             recalcularTudo()
+            if tipo == "Qualidade" and nome == "Legado desperto"
+               and tostring(sheet and sheet.deusLegado or "") == "" then
+                abrirPopupDeusesParaLegado()
+            end
+        end
+
+        function atualizarLinhaLegadoDesperto()
+            if sheet == nil then return end
+            local no = buscarNoQD("listaQualidades", "Legado desperto")
+            if no == nil then return end
+            local efetivo = tonumber(no.pontosEscolhidos) or 5
+            local pagos = tonumber(no.pontosPagos)
+            if pagos == nil then pagos = efetivo end
+            salvarQD(no, tostring(no.tipo or "Qualidade"), tostring(no.nome or "Legado desperto"),
+                efetivo, pagos, "listaQualidades")
         end
 
         -- Estado transitorio de "qual item esta sendo detalhado agora" em
@@ -2504,6 +2691,24 @@
             local existente = buscarNoQD(nomeLista, nome)
             local pagosAtuais = existente and (tonumber(existente.pontosPagos) or 0) or 0
             local efetivoAtual = existente and (tonumber(existente.pontosEscolhidos) or 0) or 0
+
+            if tipo == "Qualidade" and nome == "Legado desperto" then
+                if tostring(sheet.aspectoDivino or "") == "" then
+                    if self.lblLimiteQDTexto ~= nil then
+                        self.lblLimiteQDTexto:setText(
+                            "Escolha primeiro o pai/mãe no campo Aspecto Divino do Perfil. Legado desperto exige uma segunda divindade diferente da principal.")
+                    end
+                    if self.popLimiteQD ~= nil then self.popLimiteQD:show() end
+                    return
+                end
+                -- Fichas que já tinham a qualidade na v0.53.29 precisam
+                -- completar a nova escolha sem recomprar os cinco pontos.
+                if existente ~= nil and tostring(sheet.deusLegado or "") == ""
+                   and pontosAlvo <= efetivoAtual then
+                    abrirPopupDeusesParaLegado()
+                    return
+                end
+            end
 
             -- Livro, Mestiço [02 pontos]: "você pode escolher todas as suas
             -- habilidades raciais". A mesa define o total pela raça com a
@@ -5729,10 +5934,10 @@
 
         -- Livro [1.3], qualidade "Legado desperto": "receba um poder
         -- adicional inicial ligado ao seu legado que será definido pelo
-        -- narrador da divindade." O narrador escolhe o poder; a ficha só
-        -- materializa UM nível 1 sem custo, no kit do Aspecto que representa
-        -- o legado. Não é ponto de poder comum: trocar o poder muda qual
-        -- nível é gratuito, sem criar saldo livre para gastar em outro kit.
+        -- narrador da divindade." A decisão da mesa esclarece que o legado é
+        -- OUTRO deus, diferente do pai/mãe, escolhido uma vez e lacrado. A
+        -- ficha materializa UM nível 1 sem custo no kit desse deus. Não é
+        -- ponto de poder comum: o benefício nunca vira saldo livre.
         function temLegadoDesperto()
             return temQualidadeNaFicha("Legado desperto")
         end
@@ -5743,9 +5948,9 @@
             if nome == "" then return "" end
             local item = acharPoder(lerPoderes(), nome)
             if item == nil or n(item.nivel) < 1 then return "" end
-            -- Se o Aspecto for trocado, o desconto não acompanha o poder
-            -- antigo: ele só vale enquanto a origem continuar sendo o legado.
-            if tostring(item.deus or "") ~= tostring(sheet.aspectoDivino or "") then return "" end
+            -- O desconto só vale enquanto a origem gravada for exatamente a
+            -- divindade lacrada como legado — nunca o pai/mãe.
+            if tostring(item.deus or "") ~= tostring(sheet.deusLegado or "") then return "" end
             return nome
         end
 
@@ -5779,8 +5984,8 @@
         -- ACESSO AOS KITS
         --
         -- O catalogo mostra o kit dos 18 deuses grandes, mas so libera a
-        -- compra do deus de quem o personagem e filho/legado (Aspecto
-        -- Divino) ou de quem o abencoou.
+        -- compra do pai/mãe (Aspecto Divino), da segunda divindade lacrada
+        -- por Legado Desperto ou de quem abençoou o personagem.
         -- Bencao: 3 favores com um deus que NAO e seu pai/mae podem ser
         -- trocados por ser abencoado, e isso da acesso ao kit dele.
         -- Guardado em campo plano serializado ("Kaern;Mungus").
@@ -5804,6 +6009,8 @@
                 return temHemocineseRacial()
             end
             if tostring(sheet.aspectoDivino or "") == nomeDeus then return true end
+            if temLegadoDesperto()
+               and tostring(sheet.deusLegado or "") == nomeDeus then return true end
             for _, d in ipairs(deusesAbencoados()) do
                 if d == nomeDeus then return true end
             end
@@ -5820,7 +6027,7 @@
             if tostring(sheet and sheet.aspectoDivino or "") == "" then
                 return "Escolha primeiro o seu Aspecto Divino, no capítulo I."
             end
-            return "Você não é filho nem abençoado de " .. tostring(nomeDeus) ..
+            return "Você não é filho, legado nem abençoado de " .. tostring(nomeDeus) ..
                 ". É preciso trocar 3 Favores com esta divindade para receber a bênção."
         end
 
@@ -5976,7 +6183,10 @@
         -- ---------------------------------------------------------------
         function comprarNivelPoder(nomePoder, gratuitoLegado, origemForcada)
             if sheet == nil then return end
-            if not podeEditarCriacao() then
+            -- A escolha única do Legado precisa funcionar também na migração
+            -- de fichas antigas já finalizadas. Compras normais continuam
+            -- submetidas à trava de criação.
+            if not podeEditarCriacao() and gratuitoLegado ~= true then
                 avisarPoderes(motivoTravaCriacao(), COR.wine); return
             end
             local poder = CatalogoPoderes.buscar(nomePoder)
@@ -6147,19 +6357,15 @@
 
         function concederPoderLegado(nomePoder, nomeDeus)
             if sheet == nil then return end
-            if not usuarioEhMestre() then
-                avisarPoderes("Ação recusada: somente o MESTRE define o poder gratuito do Legado Desperto.", COR.wine)
-                return
-            end
             if not temLegadoDesperto() then
                 avisarPoderes("Requer a qualidade Legado desperto.", COR.wine); return
             end
-            local aspecto = tostring(sheet.aspectoDivino or "")
-            if aspecto == "" then
-                avisarPoderes("Registre primeiro o Aspecto Divino que representa o legado.", COR.wine); return
+            local legado = tostring(sheet.deusLegado or "")
+            if legado == "" then
+                avisarPoderes("Escolha primeiro a divindade do legado na qualidade Legado desperto.", COR.wine); return
             end
-            if tostring(nomeDeus or "") ~= aspecto then
-                avisarPoderes("O poder gratuito deve pertencer ao kit do Aspecto registrado como legado (" .. aspecto .. ").", COR.wine)
+            if tostring(nomeDeus or "") ~= legado then
+                avisarPoderes("O poder gratuito deve pertencer ao kit da divindade do legado (" .. legado .. ").", COR.wine)
                 return
             end
 
@@ -6168,22 +6374,27 @@
                 avisarPoderes(nomePoder .. " já é o poder gratuito do Legado Desperto.", COR.muted)
                 return
             end
+            if atual ~= "" and not usuarioEhMestre() then
+                avisarPoderes("O poder gratuito do legado já foi escolhido como " .. atual ..
+                    ". Somente o MESTRE pode corrigir essa escolha.", COR.wine)
+                return
+            end
 
             local item = acharPoder(lerPoderes(), nomePoder)
-            if item ~= nil and n(item.nivel) > 0 and tostring(item.deus or "") ~= aspecto then
+            if item ~= nil and n(item.nivel) > 0 and tostring(item.deus or "") ~= legado then
                 avisarPoderes(nomePoder .. " já foi adquirido pelo kit de " ..
                     tostring(item.deus or "origem desconhecida") ..
                     ". Escolha outro poder do legado ou remova este primeiro; a ficha não mistura duas origens no mesmo registro.", COR.wine)
                 return
             end
             if item == nil or n(item.nivel) == 0 then
-                comprarNivelPoder(nomePoder, true, aspecto)
+                comprarNivelPoder(nomePoder, true, legado)
                 item = acharPoder(lerPoderes(), nomePoder)
                 if item == nil or n(item.nivel) == 0 then return end
             end
             sheet.poderLegadoGratuito = nomePoder
             recalcularTudo()
-            mostrarDetalhePoder(nomePoder, aspecto)
+            mostrarDetalhePoder(nomePoder, legado)
             avisarPoderes(nomePoder .. " está marcado como o poder gratuito do Legado Desperto.", COR.gold)
         end
 
@@ -6197,7 +6408,7 @@
             if atual == "" then return end
             sheet.poderLegadoGratuito = ""
             recalcularTudo()
-            mostrarDetalhePoder(atual, tostring(sheet.aspectoDivino or ""))
+            mostrarDetalhePoder(atual, tostring(sheet.deusLegado or ""))
             avisarPoderes(atual .. " deixou de ser o poder gratuito do Legado Desperto.", COR.muted)
         end
 
@@ -6254,10 +6465,15 @@
         end
 
         -- Qual divindade oferece este poder (para gravar a origem).
-        -- Prioriza o Aspecto Divino, depois os deuses que abencoaram.
+        -- Prioriza o Aspecto Divino, depois o legado e os deuses que
+        -- abençoaram. A tela de detalhe força a origem clicada, então esta
+        -- função é só o fallback para chamadas antigas.
         function deusDonoDoPoder(nomePoder)
             if sheet == nil then return "" end
             local candidatos = {tostring(sheet.aspectoDivino or "")}
+            if temLegadoDesperto() then
+                table.insert(candidatos, tostring(sheet.deusLegado or ""))
+            end
             for _, d in ipairs(deusesAbencoados()) do table.insert(candidatos, d) end
             for _, nomeDeus in ipairs(candidatos) do
                 local deus = CatalogoDeuses.buscarPorNome(nomeDeus)
@@ -6431,18 +6647,22 @@
                 self.popPod_lblSaldo:setText("Saldo: " .. saldoPontosPoder() .. " ponto(s)")
             end
 
-            -- O livro deixa a escolha do poder do Legado para o narrador.
-            -- Por isso este controle não aparece para jogador e só vale para
-            -- o kit do Aspecto que foi registrado como legado.
-            local podeConcederLegado = usuarioEhMestre() and temLegadoDesperto() and
-                tostring(sheet and sheet.aspectoDivino or "") ~= "" and
-                tostring(nomeDeus or "") == tostring(sheet and sheet.aspectoDivino or "")
-            definirAlturaPod(self.popPod_secLegado, podeConcederLegado and 30 or 0)
-            if self.popPod_lblLegado ~= nil and podeConcederLegado then
-                if nomePoderLegadoGratuito() == nomePoder then
+            -- A divindade do legado é fixa; dentro do kit dela o jogador
+            -- escolhe uma vez o poder inicial gratuito. O mestre conserva a
+            -- revogação apenas como ferramenta de correção.
+            local deusLegado = tostring(sheet and sheet.deusLegado or "")
+            local gratuitoLegado = nomePoderLegadoGratuito()
+            local ehKitLegado = temLegadoDesperto() and deusLegado ~= "" and
+                tostring(nomeDeus or "") == deusLegado
+            local podeEscolherLegado = ehKitLegado and gratuitoLegado == ""
+            local podeRevogarLegado = ehKitLegado and gratuitoLegado == nomePoder and usuarioEhMestre()
+            local mostraControleLegado = podeEscolherLegado or podeRevogarLegado
+            definirAlturaPod(self.popPod_secLegado, mostraControleLegado and 30 or 0)
+            if self.popPod_lblLegado ~= nil and mostraControleLegado then
+                if podeRevogarLegado then
                     self.popPod_lblLegado:setText("MESTRE — REVOGAR PODER GRATUITO DO LEGADO")
                 else
-                    self.popPod_lblLegado:setText("MESTRE — CONCEDER PODER GRATUITO DO LEGADO")
+                    self.popPod_lblLegado:setText("ESCOLHER COMO PODER GRATUITO DO LEGADO DE " .. string.upper(deusLegado))
                 end
             end
 
@@ -6468,7 +6688,10 @@
                 end
                 return
             end
-            comprarNivelPoder(poderEmDetalhe)
+            -- Força a origem do card clicado. Sem isso, um poder presente em
+            -- dois kits era sempre gravado no primeiro candidato (geralmente
+            -- o pai/mãe), mesmo quando o clique veio do legado ou bênção.
+            comprarNivelPoder(poderEmDetalhe, false, deusEmDetalhePoder)
             mostrarDetalhePoder(poderEmDetalhe, deusEmDetalhePoder)
         end
 
@@ -6628,6 +6851,8 @@
         function poderesOrdenados()
             local lista = lerPoderes()
             local aspecto = tostring(sheet and sheet.aspectoDivino or "")
+            local legado = ""
+            if temLegadoDesperto() then legado = tostring(sheet and sheet.deusLegado or "") end
             local ordemDeus = {}
             local rotulo = {}
 
@@ -6636,6 +6861,11 @@
                 rotulo[aspecto] = "KIT DE " .. string.upper(aspecto) .. "  ·  ASPECTO DIVINO"
             end
             local i = 2
+            if legado ~= "" and ordemDeus[legado] == nil then
+                ordemDeus[legado] = i
+                rotulo[legado] = "KIT DE " .. string.upper(legado) .. "  ·  LEGADO DESPERTO"
+                i = i + 1
+            end
             for _, d in ipairs(deusesAbencoados()) do
                 if ordemDeus[d] == nil then
                     ordemDeus[d] = i
@@ -6746,11 +6976,14 @@
                         local cor, txt
                         if item.selo ~= nil then
                             txt = item.selo; cor = COR.rain
-                        elseif item.ordem == 1 then
+                        elseif tostring(item.deus or "") == tostring(sheet.aspectoDivino or "") then
+                            txt = string.upper(item.deus) .. "  ·  PAI/MÃE"; cor = COR.gold
+                        elseif temLegadoDesperto()
+                           and tostring(item.deus or "") == tostring(sheet.deusLegado or "") then
                             if nomePoderLegadoGratuito() == item.nome then
                                 txt = string.upper(item.deus) .. "  ·  LEGADO GRATUITO"; cor = COR.gold
                             else
-                                txt = string.upper(item.deus) .. "  ·  PAI/MÃE"; cor = COR.gold
+                                txt = string.upper(item.deus) .. "  ·  LEGADO"; cor = COR.gold
                             end
                         else
                             txt = string.upper(item.deus) .. "  ·  BÊNÇÃO"; cor = COR.aura
@@ -15219,7 +15452,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.30" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.31" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -29791,7 +30024,7 @@
                             </rectangle>
                         </layout>
                         <layout name="popPod_secLegado" align="bottom" height="0" margins="{left=14,right=14,bottom=4}">
-                            <rectangle align="client" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="MESTRE: definir ou revogar o poder inicial gratuito concedido por Legado Desperto">
+                            <rectangle align="client" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Escolher o poder inicial gratuito do Legado Desperto; após a escolha, somente o mestre pode corrigir">
                                 <label name="popPod_lblLegado" align="client" text="" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarPoderLegadoEmDetalhe();]]></event>
                             </rectangle>
@@ -29821,12 +30054,12 @@
         </rectangle>
     </popup>
 
-    <popup name="popDeuses" width="1080" height="680" backOpacity="0.75" cancelable="true">
+    <popup name="popDeuses" width="1080" height="680" backOpacity="0.75" cancelable="false">
         <rectangle align="client" color="#070A0C" strokeColor="#8A63C9" strokeSize="2" xradius="6" yradius="6" hitTest="false">
             <layout align="client" margins="{left=18,right=18,top=14,bottom=14}">
-                <label align="top" height="26" text="ASPECTO DIVINO" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold" horzTextAlign="center"/>
+                <label name="popDeus_lblTituloModo" align="top" height="26" text="ASPECTO DIVINO" fontFamily="Cinzel Decorative" fontColor="#C9A24B" fontSize="15" fontStyle="bold" horzTextAlign="center"/>
                 <rectangle align="top" height="1" color="#C9A24B" margins="{top=4,bottom=8}" hitTest="false"/>
-                <label align="top" height="18" text="A divindade define o kit de poderes do semideus. Somente os deuses grandes podem ser escolhidos como Aspecto Divino." fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=8}" hitTest="false"/>
+                <label name="popDeus_lblInstrucaoModo" align="top" height="18" text="A divindade define o kit principal de poderes do semideus. Somente os deuses grandes podem ser escolhidos como Aspecto Divino." fontFamily="EB Garamond" fontColor="#5F7078" fontSize="11" margins="{bottom=8}" hitTest="false"/>
 
                 <layout align="client">
                     <rectangle align="left" width="270" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=14}" hitTest="false">
@@ -30027,7 +30260,7 @@
                 </layout>
 
                 <layout align="bottom" height="32" margins="{top=10}">
-                    <rectangle align="left" width="200" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Deixar o Aspecto Divino em branco">
+                    <rectangle name="popDeus_btnLimpar" align="left" width="200" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Deixar o Aspecto Divino em branco">
                         <event name="onClick"><![CDATA[limparAspectoDivino();]]></event>
                         <label align="client" text="LIMPAR ASPECTO DIVINO" fontFamily="Marcellus SC" fontColor="#9E3B4A" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                     </rectangle>
