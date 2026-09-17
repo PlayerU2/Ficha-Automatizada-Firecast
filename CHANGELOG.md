@@ -1,3 +1,13 @@
+## v0.53.33 — auditoria completa de Qualidades e Defeitos (17/09/2026)
+
+- confronta as 25 Qualidades e os 25 Defeitos com o capítulo 1.3 do livro; restaura **Fobia** como entrada própria, remove seu texto de **Endividado** e limpa o cabeçalho indevido de **Vontade de ferro**;
+- automatiza **Reflexos aprimorados**, **Corajoso**, **Educação funcional**, **Covarde**, **Deformado**, **Doença terminal** e **Presença vulnerável** nas contas e limites correspondentes;
+- automatiza o nível gratuito de **Poder oculto**, a escolha pelo mestre de **Poder incontrolável** e as restrições de progressão de ambos;
+- aplica o kit de dois poderes e a progressão não consecutiva de **Sangue mortal**, sem inventar tier para a Má Reputação citada pelo texto;
+- impede, nos dois sentidos, as combinações Bastardo/Nobreza, Endividado/Riqueza, Sangue mortal/Poder oculto ou Legado desperto e Sangue das raças antigas/linhagens raciais exclusivas;
+- faz **Coração de mana** e **Linhagem de Unaris** recusarem poderes ativos incompatíveis, preservando fichas antigas para revisão em vez de apagar escolhas silenciosamente;
+- atualiza o painel de automação de cada item para separar efeitos calculados de efeitos situacionais que continuam sob arbitragem da mesa.
+
 ## v0.53.32 — Sereias e Tritões são raças distintas (17/09/2026)
 
 - separa a antiga entrada `Sereias e Tritões` em `Sereias` (5

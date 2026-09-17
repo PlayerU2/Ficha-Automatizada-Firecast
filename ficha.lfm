@@ -1200,7 +1200,7 @@
             sheet.deslocamento = n(sheet.deslocamento) + n(bonusBesta.deslocamento)
             sheet.iniciativa = Calculos.iniciativa({
                 destreza = valores.destreza, rank = dadosNivel.rank, ajusteManual = sheet.ajusteIniciativa,
-            }) + n(bonusBesta.iniciativa)
+            }) + n(bonusBesta.iniciativa) + n(efeitosQD.iniciativa)
 
             -- As contas de deslocamento e iniciativa comecam aqui e vao
             -- ganhando parcela conforme o valor ganha (armadura, dobro).
@@ -1215,7 +1215,8 @@
                 parcela(bonusBesta.deslocamento, rotuloLua)
             CONTAS.Iniciativa = "Des " .. valores.destreza .. " + rank " .. rankNumDesloc ..
                 parcela(sheet.ajusteIniciativa, "ajuste") ..
-                parcela(bonusBesta.iniciativa, rotuloLua)
+                parcela(bonusBesta.iniciativa, rotuloLua) ..
+                parcela(efeitosQD.iniciativa, "Reflexos aprimorados")
 
             local ctxDef = {
                 forca = valores.forca, destreza = valores.destreza,
@@ -2221,6 +2222,18 @@
                 fecharTodosPopupsPericia()
                 return
             end
+            local bloqueio = ""
+            if motivoPericiaBloqueada ~= nil then
+                bloqueio = tostring(motivoPericiaBloqueada(atributo, nome) or "")
+            end
+            if bloqueio ~= "" then
+                fecharTodosPopupsPericia()
+                if self.lblLimitePericiaTexto ~= nil then
+                    self.lblLimitePericiaTexto:setText(bloqueio)
+                end
+                if self.popLimitePericia ~= nil then self.popLimitePericia:show() end
+                return
+            end
             local limite = limitePericiasDoAtributo(campoTotal)
             local atual = contarItensLista(nomeLista)
             fecharTodosPopupsPericia()
@@ -2286,13 +2299,35 @@
             if sheet == nil then return 0 end
             local base = n(sheet[campoTotal])
             local raiz = tostring(campoTotal):gsub("Total$", "")
-            return base + n(sheet[raiz .. "PericiasBonus"])
+            local educacao = 0
+            local nomes = {
+                carisma = "Carisma", constituicao = "Constituição",
+                destreza = "Destreza", forca = "Força",
+                inteligencia = "Inteligência", manipulacao = "Manipulação",
+                sabedoria = "Sabedoria",
+            }
+            if atributoEducacaoEscolhido ~= nil
+               and atributoEducacaoEscolhido() == nomes[raiz] then
+                educacao = 1
+            end
+            return base + n(sheet[raiz .. "PericiasBonus"]) + educacao
         end
 
         function vagasExtrasPericia(campoTotal)
             if sheet == nil then return 0 end
             local raiz = tostring(campoTotal):gsub("Total$", "")
-            return n(sheet[raiz .. "PericiasBonus"])
+            local extras = n(sheet[raiz .. "PericiasBonus"])
+            local nomes = {
+                carisma = "Carisma", constituicao = "Constituição",
+                destreza = "Destreza", forca = "Força",
+                inteligencia = "Inteligência", manipulacao = "Manipulação",
+                sabedoria = "Sabedoria",
+            }
+            if atributoEducacaoEscolhido ~= nil
+               and atributoEducacaoEscolhido() == nomes[raiz] then
+                extras = extras + 1
+            end
+            return extras
         end
 
         function atualizarContadoresPericias()
@@ -2388,6 +2423,21 @@
             return ""
         end
 
+        -- Livro [1.3], qualidade "Educação funcional": "Escolha um atributo
+        -- alvo e ganhe uma perícia ignorando o limite [...] receba +1 em
+        -- testes de perícias [...] vinculadas ao atributo escolhido; Esta
+        -- bonificação passará a ser de +2 a partir do nível 10."
+        -- A escolha fica no próprio item, pelo mesmo motivo de Inepto: ao
+        -- remover a qualidade, vaga e bônus desaparecem sem resíduo.
+        function atributoEducacaoEscolhido()
+            for _, item in ipairs(NDB.getChildNodes(sheet and sheet.listaQualidades) or {}) do
+                if tostring(item.nome or "") == "Educação funcional" then
+                    return tostring(item.atributoEscolhido or "")
+                end
+            end
+            return ""
+        end
+
         function chaveAtributoInepto()
             local mapa = {
                 ["Carisma"] = "carisma", ["Constituição"] = "constituicao",
@@ -2398,33 +2448,42 @@
             return mapa[atributoIneptoEscolhido()] or ""
         end
 
-        function selecionarAtributoInepto(noDefeito, nomeAtributo)
-            if sheet == nil or noDefeito == nil then return false end
-            if tostring(noDefeito.nome or "") ~= "Inepto" then return false end
+        function selecionarAtributoQD(noQD, nomeAtributo)
+            if sheet == nil or noQD == nil then return false end
+            local nomeQD = tostring(noQD.nome or "")
+            if nomeQD ~= "Inepto" and nomeQD ~= "Educação funcional" then return false end
             if not podeEditarCriacao() then
                 avisarPoderes(motivoTravaCriacao(), COR.wine)
                 return false
             end
             -- Não apagamos um poder já comprado em silêncio. A escolha é
             -- recusada e informa exatamente qual vínculo precisa ser revisto.
-            for _, item in ipairs(lerPoderes()) do
-                local poder = CatalogoPoderes.buscar(item.nome)
-                if poder ~= nil and poder.tipo == "passivo"
-                   and tostring(poder.atributo or "") == nomeAtributo
-                   and n(item.nivel) > 0 then
-                    avisarPoderes("Inepto em " .. nomeAtributo .. " não pode ser escolhido enquanto " ..
-                        tostring(item.nome) .. " estiver adquirido: ele é um poder passivo vinculado a esse atributo. " ..
-                        "[a ficha vê na sua lista: " .. tostring(item.nome) .. "]", COR.wine)
-                    return false
+            if nomeQD == "Inepto" then
+                for _, item in ipairs(lerPoderes()) do
+                    local poder = CatalogoPoderes.buscar(item.nome)
+                    if poder ~= nil and poder.tipo == "passivo"
+                       and tostring(poder.atributo or "") == nomeAtributo
+                       and n(item.nivel) > 0 then
+                        avisarPoderes("Inepto em " .. nomeAtributo .. " não pode ser escolhido enquanto " ..
+                            tostring(item.nome) .. " estiver adquirido: ele é um poder passivo vinculado a esse atributo. " ..
+                            "[a ficha vê na sua lista: " .. tostring(item.nome) .. "]", COR.wine)
+                        return false
+                    end
                 end
             end
-            noDefeito.atributoEscolhido = nomeAtributo
+            noQD.atributoEscolhido = nomeAtributo
             recalcularTudo()
             return true
         end
 
+        -- Compatibilidade com linhas antigas do template durante migração.
+        function selecionarAtributoInepto(noDefeito, nomeAtributo)
+            return selecionarAtributoQD(noDefeito, nomeAtributo)
+        end
+
         function repintarAtributoInepto(formItem, noDefeito)
             if formItem == nil or noDefeito == nil then return end
+            local nomeQD = tostring(noDefeito.nome or "")
             local escolhida = tostring(noDefeito.atributoEscolhido or "")
             local itens = {
                 {"Carisma", "Car"}, {"Constituição", "Con"}, {"Destreza", "Des"},
@@ -2444,10 +2503,22 @@
                     end
                 end
             end
+            if formItem.popQD_lblAtributoTitulo ~= nil then
+                if nomeQD == "Educação funcional" then
+                    formItem.popQD_lblAtributoTitulo:setText("ATRIBUTO DA EDUCAÇÃO — concede vaga e bônus às perícias")
+                else
+                    formItem.popQD_lblAtributoTitulo:setText("ATRIBUTO INEPTO — recebe −1 e passa a ter limite base 6")
+                end
+            end
             if formItem.popQD_lblIneptoAtual ~= nil then
                 if escolhida == "" then
-                    formItem.popQD_lblIneptoAtual:setText("Nenhum atributo escolhido — a penalidade ainda não foi aplicada.")
+                    local efeito = (nomeQD == "Educação funcional") and "o benefício ainda não foi aplicado." or "a penalidade ainda não foi aplicada."
+                    formItem.popQD_lblIneptoAtual:setText("Nenhum atributo escolhido — " .. efeito)
                     formItem.popQD_lblIneptoAtual:setFontColor(COR.wine)
+                elseif nomeQD == "Educação funcional" then
+                    formItem.popQD_lblIneptoAtual:setText(escolhida ..
+                        ": +1 vaga e +1 nos testes das perícias (+2 a partir do nível 10).")
+                    formItem.popQD_lblIneptoAtual:setFontColor(COR.rain)
                 else
                     formItem.popQD_lblIneptoAtual:setText(escolhida ..
                         ": −1 automático, limite base 6 e bloqueio do poder passivo vinculado.")
@@ -2675,6 +2746,63 @@
             processarQD(alvo.tipo, alvo.nome, pontos, gratis, nomeListaDoPopup(nomePopup), nomePopup)
         end
 
+        -- Restrições explícitas do livro [1.3]. Conferir os dois sentidos é
+        -- indispensável: bloquear apenas quando o defeito entra deixaria a
+        -- combinação passar se a qualidade fosse comprada depois.
+        function motivoConflitoQD(tipo, nome)
+            local pares = {
+                ["Bastardo"] = "Nobreza", ["Nobreza"] = "Bastardo",
+                ["Endividado"] = "Riqueza", ["Riqueza"] = "Endividado",
+                ["Sangue mortal"] = "Poder oculto", ["Poder oculto"] = "Sangue mortal",
+            }
+            local outro = pares[nome]
+            if outro ~= nil then
+                local existe = temQualidadeNaFicha(outro) or temDefeitoNaFicha(outro)
+                if existe then return nome .. " não pode ser combinado com " .. outro .. "." end
+            end
+            if nome == "Sangue mortal" and temQualidadeNaFicha("Legado desperto") then
+                return "Sangue mortal impede adquirir Legado desperto."
+            end
+            if nome == "Legado desperto" and temDefeitoNaFicha("Sangue mortal") then
+                return "Legado desperto não pode ser combinado com Sangue mortal."
+            end
+
+            local raciaisExclusivas = {
+                ["Linhagem de Gunndana"] = true,
+                ["Linhagem de Unaris"] = true,
+                ["Linhagem da noite"] = true,
+            }
+            if nome == "Sangue das raças antigas" then
+                for q in pairs(raciaisExclusivas) do
+                    if temQualidadeNaFicha(q) then
+                        return "Sangue das raças antigas não pode ser combinado com " .. q .. "."
+                    end
+                end
+            elseif raciaisExclusivas[nome] and temQualidadeNaFicha("Sangue das raças antigas") then
+                return nome .. " não pode ser combinada com Sangue das raças antigas."
+            end
+            return ""
+        end
+
+        function poderesAtivosQueImpedemQualidade(nomeQualidade)
+            local nomes = {}
+            for _, item in ipairs(lerPoderes()) do
+                local poder = CatalogoPoderes.buscar(item.nome)
+                if poder ~= nil and poder.tipo == "ativo" and n(item.nivel) > 0 then
+                    local impede = false
+                    if nomeQualidade == "Coração de mana" then
+                        impede = (tostring(item.nome or "") ~= "Magia")
+                    elseif nomeQualidade == "Linhagem de Unaris" then
+                        -- O texto substitui os poderes ativos do kit inicial;
+                        -- na ficha, esse kit é a origem Aspecto Divino.
+                        impede = tostring(item.deus or "") == tostring(sheet.aspectoDivino or "")
+                    end
+                    if impede then table.insert(nomes, tostring(item.nome or "?")) end
+                end
+            end
+            return nomes
+        end
+
         -- Nucleo unico: decide entre CRIAR, ATUALIZAR (upgrade) ou colocar em
         -- espera por autorizacao do mestre. "pontosAlvo" e o tier EFETIVO
         -- desejado; so cobramos a diferenca entre ele e o que ja foi pago.
@@ -2687,6 +2815,54 @@
                 return
             end
             if self[nomePopup] ~= nil then self[nomePopup]:close() end
+
+            local conflito = motivoConflitoQD(tipo, nome)
+            if conflito ~= "" then
+                if self.lblLimiteQDTexto ~= nil then
+                    self.lblLimiteQDTexto:setText(conflito .. " [livro 1.3 — restrição da qualidade/defeito]")
+                end
+                if self.popLimiteQD ~= nil then self.popLimiteQD:show() end
+                return
+            end
+
+            if nome == "Coração de mana" or nome == "Linhagem de Unaris" then
+                local incompat = poderesAtivosQueImpedemQualidade(nome)
+                if #incompat > 0 then
+                    if self.lblLimiteQDTexto ~= nil then
+                        self.lblLimiteQDTexto:setText(nome .. " não pode ser aplicada enquanto estes poderes ativos incompatíveis estiverem adquiridos: " ..
+                            table.concat(incompat, ", ") .. ". A ficha não apaga poderes antigos em silêncio.")
+                    end
+                    if self.popLimiteQD ~= nil then self.popLimiteQD:show() end
+                    return
+                end
+            end
+            if nome == "Sangue mortal" and quantidadePoderesKitInicial ~= nil
+               and quantidadePoderesKitInicial() > 2 then
+                if self.lblLimiteQDTexto ~= nil then
+                    self.lblLimiteQDTexto:setText(
+                        "Sangue mortal limita o kit inicial a dois poderes, mas a ficha já possui " ..
+                        quantidadePoderesKitInicial() .. ". Remova ou revise os excedentes antes; a ficha não apaga escolhas antigas em silêncio.")
+                end
+                if self.popLimiteQD ~= nil then self.popLimiteQD:show() end
+                return
+            end
+            if nome == "Poder incontrolável" then
+                local temAtivo = false
+                for _, item in ipairs(lerPoderes()) do
+                    local poder = CatalogoPoderes.buscar(item.nome)
+                    if poder ~= nil and poder.tipo == "ativo" and n(item.nivel) > 0 then
+                        temAtivo = true; break
+                    end
+                end
+                if not temAtivo then
+                    if self.lblLimiteQDTexto ~= nil then
+                        self.lblLimiteQDTexto:setText(
+                            "Poder incontrolável exige ao menos um nível de um poder ativo. Adquira o poder primeiro; depois o mestre o vincula no catálogo de Poderes.")
+                    end
+                    if self.popLimiteQD ~= nil then self.popLimiteQD:show() end
+                    return
+                end
+            end
 
             local existente = buscarNoQD(nomeLista, nome)
             local pagosAtuais = existente and (tonumber(existente.pontosPagos) or 0) or 0
@@ -6059,12 +6235,29 @@
             return nome
         end
 
+        -- Livro [1.3], Poder oculto: "Escolha um poder ativo inicial para
+        -- começar com um ponto de nível no mesmo". Inicial significa o kit
+        -- do Aspecto Divino; Legado, bênção, Magia e herança racial não são
+        -- candidatos. Assim como no Legado, é UM nível, nunca saldo livre.
+        function nomePoderOcultoGratuito()
+            if sheet == nil or not temQualidadeNaFicha("Poder oculto") then return "" end
+            local nome = tostring(sheet.poderOcultoGratuito or "")
+            if nome == "" then return "" end
+            local item = acharPoder(lerPoderes(), nome)
+            local poder = CatalogoPoderes.buscar(nome)
+            if item == nil or n(item.nivel) < 1 or poder == nil or poder.tipo ~= "ativo" then return "" end
+            if tostring(item.deus or "") ~= tostring(sheet.aspectoDivino or "") then return "" end
+            return nome
+        end
+
         function pontosPoderGastos()
             local total = 0
-            local gratuito = nomePoderLegadoGratuito()
+            local gratuitoLegado = nomePoderLegadoGratuito()
+            local gratuitoOculto = nomePoderOcultoGratuito()
             for _, p in ipairs(lerPoderes()) do
                 total = total + n(p.nivel)
-                if p.nome == gratuito and n(p.nivel) > 0 then total = total - 1 end
+                if p.nome == gratuitoLegado and n(p.nivel) > 0 then total = total - 1 end
+                if p.nome == gratuitoOculto and n(p.nivel) > 0 then total = total - 1 end
             end
             return total
         end
@@ -6229,6 +6422,28 @@
             return false
         end
 
+        function ultimoNivelPersonagemDoPoder(item)
+            local ultimo = -1
+            if item == nil then return ultimo end
+            for _, par in ipairs(partirTexto(item.log, ",")) do
+                local _, nvPers = string.match(par, "^(%d+)@(%d+)$")
+                if nvPers ~= nil and n(nvPers) > ultimo then ultimo = n(nvPers) end
+            end
+            return ultimo
+        end
+
+        function quantidadePoderesKitInicial()
+            if sheet == nil then return 0 end
+            local aspecto = tostring(sheet.aspectoDivino or "")
+            local total = 0
+            for _, item in ipairs(lerPoderes()) do
+                if n(item.nivel) > 0 and tostring(item.deus or "") == aspecto then
+                    total = total + 1
+                end
+            end
+            return total
+        end
+
         -- ---------------------------------------------------------------
         -- LACRE DO ASPECTO DIVINO
         -- ---------------------------------------------------------------
@@ -6286,7 +6501,7 @@
         -- ---------------------------------------------------------------
         -- COMPRA E DEVOLUCAO
         -- ---------------------------------------------------------------
-        function comprarNivelPoder(nomePoder, gratuitoLegado, origemForcada)
+        function comprarNivelPoder(nomePoder, gratuitoLegado, origemForcada, fonteGratuita)
             if sheet == nil then return end
             -- A escolha única do Legado precisa funcionar também na migração
             -- de fichas antigas já finalizadas. Compras normais continuam
@@ -6296,6 +6511,21 @@
             end
             local poder = CatalogoPoderes.buscar(nomePoder)
             if poder == nil then return end
+            local origemPretendida = origemForcada or deusDonoDoPoder(nomePoder)
+
+            -- Livro [1.3], Coração de mana: nenhum outro poder ativo além de
+            -- Magia. Linhagem de Unaris substitui os ativos do kit inicial,
+            -- isto é, os que vêm do Aspecto Divino.
+            if poder.tipo == "ativo" and temQualidadeNaFicha("Coração de mana")
+               and nomePoder ~= "Magia" then
+                avisarPoderes("Coração de mana impede adquirir qualquer outro poder ativo além de Magia. [livro 1.3]", COR.wine)
+                return
+            end
+            if poder.tipo == "ativo" and temQualidadeNaFicha("Linhagem de Unaris")
+               and tostring(origemPretendida or "") == tostring(sheet.aspectoDivino or "") then
+                avisarPoderes("Linhagem de Unaris substitui todos os poderes ativos do kit inicial pela Magia. [livro 1.3]", COR.wine)
+                return
+            end
 
             if poder.tipo == "passivo" and tostring(poder.atributo or "") ~= ""
                and tostring(poder.atributo) == atributoIneptoEscolhido() then
@@ -6311,6 +6541,16 @@
             if item ~= nil then atual = n(item.nivel) end
             local novo = atual + 1
 
+            -- Sangue mortal reduz o kit inicial a dois poderes. Poderes de
+            -- Legado, bênção, Magia ou herança racial têm outra origem e não
+            -- são contados como o kit do pai/mãe.
+            if atual == 0 and temDefeitoNaFicha("Sangue mortal")
+               and tostring(origemPretendida or "") == tostring(sheet.aspectoDivino or "")
+               and quantidadePoderesKitInicial() >= 2 then
+                avisarPoderes("Sangue mortal limita o kit inicial a dois poderes; os dois espaços já estão ocupados. [livro 1.3]", COR.wine)
+                return
+            end
+
             if novo > 5 then
                 avisarPoderes("Este poder já está no nível máximo (5).", COR.muted); return
             end
@@ -6322,8 +6562,8 @@
                 return
             end
 
-            local ehGratisLegado = (gratuitoLegado == true)
-            if not ehGratisLegado and saldoPontosPoder() < 1 then
+            local ehGratis = (gratuitoLegado == true)
+            if not ehGratis and saldoPontosPoder() < 1 then
                 avisarPoderes("Sem pontos de poder disponíveis.", COR.wine); return
             end
 
@@ -6429,25 +6669,45 @@
                 end
             end
 
+            -- Sangue mortal e Poder incontrolável usam "níveis
+            -- sequenciais" no sentido de níveis consecutivos do personagem,
+            -- distinto da regra geral acima (duas subidas no MESMO nível).
+            local sequencial = false
+            local fonteSequencial = ""
+            if item ~= nil and ultimoNivelPersonagemDoPoder(item) == n(sheet.nivel) - 1 then
+                if temDefeitoNaFicha("Sangue mortal") then
+                    sequencial = true; fonteSequencial = "Sangue mortal"
+                elseif temDefeitoNaFicha("Poder incontrolável")
+                   and tostring(sheet.poderIncontrolavelEscolhido or "") == nomePoder then
+                    sequencial = true; fonteSequencial = "Poder incontrolável"
+                end
+            end
+            if sequencial then
+                avisarPoderes(fonteSequencial .. " impede elevar o mesmo poder em níveis consecutivos do personagem. " ..
+                    "A última subida ocorreu no nível " .. ultimoNivelPersonagemDoPoder(item) .. ". [livro 1.3]", COR.wine)
+                return
+            end
+
             if item == nil then
                 item = { nome = nomePoder, nivel = 0, log = "",
-                         deus = origemForcada or deusDonoDoPoder(nomePoder) }
+                         deus = origemPretendida }
                 table.insert(lista, item)
             end
             item.nivel = novo
-            if not ehGratisLegado then
+            if not ehGratis then
                 local marca = tostring(novo) .. "@" .. tostring(n(sheet.nivel))
                 if item.log == "" then item.log = marca else item.log = item.log .. "," .. marca end
             end
 
             gravarPoderes(lista)
             if usouAutorizacao then sheet.autorizacaoMestrePoder = false end
-            if not ehGratisLegado then selarAspectoDivino() end
+            if not ehGratis then selarAspectoDivino() end
             aplicarConcessoes()
 
-            if ehGratisLegado then
+            if ehGratis then
                 publicarNoChat("" .. tostring(sheet.nome or "Personagem") ..
-                    " recebeu **" .. nomePoder .. "** como poder gratuito do Legado Desperto.", COR.gold)
+                    " recebeu **" .. nomePoder .. "** como poder gratuito de " ..
+                    tostring(fonteGratuita or "Legado Desperto") .. ".", COR.gold)
             else
                 publicarNoChat("" .. tostring(sheet.nome or "Personagem") ..
                     " elevou o poder **" .. nomePoder .. "** ao nível " .. novo ..
@@ -6517,6 +6777,78 @@
             avisarPoderes(atual .. " deixou de ser o poder gratuito do Legado Desperto.", COR.muted)
         end
 
+        function concederPoderOculto(nomePoder, nomeDeus)
+            if sheet == nil or not temQualidadeNaFicha("Poder oculto") then return end
+            if temDefeitoNaFicha("Sangue mortal") then
+                avisarPoderes("Sangue mortal impede Poder oculto.", COR.wine); return
+            end
+            local aspecto = tostring(sheet.aspectoDivino or "")
+            local poder = CatalogoPoderes.buscar(nomePoder)
+            if aspecto == "" or tostring(nomeDeus or "") ~= aspecto
+               or poder == nil or poder.tipo ~= "ativo" then
+                avisarPoderes("Poder oculto deve ser um poder ativo do kit inicial do seu Aspecto Divino.", COR.wine)
+                return
+            end
+            local atual = nomePoderOcultoGratuito()
+            if atual == nomePoder then return end
+            if atual ~= "" and not usuarioEhMestre() then
+                avisarPoderes("Poder oculto já foi escolhido como " .. atual .. ". Somente o MESTRE pode corrigir.", COR.wine)
+                return
+            end
+            local item = acharPoder(lerPoderes(), nomePoder)
+            if item ~= nil and n(item.nivel) > 0 and tostring(item.deus or "") ~= aspecto then
+                avisarPoderes(nomePoder .. " já está registrado com outra origem; a ficha não mistura duas origens no mesmo poder.", COR.wine)
+                return
+            end
+            if item == nil or n(item.nivel) == 0 then
+                comprarNivelPoder(nomePoder, true, aspecto, "Poder oculto")
+                item = acharPoder(lerPoderes(), nomePoder)
+                if item == nil or n(item.nivel) == 0 then return end
+            end
+            sheet.poderOcultoGratuito = nomePoder
+            recalcularTudo()
+            mostrarDetalhePoder(nomePoder, aspecto)
+            avisarPoderes(nomePoder .. " está marcado como o nível gratuito de Poder oculto.", COR.gold)
+        end
+
+        function revogarPoderOculto()
+            if sheet == nil or not usuarioEhMestre() then
+                avisarPoderes("Ação recusada: somente o MESTRE pode corrigir Poder oculto.", COR.wine); return
+            end
+            local atual = nomePoderOcultoGratuito()
+            if atual == "" then return end
+            sheet.poderOcultoGratuito = ""
+            recalcularTudo()
+            mostrarDetalhePoder(atual, tostring(sheet.aspectoDivino or ""))
+        end
+
+        -- Livro [1.3], Poder incontrolável: o mestre escolhe um poder ativo
+        -- que já tenha ao menos um nível. O vínculo fica explícito na raiz
+        -- porque a restrição de progressão precisa consultá-lo em toda compra.
+        function selecionarPoderIncontrolavel(nomePoder)
+            if sheet == nil then return end
+            if not usuarioEhMestre() then
+                avisarPoderes("Ação recusada: o texto de Poder incontrolável atribui esta escolha ao MESTRE.", COR.wine)
+                return
+            end
+            if not temDefeitoNaFicha("Poder incontrolável") then return end
+            local item = acharPoder(lerPoderes(), nomePoder)
+            local poder = CatalogoPoderes.buscar(nomePoder)
+            if item == nil or n(item.nivel) < 1 or poder == nil or poder.tipo ~= "ativo" then
+                avisarPoderes("Poder incontrolável só pode ser vinculado a um poder ativo já adquirido.", COR.wine)
+                return
+            end
+            if tostring(sheet.poderIncontrolavelEscolhido or "") == nomePoder then
+                sheet.poderIncontrolavelEscolhido = ""
+                avisarPoderes("Vínculo de Poder incontrolável removido pelo mestre para correção.", COR.muted)
+            else
+                sheet.poderIncontrolavelEscolhido = nomePoder
+                avisarPoderes(nomePoder .. " foi vinculado ao defeito Poder incontrolável.", COR.gold)
+            end
+            recalcularTudo()
+            mostrarDetalhePoder(nomePoder, deusEmDetalhePoder)
+        end
+
         function devolverNivelPoder(nomePoder)
             if sheet == nil then return end
             if not podeEditarCriacao() then
@@ -6528,6 +6860,14 @@
 
             if n(item.nivel) == 1 and nomePoderLegadoGratuito() == nomePoder then
                 avisarPoderes("Este é o nível gratuito do Legado Desperto. O MESTRE deve revogá-lo antes de remover o poder.", COR.wine)
+                return
+            end
+            if n(item.nivel) == 1 and nomePoderOcultoGratuito() == nomePoder then
+                avisarPoderes("Este é o nível gratuito de Poder oculto. O MESTRE deve revogar o vínculo antes de remover o poder.", COR.wine)
+                return
+            end
+            if n(item.nivel) == 1 and tostring(sheet.poderIncontrolavelEscolhido or "") == nomePoder then
+                avisarPoderes("Este poder está vinculado a Poder incontrolável. O MESTRE deve corrigir o vínculo antes de removê-lo.", COR.wine)
                 return
             end
 
@@ -6628,6 +6968,8 @@
                 self.popPod_lblSaldo:setText("Saldo: " .. saldoPontosPoder() .. " ponto(s)")
             end
             definirAlturaPod(self.popPod_secLegado, 0)
+            definirAlturaPod(self.popPod_secPoderOculto, 0)
+            definirAlturaPod(self.popPod_secIncontrolavel, 0)
         end
 
         function abrirPopupPoderes()
@@ -6781,6 +7123,35 @@
                 tostring(sheet and sheet.aspectoDivino or "") ~= ""
             definirAlturaPod(self.popPod_secBencao, mostraBencao and 30 or 0)
 
+            local gratuitoOculto = nomePoderOcultoGratuito()
+            local ehCandidatoOculto = temQualidadeNaFicha("Poder oculto")
+                and not temDefeitoNaFicha("Sangue mortal")
+                and poder.tipo == "ativo"
+                and tostring(nomeDeus or "") == tostring(sheet.aspectoDivino or "")
+            local mostraOculto = ehCandidatoOculto and
+                (gratuitoOculto == "" or (gratuitoOculto == nomePoder and usuarioEhMestre()))
+            definirAlturaPod(self.popPod_secPoderOculto, mostraOculto and 30 or 0)
+            if self.popPod_lblPoderOculto ~= nil and mostraOculto then
+                if gratuitoOculto == nomePoder then
+                    self.popPod_lblPoderOculto:setText("MESTRE — REVOGAR NÍVEL GRATUITO DE PODER OCULTO")
+                else
+                    self.popPod_lblPoderOculto:setText("ESCOLHER COMO PODER OCULTO — NÍVEL 1 GRATUITO")
+                end
+            end
+
+            local itemAtual = acharPoder(lerPoderes(), nomePoder)
+            local podeVincularIncontrolavel = temDefeitoNaFicha("Poder incontrolável")
+                and poder.tipo == "ativo" and itemAtual ~= nil and n(itemAtual.nivel) > 0
+                and usuarioEhMestre()
+            definirAlturaPod(self.popPod_secIncontrolavel, podeVincularIncontrolavel and 30 or 0)
+            if self.popPod_lblIncontrolavel ~= nil and podeVincularIncontrolavel then
+                if tostring(sheet.poderIncontrolavelEscolhido or "") == nomePoder then
+                    self.popPod_lblIncontrolavel:setText("MESTRE — DESVINCULAR DE PODER INCONTROLÁVEL")
+                else
+                    self.popPod_lblIncontrolavel:setText("MESTRE — VINCULAR A PODER INCONTROLÁVEL")
+                end
+            end
+
             destacarPoderSelecionado()
         end
 
@@ -6811,6 +7182,20 @@
                 revogarPoderLegado()
             else
                 concederPoderLegado(poderEmDetalhe, deusEmDetalhePoder)
+            end
+        end
+
+        function alternarPoderIncontrolavelEmDetalhe()
+            if poderEmDetalhe == nil then return end
+            selecionarPoderIncontrolavel(poderEmDetalhe)
+        end
+
+        function alternarPoderOcultoEmDetalhe()
+            if poderEmDetalhe == nil then return end
+            if nomePoderOcultoGratuito() == poderEmDetalhe then
+                revogarPoderOculto()
+            else
+                concederPoderOculto(poderEmDetalhe, deusEmDetalhePoder)
             end
         end
 
@@ -9150,6 +9535,42 @@
             return false
         end
 
+        function temDefeitoNaFicha(nome)
+            if sheet == nil then return false end
+            for _, d in ipairs(NDB.getChildNodes(sheet.listaDefeitos) or {}) do
+                if tostring(d.nome or "") == nome then return true end
+            end
+            return false
+        end
+
+        function pontosQDNaFicha(tipo, nome)
+            if sheet == nil then return 0 end
+            local lista = (tipo == "Qualidade") and sheet.listaQualidades or sheet.listaDefeitos
+            for _, item in ipairs(NDB.getChildNodes(lista) or {}) do
+                if tostring(item.nome or "") == nome then
+                    return n(item.pontosEscolhidos)
+                end
+            end
+            return 0
+        end
+
+        -- Livro [1.3]: Covarde veta Coragem; Deformado 2+ veta perícias de
+        -- Carisma; Doença terminal veta perícias de Constituição. O bloqueio
+        -- ocorre na entrada, sem apagar silenciosamente perícias de fichas
+        -- antigas — estas continuam visíveis para revisão do mestre.
+        function motivoPericiaBloqueada(atributo, nomePericia)
+            if nomePericia == "Coragem" and temDefeitoNaFicha("Covarde") then
+                return "Covarde impede adquirir a perícia Coragem. [livro 1.3 — efeito do defeito]"
+            end
+            if atributo == "Carisma" and pontosQDNaFicha("Defeito", "Deformado") >= 2 then
+                return "Deformado no tier 2 ou 3 impede adquirir perícias de Carisma. [livro 1.3 — efeitos cumulativos]"
+            end
+            if atributo == "Constituição" and temDefeitoNaFicha("Doença terminal") then
+                return "Doença terminal impede adquirir perícias de Constituição. [livro 1.3 — efeito do defeito]"
+            end
+            return ""
+        end
+
         function fonteEstaAtiva(fonte)
             if fonte == nil then return false end
             if fonte.tipo == "caracRacial" then
@@ -9656,6 +10077,12 @@
             if dados ~= nil and dados.limiteAtributo ~= nil then
                 limite = n(dados.limiteAtributo)
             end
+            -- Livro [1.3], Doença terminal: "Sua pontuação máxima do
+            -- atributo Constituição é 02". É um teto absoluto do valor
+            -- base, portanto prevalece inclusive nos níveis altos.
+            if nomeAtributo == "Constituição" and temDefeitoNaFicha("Doença terminal") then
+                return math.min(limite, 2)
+            end
             -- Inepto reduz somente o teto do valor base. Bônus continuam
             -- podendo ultrapassar 6, como acontece com todos os outros tetos.
             if atributoIneptoEscolhido() == nomeAtributo and limite > 6 then
@@ -9850,6 +10277,9 @@
             local total = n(sheet.periciasBonusGeral)
             for _, a in ipairs(ATRIBUTOS_DA_FICHA) do
                 total = total + n(sheet[a.campo .. "PericiasBonus"])
+            end
+            if atributoEducacaoEscolhido ~= nil and atributoEducacaoEscolhido() ~= "" then
+                total = total + 1
             end
             return total
         end
@@ -10875,6 +11305,14 @@
             -- numero, entao entra so como marcacao)
             {pericia = "Vontade", atributo = "Sabedoria", ate10 = 2, apos11 = 2,
              fonte = "qualidade", nome = "Vontade de ferro"},
+            -- Livro [1.3], Corajoso: +2 em Coragem.
+            {pericia = "Coragem", atributo = "Sabedoria", ate10 = 2, apos11 = 2,
+             fonte = "qualidade", nome = "Corajoso"},
+            -- Livro [1.3], Covarde e Presença vulnerável: redutores fixos.
+            {pericia = "Coragem", atributo = "Sabedoria", ate10 = -3, apos11 = -3,
+             fonte = "defeito", nome = "Covarde"},
+            {pericia = "Intimidação", atributo = "Manipulação", ate10 = -2, apos11 = -2,
+             fonte = "defeito", nome = "Presença vulnerável"},
         }
 
         -- Escolas de magia entre as quais a Linhagem de Unaris escolhe.
@@ -10903,13 +11341,25 @@
                         end
                     elseif b.fonte == "qualidade" then
                         ativo = temQualidadeNaFicha(b.nome)
+                    elseif b.fonte == "defeito" then
+                        ativo = temDefeitoNaFicha(b.nome)
                     end
                     if ativo then
                         local v = (nivel >= 11) and b.apos11 or b.ate10
                         total = total + v
-                        table.insert(fontes, b.nome .. " +" .. v)
+                        table.insert(fontes, b.nome .. " " .. (v >= 0 and "+" or "") .. v)
                     end
                 end
+            end
+
+            -- Educação funcional usa qualquer perícia que o personagem
+            -- possua no atributo escolhido. O texto muda o bônus NO nível
+            -- 10, diferente das características raciais que mudam no 11.
+            if atributoEducacaoEscolhido ~= nil
+               and atributoEducacaoEscolhido() == atributo then
+                local v = (nivel >= 10) and 2 or 1
+                total = total + v
+                table.insert(fontes, "Educação funcional +" .. v)
             end
 
             -- [Magia inata], da Linhagem de Unaris: +1 em testes de magia ate
@@ -15633,7 +16083,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.32" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.33" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -25060,6 +25510,13 @@
                                 <label align="right" width="128" text="01, 02, 03 ou 04 pontos" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="trailing" vertTextAlign="center" hitTest="false"/>
                             </layout>
                         </rectangle>
+                        <rectangle name="rectLinhaQD_Fobia" align="top" height="48" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Ver os detalhes de 'Fobia'">
+                            <event name="onClick"><![CDATA[selecionarDetalheQD("Defeito", "Fobia", "popCatalogoDefeitos");]]></event>
+                            <layout align="client" margins="{left=10,right=10,top=0,bottom=0}">
+                                <label align="client" text="Fobia" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="12" fontStyle="bold" vertTextAlign="center" hitTest="false"/>
+                                <label align="right" width="110" text="02 ou 03 pontos" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="trailing" vertTextAlign="center" hitTest="false"/>
+                            </layout>
+                        </rectangle>
                         <rectangle name="rectLinhaQD_Inepto" align="top" height="48" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Ver os detalhes de 'Inepto'">
                             <event name="onClick"><![CDATA[selecionarDetalheQD("Defeito", "Inepto", "popCatalogoDefeitos");]]></event>
                             <layout align="client" margins="{left=10,right=10,top=0,bottom=0}">
@@ -30229,6 +30686,18 @@
                             <rectangle align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="MESTRE: registrar que esta divindade abençoou o personagem (3 Favores trocados)">
                                 <label align="client" text="MESTRE — REGISTRAR BÊNÇÃO DESTA DIVINDADE" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <event name="onClick"><![CDATA[concederBencaoEmDetalhe();]]></event>
+                            </rectangle>
+                        </layout>
+                        <layout name="popPod_secIncontrolavel" align="bottom" height="0" margins="{left=14,right=14,bottom=4}">
+                            <rectangle align="client" color="#12181C" strokeColor="#9E3B4A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="MESTRE: escolher ou corrigir o poder ativo afetado por Poder incontrolável">
+                                <label name="popPod_lblIncontrolavel" align="client" text="" fontFamily="Marcellus SC" fontColor="#C65A69" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <event name="onClick"><![CDATA[alternarPoderIncontrolavelEmDetalhe();]]></event>
+                            </rectangle>
+                        </layout>
+                        <layout name="popPod_secPoderOculto" align="bottom" height="0" margins="{left=14,right=14,bottom=4}">
+                            <rectangle align="client" color="#12181C" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Escolher o poder ativo inicial que recebe o nível gratuito de Poder oculto">
+                                <label name="popPod_lblPoderOculto" align="client" text="" fontFamily="Marcellus SC" fontColor="#7FA8B8" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <event name="onClick"><![CDATA[alternarPoderOcultoEmDetalhe();]]></event>
                             </rectangle>
                         </layout>
                         <layout name="popPod_secLegado" align="bottom" height="0" margins="{left=14,right=14,bottom=4}">
