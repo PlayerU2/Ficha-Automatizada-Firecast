@@ -1,3 +1,13 @@
+## v0.53.30 — Quantidade racial e migração de Mestiço (17/09/2026)
+
+- a quantidade de características do mestiço passa a ser a maior quantidade entre suas duas raças, permitindo totais como 4 ou 5;
+- no tier 2, as escolhas precisam ser equilibradas entre as duas origens: 2+2 para quatro características e 3+2 para cinco, com o jogador decidindo qual raça fornece as três;
+- transforma o upgrade explícito e gratuito de Mestiço 0/1 para 2 pontos em modo de importação de ficha antiga;
+- permite reativar esse modo clicando novamente no tier 2 com a opção gratuita, contemplando fichas que já tentaram fazer a migração;
+- durante a importação, libera a seleção manual da quantidade correta de características antigas e não executa nenhuma nova rolagem;
+- ao confirmar, registra as características, relacra a herança e publica no chat que o resultado foi importado;
+- upgrades pagos comuns continuam sem converter automaticamente características sorteadas.
+
 ## v0.53.29 — Poder gratuito de Legado Desperto (17/09/2026)
 
 - A qualidade **Legado desperto** agora permite ao mestre selecionar um poder do Aspecto registrado como legado e conceder seu nível inicial sem consumir ponto de poder.

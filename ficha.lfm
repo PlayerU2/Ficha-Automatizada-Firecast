@@ -2505,7 +2505,38 @@
             local pagosAtuais = existente and (tonumber(existente.pontosPagos) or 0) or 0
             local efetivoAtual = existente and (tonumber(existente.pontosEscolhidos) or 0) or 0
 
+            -- Livro, Mestiço [02 pontos]: "você pode escolher todas as suas
+            -- habilidades raciais". A mesa define o total pela raça com a
+            -- lista mais alta e também mantém a decisão de que um upgrade
+            -- PAGO comum não converte
+            -- automaticamente resultados sorteados. A exceção abaixo é uma
+            -- ferramenta explícita de migração: marcar GRATUITO e escolher o
+            -- tier 2 diz que esta ficha antiga já teve suas características
+            -- roladas fora da automação e precisa apenas registrá-las, sem
+            -- sortear novamente.
+            local solicitouImportacaoMestico =
+                tipo == "Qualidade" and nome == "Mestiço" and gratis == true
+                and pontosAlvo == 2 and existente ~= nil and pagosAtuais < 2
+
+            local function ativarImportacaoMesticoAntigo()
+                NDB.beginUpdate(sheet)
+                sheet.mesticoImportacaoAntiga = true
+                -- A importação tem fluxo próprio e não deve consumir nem
+                -- depender da autorização genérica de reajuste do mestre.
+                sheet.mesticoReajusteAutorizado = false
+                NDB.endUpdate(sheet)
+                atualizarBlocoRaca()
+                avisarMestico(
+                    "Migração de ficha antiga liberada: abra a mestiçagem e selecione manualmente as características já roladas. Nenhuma será sorteada.",
+                    COR.gold)
+            end
+
             if pontosAlvo <= efetivoAtual then
+                -- Recupera também quem já tentou o upgrade gratuito antes
+                -- desta versão e ficou parado no tier 2 com o lacre antigo.
+                if solicitouImportacaoMestico and efetivoAtual == 2 then
+                    ativarImportacaoMesticoAntigo()
+                end
                 return -- ja possui este tier ou um maior; nada a fazer
             end
 
@@ -2514,6 +2545,7 @@
             if custoNecessario < 0 then custoNecessario = 0 end
 
             if tipo == "Defeito" or custoNecessario == 0 then
+                if solicitouImportacaoMestico then ativarImportacaoMesticoAntigo() end
                 salvarQD(existente, tipo, nome, pontosAlvo, pagosAtuais + custoNecessario, nomeLista)
                 return
             end
@@ -2829,16 +2861,20 @@
         -- =================================================================
         -- MESTICAGEM
         --
-        -- Regra da mesa: um mestico e sempre HUMANO + outra raca, e fica com
-        -- 3 caracteristicas raciais no total, tiradas de um "pool" formado
-        -- pelas caracteristicas das DUAS racas.
-        --   Mestico 0 PQ -> sorteia as 3
-        --   Mestico 1 PQ -> escolhe 1 (metade de 3, arredondado pra baixo) e sorteia 2
-        --   Mestico 2 PQ -> escolhe as 3
+        -- Regra da mesa: a quantidade total de caracteristicas do mestico e
+        -- a MAIOR quantidade entre as duas racas, tirada de um "pool" formado
+        -- pelas caracteristicas de ambas. Exemplos confirmados: 3 + 4 resulta
+        -- em 4; uma das racas com 5 resulta em 5.
+        --   Mestico 0 PQ -> sorteia todas
+        --   Mestico 1 PQ -> escolhe metade (arredondada pra baixo) e sorteia o resto
+        --   Mestico 2 PQ -> escolhe todas, equilibrando as origens (2+2 ou 3+2;
+        --                   no total impar, o jogador decide qual raça dá a extra)
         -- "Favorecimento divino" e exclusiva de humano PURO, entao fica fora
         -- do pool de qualquer mestico.
         -- =================================================================
-        local TOTAL_CARACS_MESTICO = 3
+        -- Maior pool atualmente possível no catálogo: raça principal jogável
+        -- com 4 características + raça secundária permitida com 8.
+        local MAX_SLOTS_MESTICO = 12
 
         -- =================================================================
         -- LACRE DE SORTEIO
@@ -2907,6 +2943,22 @@
                 end
             end
             return pool
+        end
+
+        -- O total usa a quantidade DECLARADA de cada raça, inclusive quando
+        -- uma característica específica não pode entrar no pool (como
+        -- Favorecimento divino dos Humanos puros). É a raça com a lista mais
+        -- alta que define quantos espaços o mestiço recebe.
+        local function totalCaracsMestico(nomeSecundaria)
+            local principal = CatalogoRacas.buscarPorNome(racaPrincipalMestico())
+            local secundaria = CatalogoRacas.buscarPorNome(nomeSecundaria)
+            local qtdPrincipal = principal and #(principal.caracteristicas or {}) or 0
+            local qtdSecundaria = secundaria and #(secundaria.caracteristicas or {}) or 0
+            return math.max(qtdPrincipal, qtdSecundaria)
+        end
+
+        local function totalCaracsMesticoAtual()
+            return totalCaracsMestico(tostring(sheet and sheet.mesticoRacaSecundaria or ""))
         end
 
         -- =================================================================
@@ -3078,12 +3130,17 @@
             return sheet ~= nil and sheet.mesticoLacre == true
         end
 
+        function importacaoMesticoAntigoAtiva()
+            return sheet ~= nil and sheet.mesticoImportacaoAntiga == true
+        end
+
         -- Tier que vale AGORA para decidir quantas caracteristicas o jogador
         -- escolhe. Antes do lacre: o tier atual da qualidade. Depois: o tier
         -- congelado no sorteio - a menos que o mestre autorize o reajuste.
         function tierEfetivoMestico()
             local ctx = contextoRacial()
             if not mesticagemLacrada() then return ctx.tierMestico end
+            if importacaoMesticoAntigoAtiva() then return ctx.tierMestico end
             if sheet.mesticoReajusteAutorizado == true then return ctx.tierMestico end
             return tonumber(sheet.mesticoLacreTier) or ctx.tierMestico
         end
@@ -3100,7 +3157,40 @@
         end
 
         local function qtdEscolhasPermitidas()
-            return CatalogoRacas.escolhasPorTierMestico(tierEfetivoMestico(), TOTAL_CARACS_MESTICO)
+            return CatalogoRacas.escolhasPorTierMestico(tierEfetivoMestico(), totalCaracsMesticoAtual())
+        end
+
+        -- No tier 2 todas são escolhidas, mas a herança precisa continuar
+        -- realmente mestiça. Para totais pares, metade vem de cada origem;
+        -- para ímpares, a diferença máxima é uma (por exemplo, 3 + 2).
+        local function distribuicaoMesticoEquilibrada(indices, total)
+            if tierEfetivoMestico() < 2 then return true end
+            local principal = racaPrincipalMestico()
+            local daPrincipal, daSecundaria = 0, 0
+            for _, idx in ipairs(indices or {}) do
+                local car = poolMestico[idx]
+                if car ~= nil then
+                    if car.origem == principal then daPrincipal = daPrincipal + 1
+                    else daSecundaria = daSecundaria + 1 end
+                end
+            end
+            local minimo = math.floor(total / 2)
+            local maximo = math.ceil(total / 2)
+            return daPrincipal >= minimo and daPrincipal <= maximo
+                and daSecundaria >= minimo and daSecundaria <= maximo
+        end
+
+        local function contagemEscolhasPorOrigem(indices)
+            local principal = racaPrincipalMestico()
+            local daPrincipal, daSecundaria = 0, 0
+            for _, idx in ipairs(indices or {}) do
+                local car = poolMestico[idx]
+                if car ~= nil then
+                    if car.origem == principal then daPrincipal = daPrincipal + 1
+                    else daSecundaria = daSecundaria + 1 end
+                end
+            end
+            return daPrincipal, daSecundaria
         end
 
         -- Mensagem curta no rodape do painel de mesticagem da aba.
@@ -3121,8 +3211,10 @@
         -- =================================================================
         local function repintarPoolMestico()
             local permitidas = qtdEscolhasPermitidas()
+            local total = totalCaracsMesticoAtual()
             local lacrada = mesticagemLacrada()
-            for i = 1, 12 do
+            local importando = importacaoMesticoAntigoAtiva()
+            for i = 1, MAX_SLOTS_MESTICO do
                 local sec = self["popMest_secCarac" .. i]
                 local lblNome = self["popMest_lblCaracNome" .. i]
                 local lblDesc = self["popMest_lblCaracDesc" .. i]
@@ -3162,19 +3254,31 @@
             end
 
             if self.popMest_lblContador ~= nil then
-                if permitidas == 0 then
+                self.popMest_lblContador:setFontColor(importando and COR.gold or COR.muted)
+                if importando then
+                    local qtdPrincipal, qtdSecundaria = contagemEscolhasPorOrigem(escolhasMestico)
+                    self.popMest_lblContador:setText("IMPORTAÇÃO DE FICHA ANTIGA  •  selecionadas "
+                        .. tostring(#escolhasMestico) .. " de " .. tostring(total)
+                        .. "  •  " .. racaPrincipalMestico() .. ": " .. tostring(qtdPrincipal)
+                        .. "  /  " .. tostring(sheet.mesticoRacaSecundaria or "raça 2") .. ": " .. tostring(qtdSecundaria)
+                        .. "  •  nenhuma será sorteada")
+                elseif permitidas == 0 then
                     self.popMest_lblContador:setText("Seu tier de Mestiço não permite escolher: as "
-                        .. tostring(TOTAL_CARACS_MESTICO) .. " características serão TODAS sorteadas.")
+                        .. tostring(total) .. " características serão TODAS sorteadas.")
                 else
                     self.popMest_lblContador:setText("Escolhidas " .. tostring(#escolhasMestico) .. " de "
                         .. tostring(permitidas) .. " permitidas  •  as outras "
-                        .. tostring(TOTAL_CARACS_MESTICO - permitidas)
-                        .. (lacrada and " permanecem lacradas" or " serão sorteadas"))
+                        .. tostring(total - permitidas)
+                        .. (lacrada and " permanecem lacradas" or " serão sorteadas")
+                        .. ((permitidas >= total and total > 0) and "  •  distribua de forma equilibrada; no total ímpar, você escolhe qual raça recebe a extra" or ""))
                 end
             end
 
             if self.popMest_lblBtnConfirmar ~= nil then
-                if lacrada then
+                if importando then
+                    self.popMest_lblBtnConfirmar:setText("IMPORTAR AS CARACTERÍSTICAS  •  SEM NOVA ROLAGEM")
+                    self.popMest_lblBtnConfirmar:setFontColor(COR.gold)
+                elseif lacrada then
                     if permitidas == 0 then
                         self.popMest_lblBtnConfirmar:setText("NADA A TROCAR NESTE TIER")
                         self.popMest_lblBtnConfirmar:setFontColor(COR.faint)
@@ -3196,13 +3300,26 @@
             poolMestico = montarPoolMestico(nomeSecundaria)
             escolhasMestico = {}
             travadosMestico = {}
+            -- Na importação, o jogador precisa marcar exatamente o que saiu
+            -- na ficha antiga. Por isso nenhum resultado local anterior vem
+            -- pré-marcado ou lacrado, e confirmar não chama math.random.
+            if importacaoMesticoAntigoAtiva() then return end
             if not mesticagemLacrada() then return end
 
             local definidas = caracteristicasMesticoDefinidas()
+            local convertendoTudo = sheet.mesticoReajusteAutorizado == true
+                and qtdEscolhasPermitidas() >= totalCaracsMesticoAtual()
+            local indicesRestaurados = {}
             for _, car in ipairs(definidas) do
                 for i, p in ipairs(poolMestico) do
-                    if p.nome == car.nome and p.origem == car.origem then
-                        if car.modo == "Sorteada" then
+                    -- Algumas raças possuem duas entradas com o mesmo nome.
+                    -- Cada característica gravada precisa recuperar um índice
+                    -- diferente; sem esta marca, ambas voltavam apontando
+                    -- para o primeiro card e uma escolha sumia visualmente.
+                    if not indicesRestaurados[i]
+                        and p.nome == car.nome and p.origem == car.origem then
+                        indicesRestaurados[i] = true
+                        if car.modo == "Sorteada" and not convertendoTudo then
                             travadosMestico[i] = true
                         else
                             table.insert(escolhasMestico, i)
@@ -3278,19 +3395,25 @@
             if self.popMest_lblRegra ~= nil then
                 local permitidas = qtdEscolhasPermitidas()
                 local txt
-                if mesticagemLacrada() then
+                if importacaoMesticoAntigoAtiva() then
+                    txt = "MIGRAÇÃO DE FICHA ANTIGA. Marque as " .. tostring(totalCaracsMesticoAtual())
+                        .. " características que já foram roladas na ficha anterior, equilibradas entre as duas raças. "
+                        .. "Quando o total for ímpar, você decide qual raça fornece a característica extra. "
+                        .. "Ao confirmar, a automação apenas registra essas escolhas e mantém a herança lacrada; nenhuma nova rolagem será feita."
+                    self.popMest_lblRegra:setFontColor(COR.gold)
+                elseif mesticagemLacrada() then
                     txt = "HERANÇA LACRADA. As sorteadas estão fixas; você pode trocar apenas as "
                         .. tostring(permitidas) .. " ESCOLHIDAS entre as características não lacradas. "
                         .. motivoLacre()
                     self.popMest_lblRegra:setFontColor(COR.rain)
                 else
                     txt = "Mestiço com " .. tostring(tierEfetivoMestico()) .. " PQ. O personagem fica com "
-                        .. tostring(TOTAL_CARACS_MESTICO) .. " características no total, tiradas do conjunto abaixo (" .. racaPrincipalMestico() .. " + "
+                        .. tostring(totalCaracsMesticoAtual()) .. " características no total — a quantidade da raça com a lista mais alta — tiradas do conjunto abaixo (" .. racaPrincipalMestico() .. " + "
                         .. outra.nome .. "). "
                     if permitidas == 0 then
-                        txt = txt .. "Neste tier você não escolhe nada: clique em CONFIRMAR para sortear as 3."
-                    elseif permitidas >= TOTAL_CARACS_MESTICO then
-                        txt = txt .. "Neste tier você escolhe todas as 3: marque 3 abaixo e confirme."
+                        txt = txt .. "Neste tier você não escolhe nada: clique em CONFIRMAR para sortear todas."
+                    elseif permitidas >= totalCaracsMesticoAtual() then
+                        txt = txt .. "Neste tier você escolhe todas: distribua de forma equilibrada entre as duas raças (metade para cada; em total ímpar, você decide qual raça fornece a característica extra)."
                     else
                         txt = txt .. "Neste tier você escolhe " .. tostring(permitidas) .. " e o resto é sorteado: marque e confirme."
                     end
@@ -3312,6 +3435,17 @@
                 end
             else
                 if #escolhasMestico >= permitidas then return end -- ja no limite
+                local total = totalCaracsMesticoAtual()
+                if permitidas >= total and total > 0 then
+                    local origem = poolMestico[indice].origem
+                    local mesmaOrigem = 0
+                    for _, idx in ipairs(escolhasMestico) do
+                        if poolMestico[idx] ~= nil and poolMestico[idx].origem == origem then
+                            mesmaOrigem = mesmaOrigem + 1
+                        end
+                    end
+                    if mesmaOrigem >= math.ceil(total / 2) then return end
+                end
                 table.insert(escolhasMestico, indice)
             end
             repintarPoolMestico()
@@ -3325,11 +3459,12 @@
 
         -- Grava a lista final nos campos planos da ficha.
         -- (Campos planos, e nao um no-container: depois de NDB.deleteNode o
-        -- container voltava como nil e a gravacao quebrava. Sao no maximo 3
-        -- itens, entao campos planos sao mais simples e confiaveis.)
+        -- container voltava como nil e a gravacao quebrava. Mesmo com a
+        -- quantidade variável, campos planos continuam simples e confiáveis.)
         local function gravarCaracsMestico(resultado)
             NDB.beginUpdate(sheet)
-            for i = 1, TOTAL_CARACS_MESTICO do
+            local limparAte = math.max(MAX_SLOTS_MESTICO, tonumber(sheet.mesticoQtd) or 0, #resultado)
+            for i = 1, limparAte do
                 local c = resultado[i]
                 sheet["mestCarac" .. i .. "Nome"] = c and c.nome or ""
                 sheet["mestCarac" .. i .. "Desc"] = c and c.descricao or ""
@@ -3352,7 +3487,56 @@
                 return
             end
             local permitidas = qtdEscolhasPermitidas()
+            local total = totalCaracsMesticoAtual()
             if #escolhasMestico < permitidas then return end -- ainda falta escolher
+            if permitidas >= total and not distribuicaoMesticoEquilibrada(escolhasMestico, total) then
+                if self.popMest_lblContador ~= nil then
+                    self.popMest_lblContador:setText("Distribuição inválida: escolha metade de cada raça; com total ímpar, use "
+                        .. tostring(math.ceil(total / 2)) .. " de uma e " .. tostring(math.floor(total / 2))
+                        .. " da outra — você decide qual raça recebe a quantidade maior.")
+                    self.popMest_lblContador:setFontColor(COR.wine)
+                end
+                return
+            end
+
+            -- ===== IMPORTAÇÃO DE FICHA ANTIGA =====
+            -- É deliberadamente anterior aos caminhos de lacre/sorteio:
+            -- registra a quantidade variável informada e não executa
+            -- math.random.
+            if importacaoMesticoAntigoAtiva() then
+                if #escolhasMestico ~= total then return end
+                local resultado = {}
+                local nomes = {}
+                for _, idx in ipairs(escolhasMestico) do
+                    local c = poolMestico[idx]
+                    table.insert(resultado, {nome = c.nome, descricao = c.descricao, origem = c.origem, modo = "Escolhida"})
+                    table.insert(nomes, c.nome .. " (" .. c.origem .. ")")
+                end
+                gravarCaracsMestico(resultado)
+
+                local autor = nickDoUsuario()
+                local quando = dataHoraTexto()
+                NDB.beginUpdate(sheet)
+                sheet.mesticoLacre = true
+                sheet.mesticoLacreAutor = autor
+                sheet.mesticoLacreData = quando
+                sheet.mesticoLacreTier = 2
+                sheet.mesticoLacreTotal = total
+                sheet.mesticoRerollAutorizado = false
+                sheet.mesticoReajusteAutorizado = false
+                sheet.mesticoImportacaoAntiga = false
+                NDB.endUpdate(sheet)
+
+                publicarNoChat(anuncio("mesticagem", "MESTIÇAGEM IMPORTADA",
+                    nomeDoPersonagem() .. " registrou " .. tostring(total) .. " características já roladas na ficha antiga, sem nova rolagem: "
+                    .. table.concat(nomes, ", ") .. ". Importação concluída por " .. autor .. " em " .. quando .. "."), COR.gold)
+
+                if self.popMestico ~= nil then self.popMestico:close() end
+                atualizarBlocoRaca()
+                recalcularTudo()
+                avisarMestico("As " .. tostring(total) .. " características antigas foram importadas sem nova rolagem e a herança foi lacrada.", COR.moss)
+                return
+            end
 
             if mesticagemLacrada() then
                 -- ===== TROCA DE ESCOLHIDAS =====
@@ -3398,7 +3582,7 @@
             if math.randomseed ~= nil and os ~= nil and os.time ~= nil then
                 math.randomseed(os.time())
             end
-            local faltam = TOTAL_CARACS_MESTICO - #resultado
+            local faltam = total - #resultado
             while faltam > 0 and #disponiveis > 0 do
                 local pos = math.random(1, #disponiveis)
                 local idx = table.remove(disponiveis, pos)
@@ -3417,8 +3601,10 @@
             sheet.mesticoLacreAutor = autor
             sheet.mesticoLacreData = quando
             sheet.mesticoLacreTier = contextoRacial().tierMestico
+            sheet.mesticoLacreTotal = total
             sheet.mesticoRerollAutorizado = false
             sheet.mesticoReajusteAutorizado = false
+            sheet.mesticoImportacaoAntiga = false
             NDB.endUpdate(sheet)
 
             -- ===== PUBLICA NA MESA =====
@@ -3540,6 +3726,7 @@
             sheet.mesticoLacre = false
             sheet.mesticoRerollAutorizado = true
             sheet.mesticoReajusteAutorizado = false
+            sheet.mesticoImportacaoAntiga = false
             NDB.endUpdate(sheet)
 
             publicarNoChat(anuncio("mesticagem", "LACRE DE MESTIÇAGEM QUEBRADO",
@@ -3582,6 +3769,7 @@
             NDB.beginUpdate(sheet)
             sheet.mesticoRerollAutorizado = false
             sheet.mesticoReajusteAutorizado = false
+            sheet.mesticoImportacaoAntiga = false
             -- Se o lacre tinha sido quebrado e o sorteio ainda nao foi refeito,
             -- volta a lacrar com os dados que ja existem.
             if sheet.mesticoLacre ~= true and (tonumber(sheet.mesticoQtd) or 0) > 0 then
@@ -3606,7 +3794,7 @@
                 return
             end
             NDB.beginUpdate(sheet)
-            for i = 1, TOTAL_CARACS_MESTICO do
+            for i = 1, MAX_SLOTS_MESTICO do
                 sheet["mestCarac" .. i .. "Nome"] = ""
                 sheet["mestCarac" .. i .. "Desc"] = ""
                 sheet["mestCarac" .. i .. "Origem"] = ""
@@ -3743,20 +3931,23 @@
                     self.abaRaca_lblMestico:setFontColor(COR.faint)
                 else
                     local tierEfetivo = tierEfetivoMestico()
-                    local escolhas = CatalogoRacas.escolhasPorTierMestico(tierEfetivo, TOTAL_CARACS_MESTICO)
+                    local total = totalCaracsMesticoAtual()
+                    local escolhas = CatalogoRacas.escolhasPorTierMestico(tierEfetivo, total)
                     local secundaria = tostring(sheet.mesticoRacaSecundaria or "")
-                    local texto = "Mestiço (" .. tostring(ctx.tierMestico) .. " PQ) — fica com " .. tostring(TOTAL_CARACS_MESTICO) .. " características. "
+                    local texto = "Mestiço (" .. tostring(ctx.tierMestico) .. " PQ) — fica com " .. tostring(total) .. " características (quantidade da raça com a lista mais alta). "
                     if escolhas == 0 then
                         texto = texto .. "Neste tier todas são SORTEADAS."
-                    elseif escolhas >= TOTAL_CARACS_MESTICO then
-                        texto = texto .. "Neste tier você ESCOLHE todas."
+                    elseif escolhas >= total then
+                        texto = texto .. "Neste tier você ESCOLHE todas, equilibradas entre as duas raças; se o total for ímpar, você decide qual delas fornece a característica extra."
                     else
-                        texto = texto .. "Neste tier você ESCOLHE " .. tostring(escolhas) .. " e SORTEIA " .. tostring(TOTAL_CARACS_MESTICO - escolhas) .. "."
+                        texto = texto .. "Neste tier você ESCOLHE " .. tostring(escolhas) .. " e SORTEIA " .. tostring(total - escolhas) .. "."
                     end
                     if tierEfetivo ~= ctx.tierMestico then
                         texto = texto .. "  (tier congelado no sorteio: " .. tostring(tierEfetivo) .. " PQ)"
                     end
-                    if secundaria == "" then
+                    if importacaoMesticoAntigoAtiva() then
+                        texto = texto .. "\nMIGRAÇÃO DE FICHA ANTIGA ATIVA — clique aqui e selecione manualmente as " .. tostring(total) .. " características já roladas. Não haverá nova rolagem."
+                    elseif secundaria == "" then
                         texto = texto .. "\nHerança ainda não definida — clique aqui para definir."
                     elseif lacrada then
                         texto = texto .. "\nHerança: " .. racaPrincipalMestico() .. " + " .. secundaria .. ". Clique aqui para trocar as ESCOLHIDAS (as sorteadas estão lacradas)."
@@ -15028,7 +15219,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.29" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.30" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -24976,7 +25167,7 @@
                 <layout align="client">
                     <rectangle align="left" width="270" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" margins="{right=12}" hitTest="false">
                         <layout align="client" margins="{left=8,right=8,top=8,bottom=8}">
-                            <label align="top" height="16" text="Raça 1: HUMANOS (fixa)" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="11" hitTest="false"/>
+                            <label align="top" height="16" text="Raça 1: a raça principal da ficha" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="11" hitTest="false"/>
                             <label align="top" height="16" text="Escolha a raça 2 abaixo:" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="11" margins="{bottom=4}" hitTest="false"/>
                             <scrollBox align="client">
                                 <label align="top" height="20" text="JOGÁVEIS" fontFamily="Marcellus SC" fontColor="#4E8C74" fontSize="11" margins="{top=6,bottom=3}"/>
@@ -25063,10 +25254,10 @@
 
                     <layout align="client">
                         <label name="popMest_lblTitulo" align="top" height="24" text="Escolha a segunda raça na lista ao lado" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold"/>
-                        <label name="popMest_lblRegra" align="top" height="34" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="12" wordWrap="true" vertTextAlign="leading" margins="{bottom=6}"/>
+                        <label name="popMest_lblRegra" align="top" height="62" text="" fontFamily="EB Garamond" fontColor="#8C9AA0" fontSize="12" wordWrap="true" vertTextAlign="leading" margins="{bottom=6}"/>
 
-                        <rectangle align="top" height="34" color="#0B1014" strokeColor="#C9A24B" strokeSize="1" xradius="4" yradius="4" margins="{bottom=8}" hitTest="false">
-                            <label name="popMest_lblContador" align="client" text="" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="12" horzTextAlign="center" vertTextAlign="center"/>
+                        <rectangle align="top" height="48" color="#0B1014" strokeColor="#C9A24B" strokeSize="1" xradius="4" yradius="4" margins="{bottom=8}" hitTest="false">
+                            <label name="popMest_lblContador" align="client" text="" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="true" margins="{left=8,right=8}"/>
                         </rectangle>
 
                         <rectangle align="bottom" height="42" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="4" yradius="4" margins="{top=8}">
