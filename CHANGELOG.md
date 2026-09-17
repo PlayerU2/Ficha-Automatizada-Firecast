@@ -1,3 +1,20 @@
+## v0.53.32 — Sereias e Tritões são raças distintas (17/09/2026)
+
+- separa a antiga entrada `Sereias e Tritões` em `Sereias` (5
+  características) e `Tritões` (3 características), conforme `[1.6] Raças`;
+- adiciona brasões próprios e cards independentes nos catálogos de raça e de
+  Mestiço;
+- concede na aba de Habilidades `Metamorfose sereiana` e `Manipulação das
+  memórias` quando essas características realmente fizerem parte da herança;
+- mantém o total variável de Mestiço pela maior lista racial: Sereias podem
+  elevar a herança a 5 características, enquanto Tritões oferecem 3;
+- corrige as concessões raciais de Mestiço para consultarem exclusivamente a
+  herança escolhida/sorteada, em vez de concederem também toda a raça
+  principal;
+- fichas antigas com a entrada combinada recebem uma migração explícita
+  `ERA SEREIA` / `ERA TRITÃO`; em heranças já lacradas, o resultado pode ser
+  registrado novamente sem rolagem e preservando o tier original.
+
 ## v0.53.31 — Divindade própria do Legado Desperto (17/09/2026)
 
 - **Legado desperto** deixa de usar equivocadamente o pai/mãe como origem do poder gratuito;

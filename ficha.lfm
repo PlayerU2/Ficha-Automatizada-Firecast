@@ -2726,6 +2726,7 @@
             local function ativarImportacaoMesticoAntigo()
                 NDB.beginUpdate(sheet)
                 sheet.mesticoImportacaoAntiga = true
+                sheet.mesticoMigracaoAquatica = false
                 -- A importação tem fluxo próprio e não deve consumir nem
                 -- depender da autorização genérica de reajuste do mestre.
                 sheet.mesticoReajusteAutorizado = false
@@ -2832,6 +2833,65 @@
         -- 2 pts = escolhe todas.
         -- =================================================================
         local detalheRacaAtual = nil -- nome da raca sendo exibida no popup agora
+        local RACA_AQUATICA_LEGADA = "Sereias e Tritões"
+
+        -- Ate a v0.53.31 as duas racas aquaticas ocupavam uma unica entrada.
+        -- Nao existe conversao automatica segura: o texto antigo nao guarda
+        -- se o personagem era Sereia ou Tritao. A aba de Raca mostra dois
+        -- botoes de migracao e so troca o lado que ainda carrega o nome
+        -- legado (principal primeiro, secundaria depois).
+        local function ladoMigracaoAquaticaPendente()
+            if sheet == nil then return nil end
+            if tostring(sheet.raca or "") == RACA_AQUATICA_LEGADA then return "principal" end
+            if tostring(sheet.mesticoRacaSecundaria or "") == RACA_AQUATICA_LEGADA then return "secundaria" end
+            return nil
+        end
+
+        function migracaoAquaticaPendente()
+            return ladoMigracaoAquaticaPendente() ~= nil
+        end
+
+        function migracaoAquaticaMesticoAtiva()
+            return sheet ~= nil and sheet.mesticoMigracaoAquatica == true
+        end
+
+        function migrarRacaAquaticaAntiga(nomeNovo)
+            if sheet == nil then return end
+            if nomeNovo ~= "Sereias" and nomeNovo ~= "Tritões" then return end
+            local lado = ladoMigracaoAquaticaPendente()
+            if lado == nil then return end
+
+            local eraMestico = contextoRacial().temMestico
+                and ((tonumber(sheet.mesticoQtd) or 0) > 0
+                     or tostring(sheet.mesticoRacaSecundaria or "") ~= "")
+
+            NDB.beginUpdate(sheet)
+            if lado == "principal" then
+                sheet.raca = nomeNovo
+            else
+                sheet.mesticoRacaSecundaria = nomeNovo
+            end
+            if eraMestico then
+                -- O pool antigo tinha oito caracteristicas misturadas. Ele
+                -- nao pode ser filtrado no escuro: o jogador registra de novo
+                -- as que realmente vieram da ficha anterior, sem nova rolagem.
+                sheet.mesticoImportacaoAntiga = true
+                sheet.mesticoMigracaoAquatica = true
+                sheet.mesticoReajusteAutorizado = false
+            end
+            NDB.endUpdate(sheet)
+
+            aplicarAtributosBaseRaciais()
+            atualizarBlocoRaca()
+            aplicarConcessoes()
+            pcall(function() sincronizarHabilidadesRaciaisConcedidas() end)
+            recalcularTudo()
+
+            if eraMestico then
+                avisarMestico("Raça aquática separada. Abra a herança e registre novamente as características antigas; nenhuma será rolada de novo.", COR.gold)
+                abrirPopupMestico()
+            end
+        end
 
         -- Le, na lista de qualidades da ficha, se o personagem tem as
         -- qualidades que liberam racas e com quantos pontos (tier).
@@ -3056,7 +3116,7 @@
             -- linha ela ficava na aba de Habilidades depois da troca: quem
             -- sincronizava era so o botao da faccao e a abertura da ficha, e
             -- trocar de raca nao passa por nenhum dos dois.
-            pcall(function() sincronizarHabilidadeDaTribo() end)
+            pcall(function() sincronizarHabilidadesRaciaisConcedidas() end)
             atualizarBlocoRaca()
             atualizarBlocoHabilidades()
             recalcularTudo()
@@ -3362,6 +3422,9 @@
         end
 
         local function qtdEscolhasPermitidas()
+            if importacaoMesticoAntigoAtiva() then
+                return totalCaracsMesticoAtual()
+            end
             return CatalogoRacas.escolhasPorTierMestico(tierEfetivoMestico(), totalCaracsMesticoAtual())
         end
 
@@ -3430,6 +3493,12 @@
                     local marcado = estaEscolhido(i)
                     local prefixo = ""
                     if travado then prefixo = "[LACRADA]  "
+                    elseif marcado and importando then
+                        local ordem = 0
+                        for pos, idx in ipairs(escolhasMestico) do
+                            if idx == i then ordem = pos; break end
+                        end
+                        prefixo = "[" .. tostring(ordem) .. "]  "
                     elseif marcado then prefixo = "[X]  " end
                     if lblNome ~= nil then
                         lblNome:setText(prefixo .. dado.nome .. "   (" .. dado.origem .. ")")
@@ -3601,10 +3670,17 @@
                 local permitidas = qtdEscolhasPermitidas()
                 local txt
                 if importacaoMesticoAntigoAtiva() then
-                    txt = "MIGRAÇÃO DE FICHA ANTIGA. Marque as " .. tostring(totalCaracsMesticoAtual())
-                        .. " características que já foram roladas na ficha anterior, equilibradas entre as duas raças. "
-                        .. "Quando o total for ímpar, você decide qual raça fornece a característica extra. "
-                        .. "Ao confirmar, a automação apenas registra essas escolhas e mantém a herança lacrada; nenhuma nova rolagem será feita."
+                    txt = "MIGRAÇÃO DE FICHA ANTIGA. Marque, na ordem, as " .. tostring(totalCaracsMesticoAtual())
+                        .. " características que já pertenciam ao personagem. "
+                    if migracaoAquaticaMesticoAtiva() then
+                        local tier = tonumber(sheet.mesticoLacreTier) or contextoRacial().tierMestico
+                        local livres = CatalogoRacas.escolhasPorTierMestico(tier, totalCaracsMesticoAtual())
+                        txt = txt .. "A separação entre Sereias e Tritões preservará o tier " .. tostring(tier)
+                            .. " de Mestiço: as primeiras " .. tostring(livres) .. " marcações ficarão como ESCOLHIDAS e as demais como SORTEADAS E LACRADAS. "
+                    else
+                        txt = txt .. "Distribua de forma equilibrada entre as duas raças; no total ímpar, você decide qual raça fornece a característica extra. "
+                    end
+                    txt = txt .. "Ao confirmar, a automação apenas registra o resultado; nenhuma nova rolagem será feita."
                     self.popMest_lblRegra:setFontColor(COR.gold)
                 elseif mesticagemLacrada() then
                     txt = "HERANÇA LACRADA. As sorteadas estão fixas; você pode trocar apenas as "
@@ -3641,7 +3717,7 @@
             else
                 if #escolhasMestico >= permitidas then return end -- ja no limite
                 local total = totalCaracsMesticoAtual()
-                if permitidas >= total and total > 0 then
+                if permitidas >= total and total > 0 and tierEfetivoMestico() >= 2 then
                     local origem = poolMestico[indice].origem
                     local mesmaOrigem = 0
                     for _, idx in ipairs(escolhasMestico) do
@@ -3679,6 +3755,7 @@
             sheet.mesticoQtd = #resultado
             NDB.endUpdate(sheet)
             aplicarAtributosBaseRaciais()
+            pcall(function() sincronizarHabilidadesRaciaisConcedidas() end)
         end
 
         -- Confirma. Dois caminhos bem diferentes:
@@ -3687,7 +3764,7 @@
         --                 as sorteadas. Nao ha rolagem nenhuma aqui.
         function confirmarMesticagem()
             if sheet == nil or #poolMestico == 0 then return end
-            if not podeEditarCriacao() then
+            if not podeEditarCriacao() and not importacaoMesticoAntigoAtiva() then
                 if self.popMestico ~= nil then self.popMestico:close() end
                 return
             end
@@ -3712,9 +3789,15 @@
                 if #escolhasMestico ~= total then return end
                 local resultado = {}
                 local nomes = {}
-                for _, idx in ipairs(escolhasMestico) do
+                local migracaoAquatica = migracaoAquaticaMesticoAtiva()
+                local tierPreservado = tonumber(sheet.mesticoLacreTier) or contextoRacial().tierMestico
+                local qtdEscolhidasPreservadas = migracaoAquatica
+                    and CatalogoRacas.escolhasPorTierMestico(tierPreservado, total)
+                    or total
+                for pos, idx in ipairs(escolhasMestico) do
                     local c = poolMestico[idx]
-                    table.insert(resultado, {nome = c.nome, descricao = c.descricao, origem = c.origem, modo = "Escolhida"})
+                    local modo = (pos <= qtdEscolhidasPreservadas) and "Escolhida" or "Sorteada"
+                    table.insert(resultado, {nome = c.nome, descricao = c.descricao, origem = c.origem, modo = modo})
                     table.insert(nomes, c.nome .. " (" .. c.origem .. ")")
                 end
                 gravarCaracsMestico(resultado)
@@ -3725,12 +3808,14 @@
                 sheet.mesticoLacre = true
                 sheet.mesticoLacreAutor = autor
                 sheet.mesticoLacreData = quando
-                sheet.mesticoLacreTier = 2
+                sheet.mesticoLacreTier = migracaoAquatica and tierPreservado or 2
                 sheet.mesticoLacreTotal = total
                 sheet.mesticoRerollAutorizado = false
                 sheet.mesticoReajusteAutorizado = false
                 sheet.mesticoImportacaoAntiga = false
+                sheet.mesticoMigracaoAquatica = false
                 NDB.endUpdate(sheet)
+                pcall(function() sincronizarHabilidadesRaciaisConcedidas() end)
 
                 publicarNoChat(anuncio("mesticagem", "MESTIÇAGEM IMPORTADA",
                     nomeDoPersonagem() .. " registrou " .. tostring(total) .. " características já roladas na ficha antiga, sem nova rolagem: "
@@ -3810,6 +3895,7 @@
             sheet.mesticoRerollAutorizado = false
             sheet.mesticoReajusteAutorizado = false
             sheet.mesticoImportacaoAntiga = false
+            sheet.mesticoMigracaoAquatica = false
             NDB.endUpdate(sheet)
 
             -- ===== PUBLICA NA MESA =====
@@ -3932,6 +4018,7 @@
             sheet.mesticoRerollAutorizado = true
             sheet.mesticoReajusteAutorizado = false
             sheet.mesticoImportacaoAntiga = false
+            sheet.mesticoMigracaoAquatica = false
             NDB.endUpdate(sheet)
 
             publicarNoChat(anuncio("mesticagem", "LACRE DE MESTIÇAGEM QUEBRADO",
@@ -3975,6 +4062,7 @@
             sheet.mesticoRerollAutorizado = false
             sheet.mesticoReajusteAutorizado = false
             sheet.mesticoImportacaoAntiga = false
+            sheet.mesticoMigracaoAquatica = false
             -- Se o lacre tinha sido quebrado e o sorteio ainda nao foi refeito,
             -- volta a lacrar com os dados que ja existem.
             if sheet.mesticoLacre ~= true and (tonumber(sheet.mesticoQtd) or 0) > 0 then
@@ -4007,6 +4095,8 @@
             end
             sheet.mesticoQtd = 0
             sheet.mesticoRacaSecundaria = ""
+            sheet.mesticoImportacaoAntiga = false
+            sheet.mesticoMigracaoAquatica = false
             NDB.endUpdate(sheet)
             escolhasMestico = {}
             travadosMestico = {}
@@ -4042,7 +4132,7 @@
             -- E a habilidade de faccao sai com ela: sem esta chamada a
             -- "Forma bestial lupina" ficava na aba de Habilidades de uma
             -- ficha sem raca nenhuma.
-            pcall(function() sincronizarHabilidadeDaTribo() end)
+            pcall(function() sincronizarHabilidadesRaciaisConcedidas() end)
             atualizarBlocoHabilidades()
             if mesticagemLacrada() then
                 atualizarBlocoRaca()
@@ -4069,6 +4159,19 @@
             end
 
             local dados = (nomeAtual ~= "") and CatalogoRacas.buscarPorNome(nomeAtual) or nil
+
+            local ladoMigracao = ladoMigracaoAquaticaPendente()
+            if self.abaRaca_secMigracaoAquatica ~= nil then
+                pcall(function()
+                    self.abaRaca_secMigracaoAquatica:setHeight(ladoMigracao and 92 or 0)
+                end)
+            end
+            if ladoMigracao and self.abaRaca_lblMigracaoAquatica ~= nil then
+                local onde = (ladoMigracao == "principal") and "raça principal" or "segunda raça da herança mestiça"
+                self.abaRaca_lblMigracaoAquatica:setText(
+                    "Esta ficha ainda usa a entrada antiga \"Sereias e Tritões\" como " .. onde .. ". "
+                    .. "Escolha qual das duas raças ela sempre foi; a decisão substitui apenas essa entrada antiga.")
+            end
 
             -- Situacao / liberacao
             if self.abaRaca_lblStatus ~= nil then
@@ -4125,7 +4228,8 @@
                     self.abaRaca_secMestico:setHeight(ehMestico and 124 or 0)
                 end)
             end
-            local caracsMestico = ehMestico and caracteristicasMesticoDefinidas() or {}
+            local caracsMestico = ehMestico and not migracaoAquaticaMesticoAtiva()
+                and caracteristicasMesticoDefinidas() or {}
             local usandoMestico = (ehMestico and #caracsMestico > 0)
 
             local lacrada = mesticagemLacrada()
@@ -5203,7 +5307,8 @@
             ["Aarakocras"]      = "imagens/brasao_raca_aarakocras.png",
             ["Harpias"]         = "imagens/brasao_raca_harpias.png",
             ["Giffs"]           = "imagens/brasao_raca_giffs.png",
-            ["SereiaseTritoes"] = "imagens/brasao_raca_sereiasetritoes.png",
+            ["Sereias"]          = "imagens/brasao_raca_sereias.png",
+            ["Tritoes"]          = "imagens/brasao_raca_tritoes.png",
             ["Centauros"]       = "imagens/brasao_raca_centauros.png",
             ["Ghiscari"]        = "imagens/brasao_raca_ghiscari.png",
             ["Ninfas"]          = "imagens/brasao_raca_ninfas.png",
@@ -8732,7 +8837,7 @@
             {chave = "rac_manipuladores", fonte = {tipo = "caracRacial", nome = "Manipuladores"},
              efeito = {tipo = "atributoRacial", atributos = {"Manipulação"}, valor = 1, teto = 10},
              rotulo = "Manipuladores"},
-            -- Lizarianos, Selkies, Sereias e Tritões, Lobisomens, Minotauros, Ursaris
+            -- Lizarianos, Selkies, Tritões, Lobisomens, Minotauros, Ursaris
             {chave = "rac_superforca", fonte = {tipo = "caracRacial", nome = "Super força"},
              efeito = {tipo = "atributoRacial", atributos = {"Força"}, valor = 1, teto = 10},
              rotulo = "Super força"},
@@ -8884,17 +8989,17 @@
             sheet.concessoesAplicadas = table.concat(partes, ";")
         end
 
-        -- Consulta em DUAS fontes, nesta ordem:
-        --   1. o catalogo da raca gravada em sheet.raca;
-        --   2. a recordList de caracteristicas da aba.
+        -- Consulta a fonte certa para cada personagem:
+        --   1. Mestiço: somente o resultado gravado da herança;
+        --   2. puro: catálogo da raça e, defensivamente, a recordList da aba.
         --
         -- A recordList e reconstruida quando a aba de Raca desenha, e nao no
         -- instante em que a raca muda. Depender so dela fazia os bonus
         -- entrarem apenas depois de fechar e reabrir a ficha - o catalogo, ao
         -- contrario, responde assim que sheet.raca e gravado.
-        -- A lista continua sendo consultada porque e ela que guarda as
-        -- caracteristicas ESCOLHIDAS de um mestico, que nao saem do catalogo
-        -- de uma raca so.
+        -- O resultado de Mestiço vive nos campos mestCarac*; consultar antes
+        -- o catálogo da raça principal concederia características que não
+        -- foram escolhidas nem sorteadas.
         -- As alternativas exclusivas da raca ("X OU Y" no livro), se houver.
         function alternativasExclusivasDaRaca(dados)
             if dados == nil then return {} end
@@ -8929,7 +9034,7 @@
             -- habilidade progressiva correspondente entra (ou sai) junto.
             -- Para as outras racas isto nao faz nada: quem decide e o
             -- catalogo, pelo campo `traco` da habilidade.
-            pcall(function() sincronizarHabilidadeDaTribo() end)
+            pcall(function() sincronizarHabilidadesRaciaisConcedidas() end)
             recalcularTudo()
             atualizarBlocoRaca()
         end
@@ -8987,6 +9092,19 @@
 
         function temCaracRacial(nome)
             if sheet == nil then return false end
+
+            -- Para um Mestiço, a fonte da verdade e a herança gravada, nao
+            -- a lista completa da raça principal. Consultar o catálogo antes
+            -- da seleção concedia silenciosamente todos os bônus da raça 1.
+            local ctx = contextoRacial()
+            if ctx.temMestico then
+                if migracaoAquaticaMesticoAtiva() then return false end
+                local definidas = caracteristicasMesticoDefinidas()
+                for _, car in ipairs(definidas) do
+                    if tostring(car.nome or "") == nome then return true end
+                end
+                return false
+            end
 
             -- Defensivo: se o catalogo nao estiver carregado, cai direto na
             -- lista em vez de estourar. Sem isso, um erro aqui era engolido
@@ -10233,6 +10351,69 @@
             for _, r in ipairs(CatalogoProgressiva.RANKS) do
                 novo["efeitoRank" .. r] = tostring(desejada.blocos[r] or "")
             end
+            ajustarAlturaListaHabilidades()
+        end
+
+        -- Habilidades que uma característica racial concede diretamente.
+        -- O marcador não começa por "auto:": esse prefixo pertence aos slots
+        -- de desconto de poder/subclasse e seria consumido pelo sincronizador
+        -- econômico. Aqui o registro inteiro é a concessão racial.
+        local ORIGEM_HABILIDADE_RACIAL = "racial:Sereias"
+
+        function sincronizarHabilidadesRaciaisConcedidas()
+            if sheet == nil or self.listaHabilidades == nil then return end
+
+            -- Mantém também a automação já existente das tribos de Lobisomem.
+            sincronizarHabilidadeDaTribo()
+
+            local alterou = false
+            for _, spec in ipairs(CatalogoProgressiva.HABILIDADES_RACIAIS_CONCEDIDAS or {}) do
+                local temDireito = temCaracRacial(spec.traco)
+                local automatica = nil
+                local mesmoNome = nil
+                local duplicadas = {}
+                for _, no in ipairs(todasHabilidades()) do
+                    if tostring(no.nome or "") == spec.nome then
+                        mesmoNome = mesmoNome or no
+                        if tostring(no.origemGratis or "") == ORIGEM_HABILIDADE_RACIAL then
+                            if automatica == nil then automatica = no
+                            else table.insert(duplicadas, no) end
+                        end
+                    end
+                end
+
+                for _, no in ipairs(duplicadas) do
+                    NDB.deleteNode(no)
+                    alterou = true
+                end
+
+                if temDireito and mesmoNome == nil then
+                    local novo = self.listaHabilidades:append()
+                    if novo ~= nil then
+                        novo.tipo = "universal"
+                        novo.nome = spec.nome
+                        novo.rank = "E"
+                        novo.tags = spec.tags
+                        novo.energia = ""
+                        novo.descricao = spec.descricao
+                        novo.efeito = "Progressão não publicada no material recebido; blocos de rank disponíveis para edição da mesa."
+                        novo.progressiva = true
+                        novo.ativa = false
+                        novo.custoPago = 0
+                        novo.custoManual = 0
+                        novo.origemGratis = ORIGEM_HABILIDADE_RACIAL
+                        novo.rotuloGratis = "Herança racial"
+                        alterou = true
+                    end
+                elseif not temDireito and automatica ~= nil then
+                    -- Remove só o registro criado pela ficha. Uma habilidade
+                    -- homônima escrita manualmente pelo mestre fica intacta.
+                    NDB.deleteNode(automatica)
+                    alterou = true
+                end
+            end
+
+            if alterou then reconstruirListaHabilidades() end
             ajustarAlturaListaHabilidades()
         end
 
@@ -15401,7 +15582,7 @@
             -- habilidade instalada — e o caso de toda ficha anterior a
             -- v0.51.0. Sincronizar aqui instala a que falta sem tocar na que
             -- ja existe.
-            pcall(function() sincronizarHabilidadeDaTribo() end)
+            pcall(function() sincronizarHabilidadesRaciaisConcedidas() end)
             atualizarBlocoClasse()
             atualizarBlocoPoderes()
             atualizarBlocoHabilidades()
@@ -15452,7 +15633,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.31" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.32" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -17177,6 +17358,25 @@
                             </rectangle>
                         </layout>
                     </layout>
+
+                    <!-- MIGRACAO v0.53.32: a entrada antiga juntava duas
+                         racas. Altura 0 em fichas novas; fichas antigas
+                         precisam declarar qual das duas sempre foram. -->
+                    <rectangle name="abaRaca_secMigracaoAquatica" align="top" height="0" color="#11150F" strokeColor="#C9A24B" strokeSize="1" xradius="4" yradius="4" margins="{bottom=8}">
+                        <layout align="client" margins="{left=12,right=12,top=7,bottom=7}">
+                            <label name="abaRaca_lblMigracaoAquatica" align="top" height="40" text="" fontFamily="EB Garamond" fontColor="#E8DCBE" fontSize="12" wordWrap="true" vertTextAlign="leading" hitTest="false"/>
+                            <layout align="client" margins="{top=5}">
+                                <rectangle align="left" width="250" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" margins="{right=8}" cursor="handPoint" hint="Migrar a entrada antiga para Sereias">
+                                    <event name="onClick"><![CDATA[migrarRacaAquaticaAntiga("Sereias");]]></event>
+                                    <label align="client" text="ERA SEREIA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
+                                <rectangle align="left" width="250" color="#12181C" strokeColor="#7FA8B8" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Migrar a entrada antiga para Tritões">
+                                    <event name="onClick"><![CDATA[migrarRacaAquaticaAntiga("Tritões");]]></event>
+                                    <label align="client" text="ERA TRITÃO" fontFamily="Marcellus SC" fontColor="#7FA8B8" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                </rectangle>
+                            </layout>
+                        </layout>
+                    </rectangle>
 
                     <!-- O "OU" DO LIVRO (v0.42.1, B-04): raca cujo texto da duas
                          caracteristicas em alternativa ("Magia inata OU Conexao
@@ -25156,9 +25356,13 @@
                                     <event name="onClick"><![CDATA[selecionarDetalheRaca("Ninfas");]]></event>
                                     <label align="client" text="Ninfas" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="12" fontStyle="bold" vertTextAlign="center" margins="{left=10}" hitTest="false"/>
                                 </rectangle>
-                                <rectangle name="rectLinhaRaca_SereiaseTritoes" align="top" height="32" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" cursor="handPoint" hint="Ver detalhes de Sereias e Tritões">
-                                    <event name="onClick"><![CDATA[selecionarDetalheRaca("Sereias e Tritões");]]></event>
-                                    <label align="client" text="Sereias e Tritões" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="12" fontStyle="bold" vertTextAlign="center" margins="{left=10}" hitTest="false"/>
+                                <rectangle name="rectLinhaRaca_Sereias" align="top" height="32" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" cursor="handPoint" hint="Ver detalhes de Sereias">
+                                    <event name="onClick"><![CDATA[selecionarDetalheRaca("Sereias");]]></event>
+                                    <label align="client" text="Sereias" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="12" fontStyle="bold" vertTextAlign="center" margins="{left=10}" hitTest="false"/>
+                                </rectangle>
+                                <rectangle name="rectLinhaRaca_Tritoes" align="top" height="32" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" cursor="handPoint" hint="Ver detalhes de Tritões">
+                                    <event name="onClick"><![CDATA[selecionarDetalheRaca("Tritões");]]></event>
+                                    <label align="client" text="Tritões" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="12" fontStyle="bold" vertTextAlign="center" margins="{left=10}" hitTest="false"/>
                                 </rectangle>
                                 <rectangle name="rectLinhaRaca_Satiros" align="top" height="32" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=4}" cursor="handPoint" hint="Ver detalhes de Sátiros">
                                     <event name="onClick"><![CDATA[selecionarDetalheRaca("Sátiros");]]></event>
@@ -25469,9 +25673,13 @@
                                     <event name="onClick"><![CDATA[escolherRacaSecundariaMestico("Ninfas");]]></event>
                                     <label align="client" text="Ninfas" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 </rectangle>
-                                <rectangle name="rectMestRaca_SereiaseTritoes" align="top" height="30" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Usar Sereias e Tritões como segunda raça">
-                                    <event name="onClick"><![CDATA[escolherRacaSecundariaMestico("Sereias e Tritões");]]></event>
-                                    <label align="client" text="Sereias e Tritões" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                                <rectangle name="rectMestRaca_Sereias" align="top" height="30" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Usar Sereias como segunda raça">
+                                    <event name="onClick"><![CDATA[escolherRacaSecundariaMestico("Sereias");]]></event>
+                                    <label align="client" text="Sereias" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                                </rectangle>
+                                <rectangle name="rectMestRaca_Tritoes" align="top" height="30" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Usar Tritões como segunda raça">
+                                    <event name="onClick"><![CDATA[escolherRacaSecundariaMestico("Tritões");]]></event>
+                                    <label align="client" text="Tritões" fontFamily="Cinzel" fontColor="#E6E9E4" fontSize="11" fontStyle="bold" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 </rectangle>
                                 <rectangle name="rectMestRaca_Satiros" align="top" height="30" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=3}" cursor="handPoint" hint="Usar Sátiros como segunda raça">
                                     <event name="onClick"><![CDATA[escolherRacaSecundariaMestico("Sátiros");]]></event>

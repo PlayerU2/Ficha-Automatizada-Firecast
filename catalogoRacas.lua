@@ -4,8 +4,8 @@
 --
 -- CATEGORIAS E LIBERACAO (regra da mesa):
 --   'Jogavel'    (10) - livres, sem restricao (salvo o que a propria raca disser)
---   'NaoJogavel' (12) - exigem a qualidade 'Mestico' OU 'Sangue das racas
---                       antigas' para poderem ser escolhidas
+--   'NaoJogavel' (13) - exigem uma qualidade que libere especificamente a
+--                       raca, ou autorizacao expressa do mestre
 --   'Primordial' (7)  - NUNCA disponiveis; so com autorizacao explicita do
 --                       mestre (marcada na propria ficha)
 --
@@ -668,8 +668,8 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
   São uma raça marítima por excelência, sejam aqueles que vivem em Submeria, sejam aqueles que vivem espalhados pelas cidades portuárias ao redor do mundo controlando a vasta rede de comércio que se estende por todas as águas conhecidas. Suas embarcações, conhecidas por sua velocidade e poder de fogo, patrulham os mares em busca de oportunidades comerciais e de pilhagem, o que lhes rendeu uma reputação temida como os melhores corsários de Petrichor. São mercadores habilidosos e mercenários conhecidos pela astúcia em negociações, frequentemente obtendo vantagem sobre seus parceiros comerciais com suas habilidades de barganha e uma propensão para truques e enganações.    Sua sociedade é fortemente hierárquica, com uma elite de capitães e mercadores que comanda o respeito e a lealdade de seus pares e subordinados. Embora sua aparência possa sugerir uma natureza bruta, os senhores hipopótamos são, de fato, muito astutos e manipuladores, usando sua inteligência para manobrar em situações complexas e garantir vantagem sobre seus adversários. Este estilo de vida de constante movimentação e exploração os moldou em um povo adaptável, sempre pronto para aproveitar a próxima grande oportunidade apresentada.   O conceito de 'sangue azul' é desconhecido aos Giff, que elegem seus líderes através do voto e acreditam fortemente que o sucesso deve estar ao alcance daquele que for mais astuto para atingi-lo. Enquanto muitas raças olham com admiração para aqueles que vem de famílias nobres de linhagens antigas, para esta espécie nada mais admirável do que um homem ou mulher que veio do nada e ascendeu.]==],
     },
     {
-        chave = "SereiaseTritoes",
-        nome = "Sereias e Tritões",
+        chave = "Sereias",
+        nome = "Sereias",
         categoria = "NaoJogavel",
         origem = "Aslot",
         tipo = "Aquático",
@@ -701,8 +701,46 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
             },
             {
                 nome = "Perda de identidade",
-                descricao = [==[Sempre que utilizar as habilidades progressivas "Metamorfose sereiana" e "Manipulação de memórias" role 1d20, e caso tire 1 você perderá uma memória importante da sua vida. Tritões:]==],
+                descricao = [==[Sempre que utilizar as habilidades progressivas "Metamorfose sereiana" e "Manipulação de memórias" role 1d20, e caso tire 1 você perderá uma memória importante da sua vida.]==],
             },
+        },
+        tracos = [==[[Manipuladoras] receba 1 ponto adicional no atributo Manipulação na criação da ficha, além disso o limite do mesmo para as Sereias passa a ser 10 ao invés de 8.
+[Metamorfose sereiana] receba a habilidade progressiva "Metamorfose sereiana", que permite as sereias altarem sua aparência completamente, além da voz e até trejeitos.
+[Manipulação das memórias] receba a habilidade progressiva "Manipulação das memórias", que permite as sereias manipularem as memórias de seus alvos e até em si mesmas.
+[Fisiologia subaquática] são criaturas que vivem tanto debaixo da água quanto na superfície, sem receber nenhum tipo de redutor tanto pela questão da respiração quanto pela pressão da água.
+[Perda de identidade] sempre que utilizar as habilidades progressivas "Metamorfose sereiana" e "Manipulação de memórias" role 1d20, e caso tire 1 você perderá uma memória importante da sua vida.]==],
+        lore = [==[Fisiologia
+  As sereias e os tritões descendem da deusa Aslot, como representações da vida nas profundezas dos oceanos, multifacetados entre uma raça somente de fêmeas e outra raça somente de machos. As sereias possuem um corpo esguio, coberto por escamas e com cauda longa de peixe, cabelos normalmente que variam nos tons castanhos, ruivos, negros ou loiros e olhos de tonalidade mais claras. Embora de aparência exótico, suas curvas são bem delineadas e o rosto de uma sereia está entre os mais belos. Naturalmente possuem capacidade de viver embaixo da água e por um tempo limitado na superfície, com uma expectativa de vida que varia de 70 a 90 anos. Um dos principais aspectos das sereias é sua voz, belíssimas e capazes de seduzir até o mais resistente dos mortais. 
+  Já os tritões também possuem um corpo com estrutura similar, porém o corpo esguio da lugar a músculos, sendo considerados seres com uma estrutura muscular adaptada para o combate, possuem nadadeiras nas laterais de suas cabeças e as escamas são menos frequentes, além de terem capacidade de dividirem suas caudas em um par de pernas quando estão na superfície. Sua estatura varia de 1,90m a 2,30 dependendo da genética, seus olhos variam em tons de amarelo, azul ou avermelhado e seus cabelos podem ser das cores e estilos mais variados. Assim como sua contraparte feminina, os tritões também possuem uma expectativa de vida de 70 a 110 anos.
+
+ História
+  As Sereias e os Tritões são os filhos de Aslot, a deusa das profundezas, uma figura misteriosa e multifacetada. Nascida da união proibida entre o deus Isydras e uma figura desconhecida, Aslot foi rejeitada e abandonada nas águas mais escuras e profundas do mundo. Seu corpo, moldado pelas sombras e luzes efêmeras das profundezas, tornou-se fluido e mutável, e ela cresceu em completa solidão, desenvolvendo poderes que a tornaram uma imitadora perfeita de formas e desejos. Os filhos de Aslot herdaram sua natureza mutável e ambígua. Enquanto as Sereias possuem o dom de adaptar-se à terra e ao mar, os Tritões carregam a força e a ferocidade dos grandes predadores oceânicos. Ambos são reflexos da natureza de Aslot: ora sedutora e encantadora, ora implacável e mortal.
+  A disputa pelo oricalco é a principal razão do conflito entre Tritões e Selkies, mas também há ressentimentos culturais e estratégicos entre as duas raças. Enquanto os Tritões buscam expandir seus territórios marítimos, as Sereias visam o controle político e social dos territórios terrestres, criando um equilíbrio instável entre as duas abordagens. Apesar de compartilharem a mesma origem divina, Sereias e Tritões raramente cooperam. Suas diferenças culturais e métodos opostos de agir frequentemente geram tensões e desentendimentos.
+
+ Estilo de Vida
+  Os Tritões vivem em tribos altamente competitivas, cada uma liderada por aquele que se prova o mais forte. Lutas internas são comuns, pois fraqueza não é tolerada, e líderes fracos são rapidamente desafiados e substituídos. Uma rivalidade histórica existe entre os Tritões e os Selkies, centrada no controle das minas de oricalco. As guerras entre essas raças são marcadas por emboscadas e batalhas ferozes nos territórios submarinos. Para os Tritões, a guerra é parte de sua identidade. Eles treinam desde cedo para o combate e valorizam força, disciplina e instinto de batalha.
+ As Sereias adotam uma abordagem mais sutil, utilizando sua habilidade de mudar de forma e personalidade para se infiltrarem nas sociedades terrestres. Elas atuam como espiãs, políticas e nobres, acumulando influência para beneficiar sua espécie. Com suas capacidades de adaptação, as Sereias criaram uma rede extensa de contatos e aliados em vilas costeiras, cidades e até reinos interiores. Sua influência muitas vezes se espalha sem que seus alvos percebam. Ao contrário dos Tritões, as Sereias não têm uma estrutura hierárquica rígida. Elas operam de forma descentralizada, unidas por um objetivo comum: expandir sua influência e proteger seus próprios interesses.]==],
+    },
+    {
+        chave = "Tritoes",
+        nome = "Tritões",
+        categoria = "NaoJogavel",
+        origem = "Aslot",
+        tipo = "Aquático",
+        alinhamento = "Caótico neutro",
+        jogavel = true,
+        -- A lista fechada de "Sangue das raças antigas" cita Sereia, não
+        -- Tritão. Tritões continuam disponíveis como segunda raça de Mestiço
+        -- ou por autorização expressa do mestre, sem ampliar a qualidade por
+        -- interpretação da ficha.
+        sangueAntigas = false,
+        mesticoPermitido = true,
+        deslocamentoNum = 8,
+        dadoVidaNum = 10,
+        deslocamentoTexto = [==[8m (terrestre) / 24m (aquático)]==],
+        dadoVidaTexto = [==[1d10]==],
+        deslocamentoModos = { terrestre = 8, nado = 24 },
+        caracteristicas = {
             {
                 nome = "Super força",
                 descricao = [==[Receba 1 ponto adicional no atributo Força na criação da ficha, além disso o limite do mesmo para os Tritões passa a ser 10 ao invés de 8]==],
@@ -716,27 +754,13 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
                 descricao = [==[São criaturas que vivem tanto debaixo da água quanto na superfície, sem receber nenhum tipo de redutor tanto pela questão da respiração quanto pela pressão da água]==],
             },
         },
-        tracos = [==[[Manipuladoras] receba 1 ponto adicional no atributo Manipulação na criação da ficha, além disso o limite do mesmo para as Sereias passa a ser 10 ao invés de 8.
-[Metamorfose sereiana] receba a habilidade progressiva "Metamorfose sereiana", que permite as sereias altarem sua aparência completamente, além da voz e até trejeitos.
-[Manipulação das memórias] receba a habilidade progressiva "Manipulação das memórias", que permite as sereias manipularem as memórias de seus alvos e até em si mesmas.
-[Fisiologia subaquática] são criaturas que vivem tanto debaixo da água quanto na superfície, sem receber nenhum tipo de redutor tanto pela questão da respiração quanto pela pressão da água.
-[Perda de identidade] sempre que utilizar as habilidades progressivas "Metamorfose sereiana" e "Manipulação de memórias" role 1d20, e caso tire 1 você perderá uma memória importante da sua vida.
-
-Tritões:
-[Super força] receba 1 ponto adicional no atributo Força na criação da ficha, além disso o limite do mesmo para os Tritões passa a ser 10 ao invés de 8.
+        tracos = [==[[Super força] receba 1 ponto adicional no atributo Força na criação da ficha, além disso o limite do mesmo para os Tritões passa a ser 10 ao invés de 8.
 [Instinto predatório] são capazes de sentir cheiro de sangue a (Nível x5) quilômetros de distância quando dentro da água.
 [Fisiologia subaquática] são criaturas que vivem tanto debaixo da água quanto na superfície, sem receber nenhum tipo de redutor tanto pela questão da respiração quanto pela pressão da água.]==],
-        lore = [==[Fisiologia
-  As sereias e os tritões descendem da deusa Aslot, como representações da vida nas profundezas dos oceanos, multifacetados entre uma raça somente de fêmeas e outra raça somente de machos. As sereias possuem um corpo esguio, coberto por escamas e com cauda longa de peixe, cabelos normalmente que variam nos tons castanhos, ruivos, negros ou loiros e olhos de tonalidade mais claras. Embora de aparência exótico, suas curvas são bem delineadas e o rosto de uma sereia está entre os mais belos. Naturalmente possuem capacidade de viver embaixo da água e por um tempo limitado na superfície, com uma expectativa de vida que varia de 70 a 90 anos. Um dos principais aspectos das sereias é sua voz, belíssimas e capazes de seduzir até o mais resistente dos mortais. 
-  Já os tritões também possuem um corpo com estrutura similar, porém o corpo esguio da lugar a músculos, sendo considerados seres com uma estrutura muscular adaptada para o combate, possuem nadadeiras nas laterais de suas cabeças e as escamas são menos frequentes, além de terem capacidade de dividirem suas caudas em um par de pernas quando estão na superfície. Sua estatura varia de 1,90m a 2,30 dependendo da genética, seus olhos variam em tons de amarelo, azul ou avermelhado e seus cabelos podem ser das cores e estilos mais variados. Assim como sua contraparte feminina, os tritões também possuem uma expectativa de vida de 70 a 110 anos.
-
- História
-  As Sereias e os Tritões são os filhos de Aslot, a deusa das profundezas, uma figura misteriosa e multifacetada. Nascida da união proibida entre o deus Isydras e uma figura desconhecida, Aslot foi rejeitada e abandonada nas águas mais escuras e profundas do mundo. Seu corpo, moldado pelas sombras e luzes efêmeras das profundezas, tornou-se fluido e mutável, e ela cresceu em completa solidão, desenvolvendo poderes que a tornaram uma imitadora perfeita de formas e desejos. Os filhos de Aslot herdaram sua natureza mutável e ambígua. Enquanto as Sereias possuem o dom de adaptar-se à terra e ao mar, os Tritões carregam a força e a ferocidade dos grandes predadores oceânicos. Ambos são reflexos da natureza de Aslot: ora sedutora e encantadora, ora implacável e mortal.
-  A disputa pelo oricalco é a principal razão do conflito entre Tritões e Selkies, mas também há ressentimentos culturais e estratégicos entre as duas raças. Enquanto os Tritões buscam expandir seus territórios marítimos, as Sereias visam o controle político e social dos territórios terrestres, criando um equilíbrio instável entre as duas abordagens. Apesar de compartilharem a mesma origem divina, Sereias e Tritões raramente cooperam. Suas diferenças culturais e métodos opostos de agir frequentemente geram tensões e desentendimentos.
-
- Estilo de Vida
-  Os Tritões vivem em tribos altamente competitivas, cada uma liderada por aquele que se prova o mais forte. Lutas internas são comuns, pois fraqueza não é tolerada, e líderes fracos são rapidamente desafiados e substituídos. Uma rivalidade histórica existe entre os Tritões e os Selkies, centrada no controle das minas de oricalco. As guerras entre essas raças são marcadas por emboscadas e batalhas ferozes nos territórios submarinos. Para os Tritões, a guerra é parte de sua identidade. Eles treinam desde cedo para o combate e valorizam força, disciplina e instinto de batalha.
- As Sereias adotam uma abordagem mais sutil, utilizando sua habilidade de mudar de forma e personalidade para se infiltrarem nas sociedades terrestres. Elas atuam como espiãs, políticas e nobres, acumulando influência para beneficiar sua espécie. Com suas capacidades de adaptação, as Sereias criaram uma rede extensa de contatos e aliados em vilas costeiras, cidades e até reinos interiores. Sua influência muitas vezes se espalha sem que seus alvos percebam. Ao contrário dos Tritões, as Sereias não têm uma estrutura hierárquica rígida. Elas operam de forma descentralizada, unidas por um objetivo comum: expandir sua influência e proteger seus próprios interesses.]==],
+        -- O capítulo traz a fisiologia, história e estilo de vida sob o mesmo
+        -- cabeçalho. A referência é ligada à das Sereias logo após a tabela,
+        -- sem duplicar um texto longo que precisa permanecer idêntico.
+        lore = "",
     },
     {
         chave = "Centauros",
@@ -1371,6 +1395,19 @@ O juramento de ordenação dos cavaleiros de Asta: "Eu juro, por minha honra e p
   São seres migratórios, com um modo de vida semi-nômade e sem rotas fixas, guiados por uma compreensão intuitiva das necessidades do ambiente e das correntes mágicas que fluem no mundo. Tal jornada constante lhes permite manter o equilíbio em diversas áreas por atuarem como catalisadores de cura e renovação por onde quer que passem.   Predominantemente solitários em sua natureza, é possível entretanto encontrar pequenos grupos familiares, formados por uma égua, um potro e talvez um ou dois companheiros próximos. Não veem a solidão como um fardo, mas como uma expressão de sua independência e uma conexão direta com o mundo natural. Podem, porém, manter uma conexão empática entre si, o que permite que compartilhem conhecimentos e avisos. Não há uma hierarquia, mas sim os mais antigos e sábios atuam como conselheiros em momentos de necessidade.   Sua conexão com a vida e seu mundo é profunda e multifacetada, sendo capazes de interagir com as correntes de vida que permeiam o mundo e usam tal habilidade para purificar águra e solo contaminados, curar doenças e ferimentos com um simples toque de seu chifres e, em alguns casos, até mesmo ressuscitam plantas e pequenos animais. Consideram tal atividade como sua responsabilidade existencial.   Eles se reproduzem apenas em momentos de grande necessidade, quando precisa-se de novos guardiões para proteger territórios e seres. O processo começa com o Chamado das Estrelas, um evento raro em que constelações específicas brilham incessantemente. Ou seja, o nascimento de um potro unicórnio é considerado um presságio de grande importância.   Devido à história de caça e traições que ocorreram no decorrer da existência, Unicórnios não interagem com mortais. Porém, pode acontecer de encontrarem aqueles que acreditam ser dignos de sua presença, como os seres de coração puro. Podem formam alianças com outras criaturas em momentos de necessidade para manter o equilíbrio da natureza.   O tempo de vida de um Unicórnio é um equilíbrio entre contemplação e ação. Longas horas podem ser passadas em meditação profunda, sintonizando-se com as energias da terra e do cosmos. Estes períodos de introspecção são intercalados com momentos de atividade intensa, seja para curar uma floresta doente, guiar um viajante perdido ou enfrentar uma ameaça ao equilíbrio natural.   São guardiões do conhecimento natural e mágico acumulado ao longo de eras, carregando consigo a sabedoria das antigas florestas e dos segredos da própria terra. Os unicórnios negros são ainda um mistério. Embora não sejam malignos, representam o lado mais introspectivo da divindade criadora. Vivem em isolamento extremo, atuando como mediadores entre o equilíbrio e o caos.]==],
     },
 }
+
+-- O livro apresenta as duas raças sob um cabeçalho de lore compartilhado,
+-- mas separa expressamente suas características. Mantemos uma única cópia do
+-- texto narrativo e dois blocos mecânicos independentes.
+do
+    local loreAquatico = nil
+    local tritoes = nil
+    for _, item in ipairs(CatalogoRacas.itens) do
+        if item.nome == "Sereias" then loreAquatico = item.lore end
+        if item.nome == "Tritões" then tritoes = item end
+    end
+    if tritoes ~= nil and loreAquatico ~= nil then tritoes.lore = loreAquatico end
+end
 
 function CatalogoRacas.buscarPorNome(nome)
     for _, item in ipairs(CatalogoRacas.itens) do

@@ -32,6 +32,25 @@ CatalogoProgressiva = {}
 
 CatalogoProgressiva.RANKS = {"E", "D", "C", "B", "A", "EX"}
 
+-- [1.6] Raças — Sereias. O livro concede estas duas habilidades
+-- progressivas, mas não publica os seis blocos de rank no material recebido.
+-- A ficha instala o registro na aba de Habilidades com a descrição oficial e
+-- deixa os blocos vazios/editáveis, em vez de inventar progressão ou custo.
+CatalogoProgressiva.HABILIDADES_RACIAIS_CONCEDIDAS = {
+    {
+        traco = "Metamorfose sereiana",
+        nome = "Metamorfose sereiana",
+        tags = "[Sereia], [Progressiva]",
+        descricao = "Permite às sereias alterarem sua aparência completamente, além da voz e até trejeitos.",
+    },
+    {
+        traco = "Manipulação das memórias",
+        nome = "Manipulação das memórias",
+        tags = "[Sereia], [Progressiva]",
+        descricao = "Permite às sereias manipularem as memórias de seus alvos e até em si mesmas.",
+    },
+}
+
 -- Nivel em que cada rank comeca (dadosSistema): E=1 D=4 C=8 B=12 A=16 EX=19.
 -- So para a ficha poder dizer "progride no nivel 12".
 CatalogoProgressiva.NIVEL_DO_RANK = {

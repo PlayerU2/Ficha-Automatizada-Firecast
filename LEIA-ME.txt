@@ -194,7 +194,7 @@ disser v0.53.28, o que esta rodando nao e este pacote.
     calculos.lua                        Hp, Mp, Ap, Pv, defesas, deslocamento
     catalogoPericias.lua                64 pericias por atributo
     catalogoQualidadesDefeitos.lua      qualidades e defeitos
-    catalogoRacas.lua                   29 racas
+    catalogoRacas.lua                   30 racas
     catalogoTracos.lua                  36 tracos de personalidade
     catalogoClasses.lua                 12 classes / 36 subclasses
     catalogoDeuses.lua                  30 divindades

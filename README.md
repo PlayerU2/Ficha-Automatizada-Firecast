@@ -9,7 +9,7 @@ número** — para o jogador conferir sem abrir o livro e o mestre auditar de
 relance.
 
 <p align="center">
-  <img alt="versão" src="https://img.shields.io/badge/versão-0.53.31-C9A24B">
+  <img alt="versão" src="https://img.shields.io/badge/versão-0.53.32-C9A24B">
   <img alt="Firecast SDK" src="https://img.shields.io/badge/Firecast%20SDK-3.7b-8A63C9">
   <img alt="Lua" src="https://img.shields.io/badge/Lua-5.3-000080">
 </p>
@@ -25,7 +25,7 @@ relance.
 | 1 | Perfil | Identidade, aspecto divino, traços de personalidade, XP com subida automática de nível |
 | 2 | Atributos & Perícias | Economia de pontos, limites por nível, rolagem pronta de cada perícia |
 | 3 | Qualidades & Defeitos | Economia de PQ/PD, tiers, efeitos numéricos automáticos |
-| 4 | Raça & Classe | 29 raças com escudo heráldico, mestiçagem lacrada, 12 classes e 36 subclasses |
+| 4 | Raça & Classe | 30 raças com escudo heráldico, mestiçagem lacrada, 12 classes e 36 subclasses |
 | 5 | Poderes & Habilidades | Kits das 18 divindades com kit, economia de pontos, construtor de habilidades |
 | 6 | Cálculos & Combate | Vida, Aura, Mana, Prana, Vitae, quatro defesas, movimento e ações |
 | 7 | Inventário | 250 entradas de loja, 64 encantamentos, oito slots de equipado, bolsa de moedas |
@@ -90,7 +90,7 @@ dadosSistema.lua              tabela de evolução: nível, rank, proficiência,
 catalogoItens.lua             250 entradas de loja (128 itens em seus níveis de qualidade)
 catalogoEncantamentos.lua     64 encantamentos em três classes
 catalogoPoderes.lua           49 poderes com progressão de 5 níveis
-catalogoRacas.lua             29 raças com características e bônus
+catalogoRacas.lua             30 raças com características e bônus
 catalogoQualidadesDefeitos.lua 49 qualidades e defeitos
 catalogoDeuses.lua            30 divindades e seus kits
 catalogoClasses.lua           12 classes, 36 subclasses
@@ -101,7 +101,7 @@ catalogoBestiario.lua         tipos, ranks e marcas das criaturas
 catalogoProgressiva.lua       progressões que dependem do nível
 itens/                        templates das linhas de lista (perícia, item, qualidade…)
 fonts/                        Cinzel, Cinzel Decorative, Marcellus SC, EB Garamond
-imagens/                      152 arquivos: selos divinos em dois tamanhos,
+imagens/                      172 arquivos: selos divinos em dois tamanhos,
                               escudos de raça, ícones de aba, atributos e combate
 sdk/                          SDK do Firecast, versionado de propósito: as baterias
                               em Lua rodam contra o SDK de verdade, não contra
