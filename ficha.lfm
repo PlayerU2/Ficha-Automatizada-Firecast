@@ -5536,9 +5536,35 @@
             return n(p.nivel)
         end
 
+        -- Livro [1.3], qualidade "Legado desperto": "receba um poder
+        -- adicional inicial ligado ao seu legado que será definido pelo
+        -- narrador da divindade." O narrador escolhe o poder; a ficha só
+        -- materializa UM nível 1 sem custo, no kit do Aspecto que representa
+        -- o legado. Não é ponto de poder comum: trocar o poder muda qual
+        -- nível é gratuito, sem criar saldo livre para gastar em outro kit.
+        function temLegadoDesperto()
+            return temQualidadeNaFicha("Legado desperto")
+        end
+
+        function nomePoderLegadoGratuito()
+            if sheet == nil or not temLegadoDesperto() then return "" end
+            local nome = tostring(sheet.poderLegadoGratuito or "")
+            if nome == "" then return "" end
+            local item = acharPoder(lerPoderes(), nome)
+            if item == nil or n(item.nivel) < 1 then return "" end
+            -- Se o Aspecto for trocado, o desconto não acompanha o poder
+            -- antigo: ele só vale enquanto a origem continuar sendo o legado.
+            if tostring(item.deus or "") ~= tostring(sheet.aspectoDivino or "") then return "" end
+            return nome
+        end
+
         function pontosPoderGastos()
             local total = 0
-            for _, p in ipairs(lerPoderes()) do total = total + n(p.nivel) end
+            local gratuito = nomePoderLegadoGratuito()
+            for _, p in ipairs(lerPoderes()) do
+                total = total + n(p.nivel)
+                if p.nome == gratuito and n(p.nivel) > 0 then total = total - 1 end
+            end
             return total
         end
 
@@ -5757,7 +5783,7 @@
         -- ---------------------------------------------------------------
         -- COMPRA E DEVOLUCAO
         -- ---------------------------------------------------------------
-        function comprarNivelPoder(nomePoder)
+        function comprarNivelPoder(nomePoder, gratuitoLegado, origemForcada)
             if sheet == nil then return end
             if not podeEditarCriacao() then
                 avisarPoderes(motivoTravaCriacao(), COR.wine); return
@@ -5790,7 +5816,8 @@
                 return
             end
 
-            if saldoPontosPoder() < 1 then
+            local ehGratisLegado = (gratuitoLegado == true)
+            if not ehGratisLegado and saldoPontosPoder() < 1 then
                 avisarPoderes("Sem pontos de poder disponíveis.", COR.wine); return
             end
 
@@ -5812,7 +5839,7 @@
                 -- faltava ate a v0.41.1 (P-03); a origem ja estava gravada
                 -- em item.deus. A autorizacao do mestre (de uso unico, a
                 -- mesma do up duplo) libera a excecao — Lei 2.
-                local meuDeus = deusDonoDoPoder(nomePoder)
+                local meuDeus = origemForcada or deusDonoDoPoder(nomePoder)
                 if poder.atributo ~= nil and meuDeus ~= "" then
                     for _, it in ipairs(lista) do
                         local p2 = CatalogoPoderes.buscar(it.nome)
@@ -5898,26 +5925,89 @@
 
             if item == nil then
                 item = { nome = nomePoder, nivel = 0, log = "",
-                         deus = deusDonoDoPoder(nomePoder) }
+                         deus = origemForcada or deusDonoDoPoder(nomePoder) }
                 table.insert(lista, item)
             end
             item.nivel = novo
-            local marca = tostring(novo) .. "@" .. tostring(n(sheet.nivel))
-            if item.log == "" then item.log = marca else item.log = item.log .. "," .. marca end
+            if not ehGratisLegado then
+                local marca = tostring(novo) .. "@" .. tostring(n(sheet.nivel))
+                if item.log == "" then item.log = marca else item.log = item.log .. "," .. marca end
+            end
 
             gravarPoderes(lista)
             if usouAutorizacao then sheet.autorizacaoMestrePoder = false end
-            selarAspectoDivino()
+            if not ehGratisLegado then selarAspectoDivino() end
             aplicarConcessoes()
 
-            publicarNoChat("" .. tostring(sheet.nome or "Personagem") ..
-                " elevou o poder **" .. nomePoder .. "** ao nível " .. novo ..
-                " (" .. poder.tipo .. ").", COR.gold)
+            if ehGratisLegado then
+                publicarNoChat("" .. tostring(sheet.nome or "Personagem") ..
+                    " recebeu **" .. nomePoder .. "** como poder gratuito do Legado Desperto.", COR.gold)
+            else
+                publicarNoChat("" .. tostring(sheet.nome or "Personagem") ..
+                    " elevou o poder **" .. nomePoder .. "** ao nível " .. novo ..
+                    " (" .. poder.tipo .. ").", COR.gold)
+            end
             atualizarBlocoHabilidades()
             recalcularTudo()
             if #avisosDeCompra > 0 then
                 avisarPoderes(table.concat(avisosDeCompra, "  "), COR.gold)
             end
+        end
+
+        function concederPoderLegado(nomePoder, nomeDeus)
+            if sheet == nil then return end
+            if not usuarioEhMestre() then
+                avisarPoderes("Ação recusada: somente o MESTRE define o poder gratuito do Legado Desperto.", COR.wine)
+                return
+            end
+            if not temLegadoDesperto() then
+                avisarPoderes("Requer a qualidade Legado desperto.", COR.wine); return
+            end
+            local aspecto = tostring(sheet.aspectoDivino or "")
+            if aspecto == "" then
+                avisarPoderes("Registre primeiro o Aspecto Divino que representa o legado.", COR.wine); return
+            end
+            if tostring(nomeDeus or "") ~= aspecto then
+                avisarPoderes("O poder gratuito deve pertencer ao kit do Aspecto registrado como legado (" .. aspecto .. ").", COR.wine)
+                return
+            end
+
+            local atual = nomePoderLegadoGratuito()
+            if atual == nomePoder then
+                avisarPoderes(nomePoder .. " já é o poder gratuito do Legado Desperto.", COR.muted)
+                return
+            end
+
+            local item = acharPoder(lerPoderes(), nomePoder)
+            if item ~= nil and n(item.nivel) > 0 and tostring(item.deus or "") ~= aspecto then
+                avisarPoderes(nomePoder .. " já foi adquirido pelo kit de " ..
+                    tostring(item.deus or "origem desconhecida") ..
+                    ". Escolha outro poder do legado ou remova este primeiro; a ficha não mistura duas origens no mesmo registro.", COR.wine)
+                return
+            end
+            if item == nil or n(item.nivel) == 0 then
+                comprarNivelPoder(nomePoder, true, aspecto)
+                item = acharPoder(lerPoderes(), nomePoder)
+                if item == nil or n(item.nivel) == 0 then return end
+            end
+            sheet.poderLegadoGratuito = nomePoder
+            recalcularTudo()
+            mostrarDetalhePoder(nomePoder, aspecto)
+            avisarPoderes(nomePoder .. " está marcado como o poder gratuito do Legado Desperto.", COR.gold)
+        end
+
+        function revogarPoderLegado()
+            if sheet == nil then return end
+            if not usuarioEhMestre() then
+                avisarPoderes("Ação recusada: somente o MESTRE pode revogar o poder gratuito do Legado Desperto.", COR.wine)
+                return
+            end
+            local atual = nomePoderLegadoGratuito()
+            if atual == "" then return end
+            sheet.poderLegadoGratuito = ""
+            recalcularTudo()
+            mostrarDetalhePoder(atual, tostring(sheet.aspectoDivino or ""))
+            avisarPoderes(atual .. " deixou de ser o poder gratuito do Legado Desperto.", COR.muted)
         end
 
         function devolverNivelPoder(nomePoder)
@@ -5928,6 +6018,11 @@
             local lista = lerPoderes()
             local item = acharPoder(lista, nomePoder)
             if item == nil or n(item.nivel) <= 0 then return end
+
+            if n(item.nivel) == 1 and nomePoderLegadoGratuito() == nomePoder then
+                avisarPoderes("Este é o nível gratuito do Legado Desperto. O MESTRE deve revogá-lo antes de remover o poder.", COR.wine)
+                return
+            end
 
             -- REGRA DA MESA: um poder ativo adquirido fica preso ao
             -- personagem - nao se "devolve" um poder como se devolve um
@@ -6020,6 +6115,7 @@
             if self.popPod_lblSaldo ~= nil then
                 self.popPod_lblSaldo:setText("Saldo: " .. saldoPontosPoder() .. " ponto(s)")
             end
+            definirAlturaPod(self.popPod_secLegado, 0)
         end
 
         function abrirPopupPoderes()
@@ -6144,6 +6240,21 @@
                 self.popPod_lblSaldo:setText("Saldo: " .. saldoPontosPoder() .. " ponto(s)")
             end
 
+            -- O livro deixa a escolha do poder do Legado para o narrador.
+            -- Por isso este controle não aparece para jogador e só vale para
+            -- o kit do Aspecto que foi registrado como legado.
+            local podeConcederLegado = usuarioEhMestre() and temLegadoDesperto() and
+                tostring(sheet and sheet.aspectoDivino or "") ~= "" and
+                tostring(nomeDeus or "") == tostring(sheet and sheet.aspectoDivino or "")
+            definirAlturaPod(self.popPod_secLegado, podeConcederLegado and 30 or 0)
+            if self.popPod_lblLegado ~= nil and podeConcederLegado then
+                if nomePoderLegadoGratuito() == nomePoder then
+                    self.popPod_lblLegado:setText("MESTRE — REVOGAR PODER GRATUITO DO LEGADO")
+                else
+                    self.popPod_lblLegado:setText("MESTRE — CONCEDER PODER GRATUITO DO LEGADO")
+                end
+            end
+
             -- botao de bencao, so para o mestre e so em deus bloqueado.
             -- "Coração de Mana" e "Herança racial" nao sao divindades: nao ha
             -- bencao a conceder ali, e o botao so confundiria o mestre.
@@ -6173,6 +6284,15 @@
         function concederBencaoEmDetalhe()
             if deusEmDetalhePoder == nil then return end
             concederBencao(deusEmDetalhePoder)
+        end
+
+        function alternarPoderLegadoEmDetalhe()
+            if poderEmDetalhe == nil then return end
+            if nomePoderLegadoGratuito() == poderEmDetalhe then
+                revogarPoderLegado()
+            else
+                concederPoderLegado(poderEmDetalhe, deusEmDetalhePoder)
+            end
         end
 
         -- O REALCE ACENDE O CARD DO PAR (deus, poder) — v0.42.1, P-01.
@@ -6436,7 +6556,11 @@
                         if item.selo ~= nil then
                             txt = item.selo; cor = COR.rain
                         elseif item.ordem == 1 then
-                            txt = string.upper(item.deus) .. "  ·  PAI/MÃE"; cor = COR.gold
+                            if nomePoderLegadoGratuito() == item.nome then
+                                txt = string.upper(item.deus) .. "  ·  LEGADO GRATUITO"; cor = COR.gold
+                            else
+                                txt = string.upper(item.deus) .. "  ·  PAI/MÃE"; cor = COR.gold
+                            end
                         else
                             txt = string.upper(item.deus) .. "  ·  BÊNÇÃO"; cor = COR.aura
                         end
@@ -14904,7 +15028,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.28" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.29" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -29473,6 +29597,12 @@
                             <rectangle align="client" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="MESTRE: registrar que esta divindade abençoou o personagem (3 Favores trocados)">
                                 <label align="client" text="MESTRE — REGISTRAR BÊNÇÃO DESTA DIVINDADE" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
                                 <event name="onClick"><![CDATA[concederBencaoEmDetalhe();]]></event>
+                            </rectangle>
+                        </layout>
+                        <layout name="popPod_secLegado" align="bottom" height="0" margins="{left=14,right=14,bottom=4}">
+                            <rectangle align="client" color="#12181C" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="MESTRE: definir ou revogar o poder inicial gratuito concedido por Legado Desperto">
+                                <label name="popPod_lblLegado" align="client" text="" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                <event name="onClick"><![CDATA[alternarPoderLegadoEmDetalhe();]]></event>
                             </rectangle>
                         </layout>
                         <scrollBox align="client" margins="{left=14,right=14,top=10,bottom=6}">

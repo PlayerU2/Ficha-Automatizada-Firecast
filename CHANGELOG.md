@@ -1,3 +1,8 @@
+## v0.53.29 — Poder gratuito de Legado Desperto (17/09/2026)
+
+- A qualidade **Legado desperto** agora permite ao mestre selecionar um poder do Aspecto registrado como legado e conceder seu nível inicial sem consumir ponto de poder.
+- O nível gratuito permanece identificado no card, não vira saldo genérico e pode ser revogado pelo mestre antes de o poder ser removido.
+
 ## v0.53.28 — novo brasão dos Humanos (16/09/2026)
 
 Substitui o antigo brasão de martelo, mão e pena pela nova composição de mãos
