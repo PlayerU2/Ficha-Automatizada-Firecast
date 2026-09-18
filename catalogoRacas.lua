@@ -478,11 +478,7 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
             },
             {
                 nome = "Linhagem de Dracul",
-                descricao = [==[O semideus vampiro obrigatoriamente deve ser um descendente da linhagem principal, recebendo a qualidade Nobreza]==],
-            },
-            {
-                nome = "06",
-                descricao = [==[]==],
+                descricao = [==[O semideus vampiro obrigatoriamente deve ser um descendente da linhagem principal, recebendo a qualidade Nobreza [06].]==],
             },
             {
                 nome = "Maldição de Ditrys",
@@ -604,11 +600,7 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
             },
             {
                 nome = "Intolerância a mortos-vivos",
-                descricao = [==[Receba o defeito "Intolerância]==],
-            },
-            {
-                nome = "2 pontos",
-                descricao = [==[" gratuitamente na criação da ficha, sendo esta intolerância a mortos-vivos ou quaisquer usuários de necromancia e capacidades similares]==],
+                descricao = [==[Receba o defeito "Intolerância [2 pontos]" gratuitamente na criação da ficha, sendo esta intolerância a mortos-vivos ou quaisquer usuários de necromancia e capacidades similares]==],
             },
         },
         tracos = [==[[Olhos da verdade] receba a habilidade progressiva "Olhos da verdade", que dão as estes seres a capacidade de utilizar a visão para compreender as intenções de outros, resistirem a ilusões e também á habilidade usada pelas harpias para profetizações.
@@ -821,34 +813,26 @@ Fraternidade e União: são ensinados desde jovens a valorizar a comunidade, enx
         deslocamentoModos = { terrestre = 14 },
         caracteristicas = {
             {
-                nome = "Forma Primal Ghiscari",
-                descricao = [==[Não pode ser apagada. Deslocamento: 14m Dado de Vida: 1d10]==],
-            },
-            {
                 nome = "Aceleração",
-                descricao = [==[: Você pode gastar uma ação bônus para realizar uma ação de disparada]==],
+                descricao = [==[Você pode gastar uma ação bônus para realizar uma ação de disparada]==],
             },
             {
                 nome = "Forma Primal Ghiscari",
-                descricao = [==[: Você recebe uma habilidade única de metamorfose Ghiscari vinculada a sua tribo]==],
+                descricao = [==[Você recebe uma habilidade única de metamorfose Ghiscari vinculada a sua tribo]==],
             },
             {
                 nome = "Visão no Escuro",
-                descricao = [==[: Acostumados à escuridão das montanhas e cavernas, os Ghiscari conseguem enxergar no escuro em tons de cinza, até 18 metros à frente]==],
+                descricao = [==[Acostumados à escuridão das montanhas e cavernas, os Ghiscari conseguem enxergar no escuro em tons de cinza, até 18 metros à frente]==],
             },
             {
                 nome = "Comunicação Animal",
-                descricao = [==[: Você pode se comunicar com quaisquer espécie variante da sua linhagem, esta característica não pode ser apagada]==],
+                descricao = [==[Você pode se comunicar com quaisquer espécie variante da sua linhagem, esta característica não pode ser apagada]==],
             },
         },
-        tracos = [==[[Forma Primal Ghiscari] não pode ser apagada.
-
-Deslocamento: 14m  Dado de Vida: 1d10
-
-[Aceleração]: Você pode gastar uma ação bônus para realizar uma ação de disparada.
-[Forma Primal Ghiscari]: Você recebe uma habilidade única de metamorfose Ghiscari vinculada a sua tribo.
-[Visão no Escuro]: Acostumados à escuridão das montanhas e cavernas, os Ghiscari conseguem enxergar no escuro em tons de cinza, até 18 metros à frente.
-[Comunicação Animal]: Você pode se comunicar com quaisquer espécie variante da sua linhagem, esta característica não pode ser apagada.]==],
+        tracos = [==[[Aceleração] você pode gastar uma ação bônus para realizar uma ação de disparada.
+[Forma Primal Ghiscari] você recebe uma habilidade única de metamorfose Ghiscari vinculada a sua tribo.
+[Visão no Escuro] acostumados à escuridão das montanhas e cavernas, os Ghiscari conseguem enxergar no escuro em tons de cinza, até 18 metros à frente.
+[Comunicação Animal] você pode se comunicar com quaisquer espécie variante da sua linhagem, esta característica não pode ser apagada.]==],
         lore = [==[Fisiologia
   Os Ghiscaris possuem uma fisiologia variável de acordo com a tribo a que pertencem, refletindo as características dos animais que representam. No entanto, todos compartilham a habilidade de assumir formas humanas, ocultando suas verdadeiras naturezas para se misturar com outras raças quando necessário. Em sua forma humana, os Ghiscaris são quase indistinguíveis de humanos comuns, exceto por sutis traços bestiais, como olhos aguçados ou posturas ágeis, que podem denunciar sua verdadeira natureza. Quando assumem suas formas verdadeiras, também chamadas de Forma Animal, exibem as características físicas de seus animais ancestrais. Leões possuem músculos poderosos e uma juba imponente; águias, asas e olhos penetrantes; serpentes, escamas e flexibilidade; e ursos, uma força bruta imensurável.   As runas gravadas nos corpos dos guerreiros Ghiscaris são essenciais para sua capacidade de combate. Essas runas permitem que os guerreiros canalizem a força dos ancestrais e da própria natureza durante a Dança de Guerra. Cada Ghiscari possui uma conexão espiritual com o animal que sua tribo representa, podendo se comunicar com eles e até controlar suas ações em momentos de necessidade. Também herdaram a força e resistência dos animais que representam, permitindo-lhes suportar condições adversas e sobreviver nas Terras Selvagens, de acordo com cada característica.
 
@@ -878,18 +862,18 @@ Deslocamento: 14m  Dado de Vida: 1d10
         caracteristicas = {
             {
                 nome = "Regeneração Avançada",
-                descricao = [==[: Quando em contato com seu elemento direto, Ninfas recuperam adicionalmente 10% da vida máxima por dia, incluindo a recuperação de órgãos e membros amputados ou feridos]==],
+                descricao = [==[Quando em contato com seu elemento direto, Ninfas recuperam adicionalmente 10% da vida máxima por dia, incluindo a recuperação de órgãos e membros amputados ou feridos]==],
             },
             {
                 nome = "Mimetismo elemental",
-                descricao = [==[: receba a habilidade progressiva "Mimetismo elemental", que permite as ninfas se misturarem ao seu elemento natural para ganharem novas capacidades temporariamente]==],
+                descricao = [==[receba a habilidade progressiva "Mimetismo elemental", que permite as ninfas se misturarem ao seu elemento natural para ganharem novas capacidades temporariamente]==],
             },
             {
                 nome = "Comunicação Natural",
-                descricao = [==[: Conseguem comunicar-se com quaisquer outros elementais, plantas e animais em nível básico, transmitindo emoções simples e compreendendo suas respostas]==],
+                descricao = [==[Conseguem comunicar-se com quaisquer outros elementais, plantas e animais em nível básico, transmitindo emoções simples e compreendendo suas respostas]==],
             },
         },
-        tracos = [==[[Regeneração Avançada]: Quando em contato com seu elemento direto, Ninfas recuperam adicionalmente 10% da vida máxima por dia, incluindo a recuperação de órgãos e membros amputados ou feridos. [Mimetismo elemental]: receba a habilidade progressiva "Mimetismo elemental", que permite as ninfas se misturarem ao seu elemento natural para ganharem novas capacidades temporariamente. [Comunicação Natural]: Conseguem comunicar-se com quaisquer outros elementais, plantas e animais em nível básico, transmitindo emoções simples e compreendendo suas respostas.]==],
+        tracos = [==[[Regeneração Avançada] Quando em contato com seu elemento direto, Ninfas recuperam adicionalmente 10% da vida máxima por dia, incluindo a recuperação de órgãos e membros amputados ou feridos. [Mimetismo elemental] receba a habilidade progressiva "Mimetismo elemental", que permite as ninfas se misturarem ao seu elemento natural para ganharem novas capacidades temporariamente. [Comunicação Natural] Conseguem comunicar-se com quaisquer outros elementais, plantas e animais em nível básico, transmitindo emoções simples e compreendendo suas respostas.]==],
         lore = [==[Fisiologia
   Ninfas possuem uma forma básica humanóide, geralmente feminina, com altura média entre 1,40m e 2,20m, com proporções elegantes e graciosas, com uma aparência que varia a depender do elemento ao qual são ligadas: sua pele varia de uma textura suave como seda a áspera como casca de árvore, com uma paleta de cores que abrange desde o azul profundo dos oceanos até o verde vibrante das florestas, ou do dourado cálido ao vermelho incandescente das chamas. Seus cabelos são uma extensão viva de seu elemento, ondulando como água, movendo-se como folhas ao vento, brilhando como chamas ou parecendo etéreos como nuvens. Os olhos das Ninfas são particularmente fascinantes, muitas vezes refletindo literalmente seu elemento, podendo conter miniaturas de oceanos, florestas, céus tempestuosos ou fogo dançante. Alimentam-se com energia absorvida diretamente de seu elemento e do ambiente ao seu redor, bem como sua respiração é mais um processo de troca de energia do que uma necessidade convencional.   Cada tipo de Ninfa possui adaptações únicas relacionadas ao seu elemento. As Vellara, ligadas à água, podem ter guelras sutis no pescoço ou costelas, e sua pele pode apresentar escamas microscópicas que auxiliam na natação. As Fylleas, conectadas à terra, possuem pele que pode imitar a textura de casca ou folhas, e têm a capacidade de se fundir fisicamente com árvores. As Alaris, seres do ar, têm corpos parcialmente translúcidos ou etéreos, com um peso extremamente leve que as permite quase flutuar. Já as Calindras, vinculadas ao fogo, apresentam uma temperatura corporal elevada e pele que pode emitir luz ou calor.   Possuem capacidade regenerativa quando em contato com seu elemento, não envelhecem no sentido tradicional e mantém sua aparência por séculos, embora possam escolher alterar sua forma com o tempo. São capazes de se reproduzirem por meio biológico com os sátios e através de processos mágicos complexos, que geralmente envolve a benção de Sýdos e a convergência de poderosas energias naturais.   Algumas ninfas são capazes de realizar metamorfose temporariamente para se assemelharem a criaturas mortais ou adaptarem-se a diferentes ambientes, bem como são capazes de se fundirem com seus elementos, mimetizando-se. Além disso, apresentam resistência às condições extremas de seus elementos.   Possuem sentidos aguçados e uma espécie de sexto sentido que as torna capaz de perceber intuitivamente desequilíbrios ou perturbações em seu domínio elemental.
 
