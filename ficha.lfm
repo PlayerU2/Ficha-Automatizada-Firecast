@@ -9191,6 +9191,23 @@
              efeito = {tipo = "defeito", nome = "Intolerância", tier = 2},
              rotulo = "Intolerância (Harpias)"},
 
+            {chave = "lobi_odio", fonte = {tipo = "caracRacial", nome = "Ódio milenar"},
+             efeito = {tipo = "defeito", nome = "Intolerância", tier = 2},
+             rotulo = "Ódio milenar (Lobisomens)"},
+
+            {chave = "sat_vicio", fonte = {tipo = "caracRacial", nome = "Vício dos Sátiros"},
+             efeito = {tipo = "defeito", nome = "Vício", tier = 2},
+             rotulo = "Vício dos Sátiros (Sátiros)"},
+
+            {chave = "urs_codigo", fonte = {tipo = "caracRacial", nome = "Código de honra Ursari"},
+             efeito = {tipo = "defeito", nome = "Código de conduta", tier = 2},
+             rotulo = "Código de honra Ursari (Ursaris)"},
+
+            {chave = "vamp_dracul", fonte = {tipo = "caracRacial", nome = "Linhagem de Dracul"},
+             efeito = {tipo = "qualidade", nome = "Nobreza", tier = 6},
+             rotulo = "Linhagem de Dracul (Vampiros)"},
+
+
             -- ----- bonus de atributo racial -----
             -- Extraidas do catalogo de racas. Cada uma da +N num ou dois
             -- atributos e eleva o TETO daquele atributo (9 ou 10 conforme a
@@ -9573,14 +9590,21 @@
 
         function fonteEstaAtiva(fonte)
             if fonte == nil then return false end
+            
+            local ativa = false
             if fonte.tipo == "caracRacial" then
-                return temCaracRacial(fonte.nome)
+                ativa = temCaracRacial(fonte.nome)
             elseif fonte.tipo == "poderNivel" then
-                return nivelDoPoder(fonte.nome) >= n(fonte.nivel)
+                ativa = nivelDoPoder(fonte.nome) >= n(fonte.nivel)
             elseif fonte.tipo == "qualidade" then
-                return temQualidadeNaFicha(fonte.nome)
+                ativa = temQualidadeNaFicha(fonte.nome)
             end
-            return false
+            
+            if ativa and fonte.condicao ~= nil then
+                ativa = fonte.condicao()
+            end
+            
+            return ativa
         end
 
         -- Nome da lista de pericias de um atributo (ex.: listaPericiasCarisma).
@@ -11315,6 +11339,14 @@
              fonte = "defeito", nome = "Presença vulnerável"},
         }
 
+        local AVISOS_PERICIA_FONTE = {
+            {pericia = "Percepção", atributo = "Sabedoria", fonte = "caracRacial", nome = "Super visão", texto = "super visão caso aplique"},
+            {pericia = "Percepção", atributo = "Sabedoria", fonte = "caracRacial", nome = "Olfato aguçado", texto = "olfato aguçado"},
+            {pericia = "Percepção", atributo = "Sabedoria", fonte = "caracRacial", nome = "Audição aguçada", texto = "audição aguçada"},
+            {pericia = "Percepção", atributo = "Sabedoria", fonte = "caracRacial", nome = "Sentidos de guerra", texto = "sentidos de guerra"},
+            {pericia = "Sobrevivência", atributo = "Sabedoria", fonte = "caracRacial", nome = "Rastreamento aprimorado", texto = "rastreamento em planícies/florestas"},
+        }
+
         -- Escolas de magia entre as quais a Linhagem de Unaris escolhe.
         CatalogoEscolasDeMagia = {
             {nome = "Encantamentos (magia/forja)", atributo = "Carisma"},
@@ -11348,6 +11380,22 @@
                         local v = (nivel >= 11) and b.apos11 or b.ate10
                         total = total + v
                         table.insert(fontes, b.nome .. " " .. (v >= 0 and "+" or "") .. v)
+                    end
+                end
+            end
+
+            -- Adiciona os avisos situacionais no textoExtras (sem somar ao total numérico)
+            if AVISOS_PERICIA_FONTE ~= nil then
+                for _, b in ipairs(AVISOS_PERICIA_FONTE) do
+                    if b.pericia == nomePericia and b.atributo == atributo then
+                        local ativo = false
+                        if b.fonte == "caracRacial" then
+                            ativo = temCaracRacial(b.nome)
+                        end
+                        if ativo then
+                            -- Em vez de modificar o total, só adiciona a tag de aviso no texto
+                            table.insert(fontes, "+2 " .. b.texto)
+                        end
                     end
                 end
             end
@@ -16083,7 +16131,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.33" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.34" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 

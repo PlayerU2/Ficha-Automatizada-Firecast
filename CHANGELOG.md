@@ -1,3 +1,11 @@
+## v0.53.34 — auditoria e automações completas de Raças (18/09/2026)
+
+- corrige erros de parsing nos textos do livro (Harpias, Vampiros e Ghiscaris), limpando características fantasmas do catálogo;
+- automatiza a concessão das habilidades progressivas raciais para Fadas, Gnomos, Selkies, Aarakocras, Harpias, Ninfas, Lobisomens e Ursaris;
+- conecta no motor de concessões os defeitos raciais obrigatórios: Ódio milenar (Lobisomens -> Intolerância), Vício dos Sátiros (Sátiros -> Vício), Código de honra Ursari (Ursaris -> Código de conduta) e a qualidade Nobreza da Linhagem de Dracul (Vampiros);
+- adiciona avisos visuais situacionais diretamente na conta das perícias relevantes (Super visão, Olfato aguçado, Audição aguçada, Sentidos de guerra e Rastreamento aprimorado) sem corromper o cálculo matemático base;
+- atualiza a exibição de extras em itens de perícia para permitir avisos situacionais independentes de modificadores numéricos fixos.
+
 ## v0.53.33 — auditoria completa de Qualidades e Defeitos (17/09/2026)
 
 - confronta as 25 Qualidades e os 25 Defeitos com o capítulo 1.3 do livro; restaura **Fobia** como entrada própria, remove seu texto de **Endividado** e limpa o cabeçalho indevido de **Vontade de ferro**;

@@ -49,6 +49,73 @@ CatalogoProgressiva.HABILIDADES_RACIAIS_CONCEDIDAS = {
         tags = "[Sereia], [Progressiva]",
         descricao = "Permite às sereias manipularem as memórias de seus alvos e até em si mesmas.",
     },
+    -- Início das automações adicionadas (Revisão Racial)
+    {
+        traco = "Asas feéricas",
+        nome = "Asas feéricas",
+        tags = "[Fada], [Progressiva]",
+        descricao = "Garante asas especiais das fadas, que evoluem juntamente do personagem lhe garantindo mais capacidades quanto mais forte é.",
+    },
+    {
+        traco = "Druidismo gnomiano",
+        nome = "Druidismo gnomiano",
+        tags = "[Gnomo], [Progressiva]",
+        descricao = "Garante a capacidade de converter sua aura (ou mana) em fenômenos únicos da natureza.",
+    },
+    {
+        traco = "Manto Selkie",
+        nome = "Manto Selkie",
+        tags = "[Selkie], [Progressiva]",
+        descricao = "Garante as habilidades especiais subaquáticas da raça quando o personagem vestir seu respectivo manto.",
+    },
+    {
+        traco = "Asas de Aarakocras",
+        nome = "Asas de Aarakocras",
+        tags = "[Aarakocra], [Progressiva]",
+        descricao = "Garante asas especiais do povo de Nellios, que evoluem juntamente do personagem.",
+    },
+    {
+        traco = "Olhos da verdade",
+        nome = "Olhos da verdade",
+        tags = "[Harpia], [Progressiva]",
+        descricao = "Dá a capacidade de utilizar a visão para compreender as intenções de outros, resistirem a ilusões e também é habilidade usada para profetizações.",
+    },
+    {
+        traco = "Grito do vendaval",
+        nome = "Grito do vendaval",
+        tags = "[Harpia], [Progressiva]",
+        descricao = "Permite às harpias utilizarem sua voz como armas contra seus oponentes.",
+    },
+    {
+        traco = "Controle do vento",
+        nome = "Controle do vento",
+        tags = "[Harpia], [Progressiva]",
+        descricao = "Dá capacidade de manipular redemoinhos e folhas em combate ou para melhor mobilidade.",
+    },
+    {
+        traco = "Asas de harpia",
+        nome = "Asas de harpia",
+        tags = "[Harpia], [Progressiva]",
+        descricao = "Garante asas especiais para estes seres, que evoluem juntamente do personagem.",
+    },
+    {
+        traco = "Mimetismo elemental",
+        nome = "Mimetismo elemental",
+        tags = "[Ninfa], [Progressiva]",
+        descricao = "Permite às ninfas se misturarem ao seu elemento natural para ganharem novas capacidades temporariamente.",
+    },
+    {
+        traco = "Forma bestial",
+        nome = "Forma bestial",
+        tags = "[Lobisomem], [Progressiva]",
+        descricao = "Permite a um lobisomem se transformar da sua forma mortal para sua forma bestial.",
+    },
+    {
+        traco = "Postura Ursari",
+        nome = "Postura Ursari",
+        tags = "[Ursari], [Progressiva]",
+        descricao = "Permite aos Ursari mudarem sua postura humanoide para uma postura selvagem, que aumenta suas defesas e lhes permitem usar suas garras afiadas para ataques devastadores.",
+    },
 }
 
 -- Nivel em que cada rank comeca (dadosSistema): E=1 D=4 C=8 B=12 A=16 EX=19.

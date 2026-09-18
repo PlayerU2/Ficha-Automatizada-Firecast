@@ -76,10 +76,10 @@
                         local sinalExtras = "+";
                         if extras < 0 then sinalExtras = ""; end;
                         local t = "extras " .. sinalExtras .. tostring(extras);
-                        if textoExtras ~= nil and textoExtras ~= "" then
-                            t = t .. " (" .. textoExtras .. ")";
-                        end;
                         table.insert(partes, t);
+                    end;
+                    if textoExtras ~= nil and textoExtras ~= "" then
+                        table.insert(partes, "(" .. textoExtras .. ")");
                     end;
                     if manual ~= 0 then
                         local sinalManual = "+";
