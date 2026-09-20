@@ -29,7 +29,13 @@ local function rankNumero(rankLetra) return DadosSistema.ordemRank[rankLetra] or
 -- ---------------------------------------------------------------------
 function Calculos.hp(ctx)
     local base = 15 + n(ctx.dadoVida) + math.floor((n(ctx.constituicao) / 2) * n(ctx.nivel))
-    return base + n(ctx.progressaoVidaExtra) + n(ctx.ajusteManual)
+    local adicional = 0
+    if n(ctx.constituicaoSobrenatural) >= 5 then
+        adicional = 4 * n(ctx.nivel)
+    elseif n(ctx.constituicaoSobrenatural) >= 3 then
+        adicional = 1 * n(ctx.nivel)
+    end
+    return base + n(ctx.progressaoVidaExtra) + adicional + n(ctx.ajusteManual)
 end
 
 -- ---------------------------------------------------------------------
