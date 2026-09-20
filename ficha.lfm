@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   FICHA DE PERSONAGEM - PETRICHOR
   Versao: 0.2.0
@@ -30,7 +30,7 @@
     - <layout g="row"> solto dentro de scrollBox precisa de align="top" e
       height explicitos, senao colapsa e sobrepoe o conteudo.
 -->
-<form name="frmFichaPetrichor" formType="sheetTemplate" dataType="com.petrichor.fichapersonagem.Ficha" title="Petrichor" theme="dark" align="client">
+<form name="frmFichaPetrichor" formType="sheetTemplate" dataType="com.petrichor.fichapersonagem.Ficha" title="Petrichor" theme="dark">
     <script><![CDATA[
         -- Bibliotecas do SDK. "rrpg.lua" e necessaria para descobrir a mesa /
         -- o jogador atual (usado em usuarioEhMestre).
@@ -225,7 +225,6 @@
             -- Equipar, desequipar e mover na mochila sao jogo; o teto da
             -- mochila tem ajuste porque a mesa concede espaco por narrativa.
             {widget = "cmb_edMochilaBonus", campo = "mochilaBonus"},
-            {widget = "abaInv_edMochilaBonus", campo = "mochilaBonus"},
             -- Pontos de poder concedidos por favor divino ou por narrativa:
             -- e campo do MESTRE, e ele os concede com a ficha ja fechada.
             {widget = "abaPod_edConcedidos", campo = "poderPontosConcedidos"},
@@ -992,13 +991,10 @@
             -- -15%/-30% de Hp). Ver catalogoQualidadesDefeitos.lua.
             local efeitosQD = CatalogoQD.somarEfeitos(escolhidosQD())
 
-            local nivelConstSobrenatural = 0
-            pcall(function() nivelConstSobrenatural = nivelDoPoder("Constituição sobrenatural") end)
             local hpBase = Calculos.hp({
                 nivel = nivel, constituicao = valores.constituicao,
                 dadoVida = sheet.dadoVida, progressaoVidaExtra = sheet.progressaoVidaExtra,
                 ajusteManual = sheet.ajusteHp,
-                constituicaoSobrenatural = nivelConstSobrenatural,
             })
             -- Vigor expandido/reprimido incide na VIDA, sempre - inclusive
             -- em vampiro. Aura expandida/reprimida incide na AURA, sempre -
@@ -1010,15 +1006,9 @@
             -- linhas acima. "dado" e o dado de vida da raca; "progressão" e
             -- o acumulado dos níveis; o percentual e das qualidades.
             local contaHp = "15 + dado " .. n(sheet.dadoVida) .. " + (Con " ..
-                valores.constituicao .. "×2 × " .. nivel .. ")" ..
-                parcela(sheet.progressaoVidaExtra, "progressão")
-            local extraPoder = 0
-            if nivelConstSobrenatural >= 5 then extraPoder = 4 * nivel
-            elseif nivelConstSobrenatural >= 3 then extraPoder = 1 * nivel end
-            if extraPoder > 0 then
-                contaHp = contaHp .. parcela(extraPoder, "poder")
-            end
-            contaHp = contaHp .. parcela(sheet.ajusteHp, "ajuste")
+                valores.constituicao .. "÷2 × " .. nivel .. ")" ..
+                parcela(sheet.progressaoVidaExtra, "progressão") ..
+                parcela(sheet.ajusteHp, "ajuste")
             if (efeitosQD.hpPercent or 0) ~= 0 then
                 contaHp = "(" .. contaHp .. ") × " .. fmtNumero(1 + (efeitosQD.hpPercent or 0) / 100) ..
                     " [qualidades " .. (efeitosQD.hpPercent > 0 and "+" or "") .. efeitosQD.hpPercent .. "%]"
@@ -11299,11 +11289,6 @@
         -- seguem o mesmo desenho: um valor ate o nivel 10 e outro do 11 em
         -- diante.
         local BONUS_PERICIA_FONTE = {
-            -- Poderes
-            {pericia = "Linguística", atributo = "Inteligência", ate10 = 2, apos11 = 2,
-             fonte = "poder", nome = "Omnilinguismo", nivelPoder = 1},
-            {pericia = "Ocultismo", atributo = "Inteligência", ate10 = 2, apos11 = 2,
-             fonte = "poder", nome = "Omnilinguismo", nivelPoder = 1},
             -- Drow
             {pericia = "Animais", atributo = "Carisma", ate10 = 1, apos11 = 2,
              fonte = "caracRacial", nome = "Mestres da domesticação"},
@@ -11390,10 +11375,6 @@
                         ativo = temQualidadeNaFicha(b.nome)
                     elseif b.fonte == "defeito" then
                         ativo = temDefeitoNaFicha(b.nome)
-                    elseif b.fonte == "poder" then
-                        local nv = 0
-                        pcall(function() nv = nivelDoPoder(b.nome) end)
-                        ativo = nv >= (b.nivelPoder or 1)
                     end
                     if ativo then
                         local v = (nivel >= 11) and b.apos11 or b.ate10
@@ -16150,7 +16131,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.35" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.34" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -20438,7 +20419,7 @@
                     <rectangle align="top" height="1" color="#C9A24B" margins="{bottom=6}" hitTest="false"/>
 
 
-                    <layout align="top" height="102" margins="{bottom=8}">
+                    <layout align="top" height="76" margins="{bottom=8}">
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#C9A24B" hitTest="false"/>
                             <layout align="top" height="22" margins="{top=4}">
@@ -20447,14 +20428,6 @@
                             </layout>
                             <label name="abaInv_lblMochila" align="top" height="28" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                             <label name="abaInv_lblMochilaConta" align="top" height="14" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" hitTest="false"/>
-                            <layout align="bottom" height="26" margins="{top=4,left=10,right=10,bottom=6}">
-                                <label align="left" width="40" text="AJUSTE" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
-                                <rectangle align="client" color="#080B0E" strokeColor="#1E2A31" strokeSize="1" xradius="3" yradius="3">
-                                    <edit name="abaInv_edMochilaBonus" align="client" field="mochilaBonus" type="number" text="0" fontFamily="EB Garamond" fontColor="#7FA8B8" fontSize="12" horzTextAlign="center" transparent="true" hint="Espaços extras de mochila que a conta não cobre: bolsa de contenção, montaria de carga, concessão do mestre. Use negativo para retirar.">
-                                        <event name="onChange"><![CDATA[recalcularTudo();]]></event>
-                                    </edit>
-                                </rectangle>
-                            </layout>
                         </rectangle>
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">
                             <rectangle align="top" height="3" color="#4E8C74" hitTest="false"/>
@@ -31798,4 +31771,3 @@
     </popup>
 
 </form>
-
