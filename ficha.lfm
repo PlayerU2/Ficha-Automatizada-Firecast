@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!--
   FICHA DE PERSONAGEM - PETRICHOR
   Versao: 0.2.0
@@ -30,7 +30,7 @@
     - <layout g="row"> solto dentro de scrollBox precisa de align="top" e
       height explicitos, senao colapsa e sobrepoe o conteudo.
 -->
-<form name="frmFichaPetrichor" formType="sheetTemplate" dataType="com.petrichor.fichapersonagem.Ficha" title="Petrichor" theme="dark">
+<form name="frmFichaPetrichor" formType="sheetTemplate" dataType="com.petrichor.fichapersonagem.Ficha" title="Petrichor" theme="dark" align="client">
     <script><![CDATA[
         -- Bibliotecas do SDK. "rrpg.lua" e necessaria para descobrir a mesa /
         -- o jogador atual (usado em usuarioEhMestre).
@@ -16150,7 +16150,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.34" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.35" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -31798,3 +31798,4 @@
     </popup>
 
 </form>
+
