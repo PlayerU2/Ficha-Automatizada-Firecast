@@ -11289,6 +11289,11 @@
         -- seguem o mesmo desenho: um valor ate o nivel 10 e outro do 11 em
         -- diante.
         local BONUS_PERICIA_FONTE = {
+            -- Poderes
+            {pericia = "Linguística", atributo = "Inteligência", ate10 = 2, apos11 = 2,
+             fonte = "poder", nome = "Omnilinguismo", nivelPoder = 1, escalaComPoder = true},
+            {pericia = "Ocultismo", atributo = "Inteligência", ate10 = 2, apos11 = 2,
+             fonte = "poder", nome = "Omnilinguismo", nivelPoder = 1, escalaComPoder = true},
             -- Drow
             {pericia = "Animais", atributo = "Carisma", ate10 = 1, apos11 = 2,
              fonte = "caracRacial", nome = "Mestres da domesticação"},
@@ -11364,6 +11369,7 @@
             for _, b in ipairs(BONUS_PERICIA_FONTE) do
                 if b.pericia == nomePericia and b.atributo == atributo then
                     local ativo = false
+                    local multiplicador = 1
                     if b.fonte == "caracRacial" then
                         ativo = temCaracRacial(b.nome)
                         -- entradas com "raca" so valem naquela raca (ver o
@@ -11375,9 +11381,16 @@
                         ativo = temQualidadeNaFicha(b.nome)
                     elseif b.fonte == "defeito" then
                         ativo = temDefeitoNaFicha(b.nome)
+                    elseif b.fonte == "poder" then
+                        local nv = 0
+                        pcall(function() nv = nivelDoPoder(b.nome) end)
+                        ativo = nv >= (b.nivelPoder or 1)
+                        if ativo and b.escalaComPoder then
+                            multiplicador = nv
+                        end
                     end
                     if ativo then
-                        local v = (nivel >= 11) and b.apos11 or b.ate10
+                        local v = ((nivel >= 11) and b.apos11 or b.ate10) * multiplicador
                         total = total + v
                         table.insert(fontes, b.nome .. " " .. (v >= 0 and "+" or "") .. v)
                     end
@@ -16005,6 +16018,8 @@
                     -- botao de montar: so em quem e montaria
                     local ehMontaria = (tostring(c.papel or "") == "Montaria")
                     definirLarguraPod(self["abaCri_wrapMontar" .. i], ehMontaria and 104 or 0)
+                    self["abaCri_wrapMontar" .. i].margins = {left = ehMontaria and 10 or 0}
+                    definirLarguraPod(self["abaCri_wrapDireito" .. i], ehMontaria and 423 or 309)
                     local lblM = self["abaCri_lblMontar" .. i]
                     if lblM ~= nil then
                         lblM:setText((c.montada == true) and "DESMONTAR" or "MONTAR")
@@ -20606,7 +20621,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito40" align="right" width="538">
                                     <layout name="abaInv_wrapDur1" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -20677,7 +20692,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito41" align="right" width="538">
                                     <layout name="abaInv_wrapDur2" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -20748,7 +20763,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito42" align="right" width="538">
                                     <layout name="abaInv_wrapDur3" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -20819,7 +20834,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito43" align="right" width="538">
                                     <layout name="abaInv_wrapDur4" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -20890,7 +20905,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito44" align="right" width="538">
                                     <layout name="abaInv_wrapDur5" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -20961,7 +20976,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito45" align="right" width="538">
                                     <layout name="abaInv_wrapDur6" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21032,7 +21047,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito46" align="right" width="538">
                                     <layout name="abaInv_wrapDur7" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21103,7 +21118,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito47" align="right" width="538">
                                     <layout name="abaInv_wrapDur8" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21174,7 +21189,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito48" align="right" width="538">
                                     <layout name="abaInv_wrapDur9" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21245,7 +21260,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito49" align="right" width="538">
                                     <layout name="abaInv_wrapDur10" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21316,7 +21331,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito50" align="right" width="538">
                                     <layout name="abaInv_wrapDur11" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21387,7 +21402,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito51" align="right" width="538">
                                     <layout name="abaInv_wrapDur12" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21458,7 +21473,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito52" align="right" width="538">
                                     <layout name="abaInv_wrapDur13" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21529,7 +21544,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito53" align="right" width="538">
                                     <layout name="abaInv_wrapDur14" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21600,7 +21615,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito54" align="right" width="538">
                                     <layout name="abaInv_wrapDur15" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21671,7 +21686,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito55" align="right" width="538">
                                     <layout name="abaInv_wrapDur16" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21742,7 +21757,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito56" align="right" width="538">
                                     <layout name="abaInv_wrapDur17" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21813,7 +21828,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito57" align="right" width="538">
                                     <layout name="abaInv_wrapDur18" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21884,7 +21899,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito58" align="right" width="538">
                                     <layout name="abaInv_wrapDur19" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -21955,7 +21970,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito59" align="right" width="538">
                                     <layout name="abaInv_wrapDur20" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22026,7 +22041,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito60" align="right" width="538">
                                     <layout name="abaInv_wrapDur21" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22097,7 +22112,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito61" align="right" width="538">
                                     <layout name="abaInv_wrapDur22" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22168,7 +22183,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito62" align="right" width="538">
                                     <layout name="abaInv_wrapDur23" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22239,7 +22254,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito63" align="right" width="538">
                                     <layout name="abaInv_wrapDur24" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22310,7 +22325,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito64" align="right" width="538">
                                     <layout name="abaInv_wrapDur25" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22381,7 +22396,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito65" align="right" width="538">
                                     <layout name="abaInv_wrapDur26" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22452,7 +22467,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito66" align="right" width="538">
                                     <layout name="abaInv_wrapDur27" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22523,7 +22538,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito67" align="right" width="538">
                                     <layout name="abaInv_wrapDur28" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22594,7 +22609,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito68" align="right" width="538">
                                     <layout name="abaInv_wrapDur29" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22665,7 +22680,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito69" align="right" width="538">
                                     <layout name="abaInv_wrapDur30" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22736,7 +22751,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito70" align="right" width="538">
                                     <layout name="abaInv_wrapDur31" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22807,7 +22822,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito71" align="right" width="538">
                                     <layout name="abaInv_wrapDur32" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22878,7 +22893,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito72" align="right" width="538">
                                     <layout name="abaInv_wrapDur33" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -22949,7 +22964,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito73" align="right" width="538">
                                     <layout name="abaInv_wrapDur34" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -23020,7 +23035,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito74" align="right" width="538">
                                     <layout name="abaInv_wrapDur35" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -23091,7 +23106,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito75" align="right" width="538">
                                     <layout name="abaInv_wrapDur36" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -23162,7 +23177,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito76" align="right" width="538">
                                     <layout name="abaInv_wrapDur37" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -23233,7 +23248,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito77" align="right" width="538">
                                     <layout name="abaInv_wrapDur38" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -23304,7 +23319,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito78" align="right" width="538">
                                     <layout name="abaInv_wrapDur39" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -23375,7 +23390,7 @@
                                 <!-- COLUNA DIREITA: um container so, filhos align="left",
                                      para a ordem ser a de declaracao. O "x" fica por
                                      ultimo, a direita de tudo - padrao da ficha. -->
-                                <layout align="right" width="612">
+                                <layout name="abaInv_wrapDireito79" align="right" width="538">
                                     <layout name="abaInv_wrapDur40" align="left" width="118" margins="{right=8}">
                                         <label align="left" width="26" text="DUR" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                         <rectangle align="left" width="22" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=3,bottom=3}" cursor="handPoint" hint="Perder 1 de durabilidade">
@@ -23512,7 +23527,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito1" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23563,7 +23578,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito2" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23614,7 +23629,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito3" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23665,7 +23680,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito4" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23716,7 +23731,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito5" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23767,7 +23782,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito6" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23818,7 +23833,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito7" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23869,7 +23884,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito8" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23920,7 +23935,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito9" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -23971,7 +23986,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito10" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -24022,7 +24037,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito11" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
@@ -24073,7 +24088,7 @@
                             <rectangle align="left" width="3" color="#8A63C9" hitTest="false"/>
                             <layout align="client" margins="{left=12,right=10,top=6,bottom=6}">
 
-                                <layout align="right" width="424">
+                                <layout name="abaCri_wrapDireito12" align="right" width="424">
                                     <label align="left" width="34" text="VIDA" fontFamily="Marcellus SC" fontColor="#54636B" fontSize="11" vertTextAlign="center" hitTest="false"/>
                                     <rectangle align="left" width="24" color="#12181C" strokeColor="#54636B" strokeSize="1" xradius="3" yradius="3" margins="{top=7,bottom=7}" cursor="handPoint" hint="Menos 1 de vida">
                                         <label align="client" text="&#8722;" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>

@@ -182,7 +182,7 @@
 
         <!-- COLUNA DIREITA: pontos e "x" na mesma linha, com as mesmas
              margens. O "x" por ultimo, a direita de tudo. -->
-        <layout align="right" width="168" margins="{right=4,top=11,bottom=11}">
+        <layout align="right" width="164" margins="{right=4,top=11,bottom=11}">
             <rectangle align="left" width="130" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" hitTest="false">
                 <label name="lblBadgeQD" align="client" text="" fontFamily="EB Garamond" fontColor="#C9A24B" fontSize="12" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
             </rectangle>

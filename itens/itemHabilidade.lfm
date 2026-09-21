@@ -56,6 +56,10 @@
             end;
             if self.rectAtivarHab ~= nil then
                 self.rectAtivarHab:setWidth(temGatilho and 148 or 0);
+                self.rectAtivarHab.margins = {left = temGatilho and 8 or 0};
+                if self.hab_wrapDireito ~= nil then
+                    self.hab_wrapDireito:setWidth(temGatilho and 318 or 162);
+                end
                 self.rectAtivarHab:setStrokeColor(ligada and "#C9A24B" or "#1A262C");
                 self.rectAtivarHab:setColor(ligada and "#171408" or "#0A0C10");
             end;
@@ -159,38 +163,37 @@
 
         <!-- Faixa inferior independente: não disputa largura com o nome. -->
         <layout align="bottom" height="28" margins="{left=12,right=12,top=6,bottom=8}">
-            <rectangle align="right" width="30" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" cursor="handPoint" hint="Remover esta habilidade da ficha">
-                <event name="onClick"><![CDATA[
-                    if sheet ~= nil then
-                        local raiz = NDB.getRoot(sheet);
-                        local travada = (raiz ~= nil and raiz.fichaFinalizada == true);
-                        local ehMestreReal = function()
-                            local ok, res = pcall(function()
-                                local personagem = rrpg.getPersonagemDe(sheet);
-                                if personagem == nil then return true end;
-                                local mesa = personagem.mesa;
-                                if mesa == nil or mesa.meuJogador == nil then return true end;
-                                return mesa.meuJogador.isMestre == true;
-                            end);
-                            return (not ok) or res;
+            <!-- Grupo da direita: alinhado à esquerda dentro de um wrapper alinhado à direita para não pular de ordem no clique. A largura muda no datalink. -->
+            <layout name="hab_wrapDireito" align="right" width="162">
+                <rectangle align="left" width="30" color="#170D10" strokeColor="#8B2332" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" cursor="handPoint" hint="Remover esta habilidade da ficha">
+                    <event name="onClick"><![CDATA[
+                        if sheet ~= nil then
+                            local raiz = NDB.getRoot(sheet);
+                            local travada = (raiz ~= nil and raiz.fichaFinalizada == true);
+                            local ehMestreReal = function()
+                                local ok, res = pcall(function()
+                                    local personagem = rrpg.getPersonagemDe(sheet);
+                                    if personagem == nil then return true end;
+                                    local mesa = personagem.mesa;
+                                    if mesa == nil or mesa.meuJogador == nil then return true end;
+                                    return mesa.meuJogador.isMestre == true;
+                                end);
+                                return (not ok) or res;
+                            end;
+                            local podeRemover = true;
+                            if travada then podeRemover = ehMestreReal(); end;
+                            if podeRemover then
+                                NDB.deleteNode(sheet);
+                                if atualizarBlocoHabilidades ~= nil then atualizarBlocoHabilidades(); end;
+                                -- Se estava ativa, seus bônus precisam sair dos
+                                -- atributos derivados neste mesmo clique.
+                                if recalcularTudo ~= nil then recalcularTudo(); end;
+                            end;
                         end;
-                        local podeRemover = true;
-                        if travada then podeRemover = ehMestreReal(); end;
-                        if podeRemover then
-                            NDB.deleteNode(sheet);
-                            if atualizarBlocoHabilidades ~= nil then atualizarBlocoHabilidades(); end;
-                            -- Se estava ativa, seus bônus precisam sair dos
-                            -- atributos derivados neste mesmo clique.
-                            if recalcularTudo ~= nil then recalcularTudo(); end;
-                        end;
-                    end;
-                ]]></event>
-                <label align="client" text="x" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="13" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
-            </rectangle>
-            <!-- Slot sempre ocupa a mesma largura. O botão interno pode sumir,
-                 mas os controles vizinhos não caminham quando o estado muda. -->
-            <layout name="slotAtivarHab" align="right" width="156">
-                <rectangle name="rectAtivarHab" align="right" width="0" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" cursor="handPoint" hint="Ligar ou desligar esta habilidade. Enquanto ligada, os efeitos entram nos cards da aba de Combate.">
+                    ]]></event>
+                    <label align="client" text="x" fontFamily="EB Garamond" fontColor="#9E3B4A" fontSize="13" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                </rectangle>
+                <rectangle name="rectAtivarHab" align="left" width="0" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=0}" cursor="handPoint" hint="Ligar ou desligar esta habilidade. Enquanto ligada, os efeitos entram nos cards da aba de Combate.">
                     <event name="onClick"><![CDATA[
                         if sheet ~= nil and tostring(sheet.tipo or "") ~= "forma" then
                             if alternarHabilidadeAtiva ~= nil then alternarHabilidadeAtiva(sheet); end;
@@ -198,10 +201,10 @@
                     ]]></event>
                     <label name="lblAtivarHab" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                 </rectangle>
+                <rectangle name="rectCustoHab" align="left" width="116" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" hitTest="false">
+                    <label name="lblCustoHab" align="client" text="" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                </rectangle>
             </layout>
-            <rectangle name="rectCustoHab" align="right" width="116" color="#0A0C10" strokeColor="#1A262C" strokeSize="1" xradius="3" yradius="3" margins="{left=8}" hitTest="false">
-                <label name="lblCustoHab" align="client" text="" fontFamily="Cinzel" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
-            </rectangle>
             <rectangle name="rectOrigemHab" align="client" color="#0A0C10" strokeColor="#22323A" strokeSize="1" xradius="8" yradius="8" hitTest="false">
                 <label name="lblOrigemHab" align="client" text="" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="leading" margins="{left=10,right=10}" vertTextAlign="center" wordWrap="false" hitTest="false"/>
             </rectangle>

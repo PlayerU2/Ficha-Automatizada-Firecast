@@ -73,13 +73,19 @@
                     table.insert(partes, "atributo " .. tostring(atr));
                     table.insert(partes, "prof +" .. tostring(prof));
                     if extras ~= 0 then
-                        local sinalExtras = "+";
-                        if extras < 0 then sinalExtras = ""; end;
-                        local t = "extras " .. sinalExtras .. tostring(extras);
-                        table.insert(partes, t);
-                    end;
-                    if textoExtras ~= nil and textoExtras ~= "" then
-                        table.insert(partes, "(" .. textoExtras .. ")");
+                        if textoExtras ~= nil and textoExtras ~= "" then
+                            -- Se temos a fonte do bônus, mostramos só ela
+                            table.insert(partes, textoExtras);
+                        else
+                            -- Fallback caso algum bônus não tenha preenchido o textoExtras
+                            local sinalExtras = "+";
+                            if extras < 0 then sinalExtras = ""; end;
+                            local t = "extras " .. sinalExtras .. tostring(extras);
+                            table.insert(partes, t);
+                        end;
+                    elseif textoExtras ~= nil and textoExtras ~= "" then
+                        -- Se for 0 mas tiver texto situacional (ex: avisos de Vantagem)
+                        table.insert(partes, textoExtras);
                     end;
                     if manual ~= 0 then
                         local sinalManual = "+";
@@ -102,7 +108,7 @@
              rotulo de 12px em cima e caixa embaixo, com as mesmas margens -
              para as caixas ficarem alinhadas na horizontal. O "x" tem rotulo
              vazio so para nascer na mesma linha dos outros. -->
-        <layout align="right" width="190" margins="{right=6,top=12,bottom=12}">
+        <layout align="right" width="182" margins="{right=6,top=12,bottom=12}">
             <layout align="left" width="70">
                 <label align="top" height="14" text="TOTAL" fontFamily="Marcellus SC" fontColor="#5F7078" fontSize="11" horzTextAlign="center" hitTest="false"/>
                 <rectangle align="client" color="#0A0C10" strokeColor="#C9A24B" strokeSize="1" xradius="3" yradius="3" hitTest="false">
