@@ -995,6 +995,7 @@
                 nivel = nivel, constituicao = valores.constituicao,
                 dadoVida = sheet.dadoVida, progressaoVidaExtra = sheet.progressaoVidaExtra,
                 ajusteManual = sheet.ajusteHp,
+                constituicaoSobrenatural = nivelDoPoder("Constituição sobrenatural"),
             })
             -- Vigor expandido/reprimido incide na VIDA, sempre - inclusive
             -- em vampiro. Aura expandida/reprimida incide na AURA, sempre -
@@ -1007,8 +1008,16 @@
             -- o acumulado dos níveis; o percentual e das qualidades.
             local contaHp = "15 + dado " .. n(sheet.dadoVida) .. " + (Con " ..
                 valores.constituicao .. "÷2 × " .. nivel .. ")" ..
-                parcela(sheet.progressaoVidaExtra, "progressão") ..
-                parcela(sheet.ajusteHp, "ajuste")
+                parcela(sheet.progressaoVidaExtra, "progressão")
+            
+            local nvCon = nivelDoPoder("Constituição sobrenatural")
+            if nvCon >= 5 then
+                contaHp = contaHp .. " + (Con Sobrenatural 4 × " .. nivel .. ")"
+            elseif nvCon >= 3 then
+                contaHp = contaHp .. " + (Con Sobrenatural 1 × " .. nivel .. ")"
+            end
+            
+            contaHp = contaHp .. parcela(sheet.ajusteHp, "ajuste")
             if (efeitosQD.hpPercent or 0) ~= 0 then
                 contaHp = "(" .. contaHp .. ") × " .. fmtNumero(1 + (efeitosQD.hpPercent or 0) / 100) ..
                     " [qualidades " .. (efeitosQD.hpPercent > 0 and "+" or "") .. efeitosQD.hpPercent .. "%]"
