@@ -225,6 +225,7 @@
             -- Equipar, desequipar e mover na mochila sao jogo; o teto da
             -- mochila tem ajuste porque a mesa concede espaco por narrativa.
             {widget = "cmb_edMochilaBonus", campo = "mochilaBonus"},
+            {widget = "abaInv_edMochilaBonus", campo = "mochilaBonus"},
             -- Pontos de poder concedidos por favor divino ou por narrativa:
             -- e campo do MESTRE, e ele os concede com a ficha ja fechada.
             {widget = "abaPod_edConcedidos", campo = "poderPontosConcedidos"},
@@ -16155,7 +16156,7 @@
                          O numero e ESCRITO A MAO aqui e conferido pela
                          checagem 27 contra o module.xml - se alguem esquecer
                          de subir um dos dois, o build para. -->
-                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.34" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
+                    <label name="lblVersaoFicha" align="left" width="52" text="v0.53.35" fontFamily="Marcellus SC" fontColor="#3A4750" fontSize="11" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <label name="lblSecaoAtual" align="client" text="SEÇÃO 01  •  DADOS PESSOAIS" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="12" vertTextAlign="center" margins="{left=8}"/>
                 </layout>
 
@@ -20450,7 +20451,12 @@
                                 <image align="none" left="4" top="0" width="22" height="22" style="originalSize" src="imagens/inventario_mochila.png" hitTest="false"/>
                                 <label align="client" text="MOCHILA" fontFamily="Marcellus SC" fontColor="#8C9AA0" fontSize="11" horzTextAlign="center" vertTextAlign="center" hint="Espaços usados e capacidade. Cada 2 consumíveis iguais ocupam 1 espaço."/>
                             </layout>
-                            <label name="abaInv_lblMochila" align="top" height="28" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
+                            <layout align="top" height="28">
+                                <label name="abaInv_lblMochila" align="client" text="0" fontFamily="Cinzel" fontColor="#C9A24B" fontSize="20" fontStyle="bold" horzTextAlign="trailing" hitTest="false"/>
+                                <edit name="abaInv_edMochilaBonus" align="right" width="26" field="mochilaBonus" type="number" text="0" fontFamily="Cinzel" fontColor="#7FA8B8" fontSize="14" horzTextAlign="center" transparent="true" margins="{top=4,bottom=4,left=4,right=16}" hint="Ajuste extra (narrativa, montaria, etc)">
+                                    <event name="onChange"><![CDATA[recalcularTudo();]]></event>
+                                </edit>
+                            </layout>
                             <label name="abaInv_lblMochilaConta" align="top" height="14" text="" fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" horzTextAlign="center" hitTest="false"/>
                         </rectangle>
                         <rectangle align="left" width="170" color="#0D1317" strokeColor="#1E2A31" strokeSize="1" xradius="6" yradius="6" margins="{right=10}">

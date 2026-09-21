@@ -1,4 +1,4 @@
-FICHA DE PERSONAGEM - PETRICHOR - v0.53.34
+FICHA DE PERSONAGEM - PETRICHOR - v0.53.35
 
 ARTE v0.53.28: o brasao racial dos Humanos foi substituido pela nova versao
 com maos erguidas, ramos e simbolo divino. A arte foi limpa e ajustada para
