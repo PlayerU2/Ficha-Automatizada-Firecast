@@ -26969,6 +26969,10 @@
                                 <label name="popHab_lblTagFenix" align="client" text="Fênix" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Fênix");]]></event>
                             </rectangle>
+                            <rectangle name="popHab_tagGhiscari" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Ghiscari]">
+                                <label name="popHab_lblTagGhiscari" align="client" text="Ghiscari" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
+                                <event name="onClick"><![CDATA[alternarTagHab("Ghiscari");]]></event>
+                            </rectangle>
                             <rectangle name="popHab_tagGiff" align="top" height="26" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{bottom=2}" cursor="handPoint" hint="Adicionar ou remover a tag [Giff]">
                                 <label name="popHab_lblTagGiff" align="client" text="Giff" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Giff");]]></event>
@@ -27045,6 +27049,22 @@
                                 <label name="popHab_lblTagVampiro" align="client" text="Vampiro" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="12" vertTextAlign="center" margins="{left=8}" hitTest="false"/>
                                 <event name="onClick"><![CDATA[alternarTagHab("Vampiro");]]></event>
                             </rectangle>
+                            <label align="top" height="18" text="PERSONALIZADA" fontFamily="Marcellus SC" fontColor="#C9A24B" fontSize="11" margins="{top=8,bottom=2}" hitTest="false"/>
+                            <layout align="top" height="26" margins="{bottom=2}">
+                                <rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" margins="{right=4}">
+                                    <edit name="popHab_editTagPersonalizada" align="client" fontFamily="EB Garamond" fontColor="#E6E9E4" fontSize="12" transparent="true" margins="{left=4,right=4}" hint="Digite o nome da tag personalizada"/>
+                                </rectangle>
+                                <rectangle align="right" width="26" color="#12181C" strokeColor="#22323A" strokeSize="1" xradius="3" yradius="3" cursor="handPoint" hint="Adicionar tag personalizada">
+                                    <label align="client" text="+" fontFamily="EB Garamond" fontColor="#A8B5BA" fontSize="16" horzTextAlign="center" vertTextAlign="center" hitTest="false"/>
+                                    <event name="onClick"><![CDATA[
+                                        local tag = self.popHab_editTagPersonalizada.text;
+                                        if tag ~= nil and tag ~= "" then
+                                            alternarTagHab(tag);
+                                            self.popHab_editTagPersonalizada.text = "";
+                                        end
+                                    ]]></event>
+                                </rectangle>
+                            </layout>
                         </scrollBox>
                     </rectangle>
                         <rectangle align="client" color="#0D1317" strokeColor="#22323A" strokeSize="1" xradius="5" yradius="5" hitTest="false">
