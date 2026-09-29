@@ -14299,10 +14299,7 @@
 
         function abrirPopupEncantamentoPersonalizado()
             if itemEmEdicao == nil or self.popEncantamentoPersonalizado == nil then return end
-            if not usuarioEhMestre() then
-                avisarInventario("Somente o MESTRE pode criar ou editar um encantamento personalizado.", COR.wine)
-                return
-            end
+
             local lista = lerItens()
             local it = lista[itemEmEdicao]
             if it == nil then return end
@@ -14322,7 +14319,7 @@
         end
 
         function salvarEncantamentoPersonalizado()
-            if itemEmEdicao == nil or not usuarioEhMestre() then return end
+            if itemEmEdicao == nil then return end
             local lista = lerItens()
             local it = lista[itemEmEdicao]
             if it == nil then return end
@@ -14353,7 +14350,7 @@
         end
 
         function removerEncantamentoPersonalizado()
-            if itemEmEdicao == nil or not usuarioEhMestre() then return end
+            if itemEmEdicao == nil then return end
             local lista = lerItens()
             local it = lista[itemEmEdicao]
             if it == nil then return end
@@ -29368,7 +29365,7 @@
                 <label align="top" height="26" text="ENCANTAMENTOS" fontFamily="Cinzel Decorative" fontColor="#8A63C9" fontSize="15" fontStyle="bold" horzTextAlign="center" hitTest="false"/>
                 <rectangle align="top" height="1" color="#8A63C9" margins="{top=4,bottom=6}" hitTest="false"/>
                 <label align="top" height="30" text="Só é possível encantar um item que tenha slot para isso, e ter slot depende da qualidade e do material com que ele foi forjado. Clique para aplicar ou remover." fontFamily="EB Garamond" fontColor="#54636B" fontSize="11" wordWrap="true" margins="{bottom=6}" hitTest="false"/>
-                <rectangle align="top" height="34" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="4" yradius="4" margins="{bottom=8}" cursor="handPoint" hint="MESTRE: criar ou editar um encantamento próprio, validado para esta mesa">
+                <rectangle align="top" height="34" color="#12181C" strokeColor="#8A63C9" strokeSize="1" xradius="4" yradius="4" margins="{bottom=8}" cursor="handPoint" hint="Criar ou editar um encantamento próprio, validado para esta mesa">
                     <label name="popEnc_lblPersonalizados" align="client" text="+ CRIAR ENCANTAMENTO PERSONALIZADO" fontFamily="Marcellus SC" fontColor="#8A63C9" fontSize="11" horzTextAlign="center" vertTextAlign="center" wordWrap="false" hitTest="false"/>
                     <event name="onClick"><![CDATA[abrirPopupEncantamentoPersonalizado();]]></event>
                 </rectangle>
